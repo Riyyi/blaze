@@ -1,0 +1,6 @@
+[submodule "vendor/ruc"]
+	path = vendor/ruc
+	url = https://github.com/riyyi/ruc
+[submodule "vendor/mal"]
+	path = vendor/mal
+	url = https://github.com/kanaka/mal
