@@ -1,12 +1,17 @@
-#include <cstdio>
+#include <csignal>  // std::signal
+#include <cstdlib>  // std::exit
 #include <iostream> // std::cin
 #include <string>   // std::getline
 #include <string_view>
+
+#include "ruc/format/color.h"
 
 #include "ast.h"
 #include "lexer.h"
 #include "printer.h"
 #include "reader.h"
+
+#define PRETTY_PRINT 0
 
 #if 1
 auto read(std::string_view data) -> blaze::ASTNode*
@@ -37,12 +42,31 @@ auto rep(std::string_view data) -> void
 	print(eval(read(data)));
 }
 
+static auto cleanup(int signal) -> void
+{
+	print("\033[0m");
+	std::exit(signal);
+}
+
 auto main() -> int
 {
+	// Signal callbacks
+	std::signal(SIGINT, cleanup);
+	std::signal(SIGTERM, cleanup);
+
 	while (true) {
-		printf("user> ");
+	#if PRETTY_PRINT
+		print(fg(ruc::format::TerminalColor::Blue), "user>");
+		print(" ");
+		print("\033[1m");
+	#else
+		print("user> ");
+	#endif
 		std::string line;
 		std::getline(std::cin, line);
+	#if PRETTY_PRINT
+		print("\033[0m");
+	#endif
 
 		// Exit with Ctrl-D
 		if (std::cin.eof() || std::cin.fail()) {
