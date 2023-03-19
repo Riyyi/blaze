@@ -73,6 +73,9 @@ ASTNode* Reader::readImpl()
 	}
 
 	switch (peek().type) {
+	case Token::Type::Special: // ~@
+		return readSpliceUnquote();
+		break;
 	case Token::Type::ParenOpen: // (
 		return readList();
 		break;
@@ -81,6 +84,15 @@ ASTNode* Reader::readImpl()
 		m_error_character = ')';
 		return nullptr;
 		break;
+	case Token::Type::Quote: // '
+		return readQuote();
+		break;
+	case Token::Type::Backtick: // `
+		return readQuasiQuote();
+		break;
+	case Token::Type::Tilde: // ~
+		return readUnquote();
+		break;
 	case Token::Type::String:
 		return readString();
 		break;
@@ -88,10 +100,28 @@ ASTNode* Reader::readImpl()
 		return readValue();
 		break;
 	default:
-		// Unimplemented token
-		VERIFY_NOT_REACHED();
-		return nullptr;
+		break;
 	};
+
+	// Unimplemented token
+	VERIFY_NOT_REACHED();
+	return nullptr;
+}
+
+ASTNode* Reader::readSpliceUnquote()
+{
+	ignore(); // ~@
+
+	if (isEOF()) {
+		Error::the().addError("expected form, got EOF");
+		return nullptr;
+	}
+
+	List* list = new List();
+	list->addNode(new Symbol("splice-unquote"));
+	list->addNode(readImpl());
+
+	return list;
 }
 
 ASTNode* Reader::readList()
@@ -107,6 +137,54 @@ ASTNode* Reader::readList()
 		m_error_character = ')';
 		m_is_unbalanced = true;
 	}
+
+	return list;
+}
+
+ASTNode* Reader::readQuote()
+{
+	ignore(); // '
+
+	if (isEOF()) {
+		Error::the().addError("expected form, got EOF");
+		return nullptr;
+	}
+
+	List* list = new List();
+	list->addNode(new Symbol("quote"));
+	list->addNode(readImpl());
+
+	return list;
+}
+
+ASTNode* Reader::readQuasiQuote()
+{
+	ignore(); // `
+
+	if (isEOF()) {
+		Error::the().addError("expected form, got EOF");
+		return nullptr;
+	}
+
+	List* list = new List();
+	list->addNode(new Symbol("quasiquote"));
+	list->addNode(readImpl());
+
+	return list;
+}
+
+ASTNode* Reader::readUnquote()
+{
+	ignore(); // ~
+
+	if (isEOF()) {
+		Error::the().addError("expected form, got EOF");
+		return nullptr;
+	}
+
+	List* list = new List();
+	list->addNode(new Symbol("unquote"));
+	list->addNode(readImpl());
 
 	return list;
 }

@@ -105,8 +105,8 @@ bool Lexer::consumeSpliceUnquoteOrUnquote()
 {
 	size_t column = m_column;
 
-	ignore(); // ~
-	if (peek() == '@') {
+	if (peek(1) == '@') {
+		ignore(); // ~
 		m_tokens.push_back({ Token::Type::Special, m_line, column, "~@" });
 	}
 	else {

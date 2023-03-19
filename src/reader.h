@@ -34,7 +34,11 @@ private:
 	void ignore();
 
 	ASTNode* readImpl();
+	ASTNode* readSpliceUnquote();
 	ASTNode* readList();
+	ASTNode* readQuote();
+	ASTNode* readQuasiQuote();
+	ASTNode* readUnquote();
 	ASTNode* readString();
 	ASTNode* readValue();
 
