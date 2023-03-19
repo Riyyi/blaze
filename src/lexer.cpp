@@ -56,16 +56,16 @@ void Lexer::tokenize()
 			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, ")" });
 			break;
 		case '\'':
-			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, "'" });
+			m_tokens.push_back({ Token::Type::Quote, m_line, m_column, "'" });
 			break;
 		case '`':
-			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, "`" });
+			m_tokens.push_back({ Token::Type::Backtick, m_line, m_column, "`" });
 			break;
 		case '^':
-			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, "^" });
+			m_tokens.push_back({ Token::Type::Caret, m_line, m_column, "^" });
 			break;
 		case '@':
-			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, "@" });
+			m_tokens.push_back({ Token::Type::At, m_line, m_column, "@" });
 			break;
 		case '"':
 			if (!consumeString()) {
