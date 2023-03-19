@@ -20,6 +20,7 @@ public:
 
 private:
 	void dumpImpl(ASTNode* node);
+	void dumpError();
 
 	bool m_firstNode { true };
 	bool m_previousNodeIsList { false };

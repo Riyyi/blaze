@@ -11,6 +11,7 @@
 #include "ruc/format/print.h"
 #include "ruc/genericlexer.h"
 
+#include "error.h"
 #include "lexer.h"
 
 namespace blaze {
@@ -28,7 +29,7 @@ Lexer::~Lexer()
 
 void Lexer::tokenize()
 {
-	if (m_tokens.size() != 0) {
+	if (Error::the().hasAnyError() || m_tokens.size() > 0) {
 		return;
 	}
 
@@ -152,8 +153,9 @@ bool Lexer::consumeString()
 	if (character == '"') {
 		text += character;
 	}
-
-	print("lex text '{}'\n", text);
+	else {
+		Error::the().addError({ Token::Type::Error, m_line, column, "expected '\"', got EOF" });
+	}
 
 	m_tokens.push_back({ Token::Type::String, m_line, column, text });
 

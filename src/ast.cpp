@@ -10,13 +10,6 @@
 
 namespace blaze {
 
-Error::Error(const std::string& error)
-	: m_error(error)
-{
-}
-
-// -----------------------------------------
-
 List::~List()
 {
 	for (auto node : m_nodes) {

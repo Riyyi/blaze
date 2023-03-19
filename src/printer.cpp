@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "lexer.h"
 #include "ruc/format/print.h"
 
+#include "error.h"
 #include "printer.h"
 #include "types.h"
 
@@ -25,6 +27,11 @@ Printer::~Printer()
 
 void Printer::dump()
 {
+	if (Error::the().hasAnyError()) {
+		dumpError();
+		return;
+	}
+
 	if (m_node == nullptr) {
 		return;
 	}
@@ -41,11 +48,7 @@ void Printer::dumpImpl(ASTNode* node)
 		}
 	};
 
-
-	if (is<Error>(node)) {
-		print("*** blaze error ***  {}", static_cast<Error*>(node)->error());
-	}
-	else if (is<List>(node)) {
+	if (is<List>(node)) {
 		printSpacing();
 		print("(");
 		m_firstNode = false;
@@ -69,6 +72,20 @@ void Printer::dumpImpl(ASTNode* node)
 		printSpacing();
 		print("{}", static_cast<Symbol*>(node)->symbol());
 	}
+}
+
+void Printer::dumpError()
+{
+	print("Error: ");
+	if (Error::the().hasTokenError()) {
+		Token error = Error::the().tokenError();
+		print("{}", error.symbol);
+	}
+	else if (Error::the().hasOtherError()) {
+		std::string error = Error::the().otherError();
+		print("{}", error);
+	}
+	print("\n");
 }
 
 } // namespace blaze

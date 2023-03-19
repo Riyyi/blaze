@@ -4,6 +4,7 @@
 #include <string>   // std::getline
 #include <string_view>
 
+#include "error.h"
 #include "ruc/format/color.h"
 
 #include "ast.h"
@@ -14,9 +15,9 @@
 #define PRETTY_PRINT 0
 
 #if 1
-auto read(std::string_view data) -> blaze::ASTNode*
+auto read(std::string_view input) -> blaze::ASTNode*
 {
-	blaze::Lexer lexer(data);
+	blaze::Lexer lexer(input);
 	lexer.tokenize();
 	// lexer.dump();
 	blaze::Reader reader(std::move(lexer.tokens()));
@@ -37,9 +38,12 @@ auto print(blaze::ASTNode* node) -> void
 	printer.dump();
 }
 
-auto rep(std::string_view data) -> void
+auto rep(std::string_view input) -> void
 {
-	print(eval(read(data)));
+	blaze::Error::the().clearErrors();
+	blaze::Error::the().setInput(input);
+
+	print(eval(read(input)));
 }
 
 static auto cleanup(int signal) -> void

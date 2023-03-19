@@ -34,6 +34,7 @@ struct Token {
 		String,       // "foobar"
 		Comment,      // ;
 		Value,        // symbols, numbers, "true", "false", and "nil"
+		Error,
 	};
 
 	Type type { Type::None };

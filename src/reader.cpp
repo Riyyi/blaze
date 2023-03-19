@@ -9,6 +9,7 @@
 #include <cstdlib> // std::strtoll
 #include <utility> // std::move
 
+#include "error.h"
 #include "ruc/format/color.h"
 #include "ruc/meta/assert.h"
 
@@ -31,7 +32,7 @@ Reader::~Reader()
 
 void Reader::read()
 {
-	if (m_node) {
+	if (Error::the().hasAnyError() || m_node) {
 		return;
 	}
 
@@ -40,26 +41,26 @@ void Reader::read()
 	// Error checking
 
 	if (m_invalid_syntax) {
-		m_node = new Error("Invalid read syntax: '" + std::string(1, m_error_character) + "'");
+		Error::the().addError("invalid read syntax: '" + std::string(1, m_error_character) + "'");
 		return;
 	}
 
 	if (m_is_unbalanced) {
-		m_node = new Error("Expected '" + std::string(1, m_error_character) + "', got EOF");
+		Error::the().addError("expected '" + std::string(1, m_error_character) + "', got EOF");
 		return;
 	}
 
 	if (!isEOF()) {
 		Token::Type type = peek().type;
 		switch (type) {
-		case Token::Type::ParenOpen: // (
+		case Token::Type::ParenOpen:  // (
 		case Token::Type::ParenClose: // )
 		case Token::Type::String:
 		case Token::Type::Value:
-			m_node = new Error("More than one sexp in input");
+			Error::the().addError("more than one sexp in input");
 			break;
 		default:
-			m_node = new Error("Unknown error");
+			Error::the().addError("unknown error");
 			break;
 		};
 	}
@@ -110,39 +111,12 @@ ASTNode* Reader::readList()
 	return list;
 }
 
-static bool isValidString(const std::string& str)
-{
-	if (str.size() < 2 || str.front() != '"' || str.back() != '"') {
-		return false;
-	}
-	if (str.size() == 2) {
-		return true;
-	}
-
-	bool escaped = false;
-	for (auto it = str.begin() + 1; it != str.end() - 1; ++it) {
-		if (*it == '\\' && !escaped) {
-			escaped = true;
-			continue;
-		}
-
-		// The last character needs to be an escaped '\' or not a '\'
-		if (it == str.end() - 2 && (escaped || *it != '\\')) {
-			return true;
-		}
-
-		escaped = false;
-	}
-
-	return false;
-}
-
 ASTNode* Reader::readString()
 {
 	std::string symbol = consume().symbol;
 
 	// Unbalanced string
-	if (!isValidString(symbol)) {
+	if (symbol.size() < 2 || symbol.front() != '"' || symbol.back() != '"') {
 		m_error_character = '"';
 		m_is_unbalanced = true;
 	}
