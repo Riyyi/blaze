@@ -23,6 +23,7 @@ public:
 	template<typename T>
 	bool fastIs() const = delete;
 
+	virtual bool isError() const { return false; }
 	virtual bool isVector() const { return false; }
 	virtual bool isHashMap() const { return false; }
 	virtual bool isList() const { return false; }
@@ -30,6 +31,21 @@ public:
 	virtual bool isNumber() const { return false; }
 	virtual bool isSpecialSymbol() const { return false; }
 	virtual bool isSymbol() const { return false; }
+};
+
+// -----------------------------------------
+
+class Error final : public ASTNode {
+public:
+	Error(const std::string& error);
+	virtual ~Error() = default;
+
+	virtual bool isError() const override { return true; }
+
+	const std::string& error() const { return m_error; }
+
+private:
+	std::string m_error;
 };
 
 // -----------------------------------------
@@ -143,6 +159,9 @@ private:
 // -----------------------------------------
 
 // clang-format off
+template<>
+inline bool ASTNode::fastIs<Error>() const { return isError(); }
+
 template<>
 inline bool ASTNode::fastIs<Vector>() const { return isVector(); }
 
