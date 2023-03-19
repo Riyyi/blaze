@@ -31,30 +31,66 @@ Reader::~Reader()
 
 void Reader::read()
 {
-	if (m_node != nullptr) {
+	if (m_node) {
 		return;
 	}
 
 	m_node = readImpl();
-	VERIFY(m_index > m_tokens.size() - 1, "more than one sexp in input");
+
+	// Error checking
+
+	if (m_invalid_syntax) {
+		m_node = new Error("Invalid read syntax: '" + std::string(1, m_error_character) + "'");
+		return;
+	}
+
+	if (m_is_unbalanced) {
+		m_node = new Error("Expected '" + std::string(1, m_error_character) + "', got EOF");
+		return;
+	}
+
+	if (!isEOF()) {
+		Token::Type type = peek().type;
+		switch (type) {
+		case Token::Type::ParenOpen: // (
+		case Token::Type::ParenClose: // )
+		case Token::Type::String:
+		case Token::Type::Value:
+			m_node = new Error("More than one sexp in input");
+			break;
+		default:
+			m_node = new Error("Unknown error");
+			break;
+		};
+	}
 }
 
 ASTNode* Reader::readImpl()
 {
+	if (m_tokens.size() == 0) {
+		return nullptr;
+	}
+
 	switch (peek().type) {
-	case Token::Type::ParenOpen:
+	case Token::Type::ParenOpen: // (
 		return readList();
+		break;
+	case Token::Type::ParenClose: // )
+		m_invalid_syntax = true;
+		m_error_character = ')';
+		return nullptr;
 		break;
 	case Token::Type::String:
 		return readString();
 		break;
 	case Token::Type::Value:
 		return readValue();
+		break;
 	default:
 		// Unimplemented token
 		VERIFY_NOT_REACHED();
 		return nullptr;
-	}
+	};
 }
 
 ASTNode* Reader::readList()
@@ -62,29 +98,64 @@ ASTNode* Reader::readList()
 	ignore(); // (
 
 	List* list = new List();
-	while (m_index < m_tokens.size() && peek().type != Token::Type::ParenClose) {
+	while (!isEOF() && peek().type != Token::Type::ParenClose) {
 		list->addNode(readImpl());
 	}
 
-	VERIFY(m_index != m_tokens.size(), "missing closing ')'");
-
-	ignore(); // )
+	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
+		m_error_character = ')';
+		m_is_unbalanced = true;
+	}
 
 	return list;
 }
 
+static bool isValidString(const std::string& str)
+{
+	if (str.size() < 2 || str.front() != '"' || str.back() != '"') {
+		return false;
+	}
+	if (str.size() == 2) {
+		return true;
+	}
+
+	bool escaped = false;
+	for (auto it = str.begin() + 1; it != str.end() - 1; ++it) {
+		if (*it == '\\' && !escaped) {
+			escaped = true;
+			continue;
+		}
+
+		// The last character needs to be an escaped '\' or not a '\'
+		if (it == str.end() - 2 && (escaped || *it != '\\')) {
+			return true;
+		}
+
+		escaped = false;
+	}
+
+	return false;
+}
+
 ASTNode* Reader::readString()
 {
-	Token token = consume();
-	return new String(token.symbol);
+	std::string symbol = consume().symbol;
+
+	// Unbalanced string
+	if (!isValidString(symbol)) {
+		m_error_character = '"';
+		m_is_unbalanced = true;
+	}
+
+	return new String(symbol);
 }
 
 ASTNode* Reader::readValue()
 {
 	Token token = consume();
-	char* endPtr = nullptr;
-	int64_t result = std::strtoll(token.symbol.c_str(), &endPtr, 10);
-	if (endPtr == token.symbol.c_str() + token.symbol.size()) {
+	char* end_ptr = nullptr;
+	int64_t result = std::strtoll(token.symbol.c_str(), &end_ptr, 10);
+	if (end_ptr == token.symbol.c_str() + token.symbol.size()) {
 		return new Number(result);
 	}
 
@@ -108,6 +179,16 @@ Token Reader::consume()
 {
 	VERIFY(!isEOF());
 	return m_tokens[m_index++];
+}
+
+bool Reader::consumeSpecific(Token token)
+{
+	if (isEOF() || peek().type != token.type) {
+		return false;
+	}
+
+	ignore();
+	return true;
 }
 
 void Reader::ignore()

@@ -30,6 +30,7 @@ private:
 	bool isEOF() const;
 	Token peek() const;
 	Token consume();
+	bool consumeSpecific(Token token);
 	void ignore();
 
 	ASTNode* readImpl();
@@ -42,6 +43,10 @@ private:
 	size_t m_index { 0 };
 	size_t m_indentation { 0 };
 	std::vector<Token> m_tokens;
+
+	char m_error_character { 0 };
+	bool m_invalid_syntax { false };
+	bool m_is_unbalanced { false };
 
 	ASTNode* m_node { nullptr };
 };

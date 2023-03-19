@@ -118,7 +118,7 @@ bool Lexer::consumeSpliceUnquoteOrUnquote()
 bool Lexer::consumeString()
 {
 	size_t column = m_column;
-	std::string text = "";
+	std::string text = "\"";
 
 	static std::unordered_set<char> exit = {
 		'"',
@@ -146,10 +146,14 @@ bool Lexer::consumeString()
 		text += character;
 		ignore();
 
-		if (escape) {
-			escape = false;
-		}
+		escape = false;
 	}
+
+	if (character == '"') {
+		text += character;
+	}
+
+	print("lex text '{}'\n", text);
 
 	m_tokens.push_back({ Token::Type::String, m_line, column, text });
 

@@ -35,13 +35,17 @@ void Printer::dump()
 
 void Printer::dumpImpl(ASTNode* node)
 {
-	auto printSpacing = [this]() {
+	auto printSpacing = [this]() -> void {
 		if (!m_firstNode && !m_previousNodeIsList) {
 			print(" ");
 		}
 	};
 
-	if (is<List>(node)) {
+
+	if (is<Error>(node)) {
+		print("*** blaze error ***  {}", static_cast<Error*>(node)->error());
+	}
+	else if (is<List>(node)) {
 		printSpacing();
 		print("(");
 		m_firstNode = false;
@@ -55,7 +59,7 @@ void Printer::dumpImpl(ASTNode* node)
 	}
 	else if (is<String>(node)) {
 		printSpacing();
-		print("\"{}\"", static_cast<String*>(node)->data());
+		print("{}", static_cast<String*>(node)->data());
 	}
 	else if (is<Number>(node)) {
 		printSpacing();
