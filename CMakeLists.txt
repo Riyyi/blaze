@@ -74,8 +74,8 @@ target_link_libraries(${PROJECT} ruc)
 # Execute target
 
 add_custom_target(run
-    COMMAND ${PROJECT})
-add_dependencies(run ${PROJECT})
+    COMMAND ${PROJECT}
+	DEPENDS ${PROJECT})
 
 # ------------------------------------------
 # Test targets
