@@ -32,14 +32,19 @@ private:
 	Token consume();
 	bool consumeSpecific(Token token);
 	void ignore();
+	void retreat();
 
 	ASTNode* readImpl();
-	ASTNode* readSpliceUnquote();
-	ASTNode* readList();
-	ASTNode* readQuote();
-	ASTNode* readQuasiQuote();
-	ASTNode* readUnquote();
-	ASTNode* readString();
+	ASTNode* readSpliceUnquote(); // ~@
+	ASTNode* readVector();        // []
+	ASTNode* readHashMap();       // {}
+	ASTNode* readList();          // ()
+	ASTNode* readQuote();         // '
+	ASTNode* readQuasiQuote();    // `
+	ASTNode* readUnquote();       // ~
+	ASTNode* readWithMeta();      // ^
+	ASTNode* readDeref();         // @
+	ASTNode* readString();        // "foobar"
 	ASTNode* readValue();
 
 	void dumpImpl(ASTNode* node);

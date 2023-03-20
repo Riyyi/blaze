@@ -39,10 +39,10 @@ void Lexer::tokenize()
 			consumeSpliceUnquoteOrUnquote();
 			break;
 		case '[':
-			m_tokens.push_back({ Token::Type::ParenOpen, m_line, m_column, "[" });
+			m_tokens.push_back({ Token::Type::BracketOpen, m_line, m_column, "[" });
 			break;
 		case ']':
-			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, "]" });
+			m_tokens.push_back({ Token::Type::BracketClose, m_line, m_column, "]" });
 			break;
 		case '{':
 			m_tokens.push_back({ Token::Type::BraceOpen, m_line, m_column, "{" });

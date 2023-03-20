@@ -10,16 +10,14 @@
 
 namespace blaze {
 
-List::~List()
+Collection::~Collection()
 {
 	for (auto node : m_nodes) {
 		delete node;
 	}
 }
 
-// -----------------------------------------
-
-void List::addNode(ASTNode* node)
+void Collection::addNode(ASTNode* node)
 {
 	m_nodes.push_back(node);
 }

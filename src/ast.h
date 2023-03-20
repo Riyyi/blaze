@@ -23,6 +23,7 @@ public:
 	template<typename T>
 	bool fastIs() const = delete;
 
+	virtual bool isCollection() const { return false; }
 	virtual bool isVector() const { return false; }
 	virtual bool isHashMap() const { return false; }
 	virtual bool isList() const { return false; }
@@ -30,52 +31,64 @@ public:
 	virtual bool isNumber() const { return false; }
 	virtual bool isSpecialSymbol() const { return false; }
 	virtual bool isSymbol() const { return false; }
+
+protected:
+	ASTNode() {}
 };
 
 // -----------------------------------------
 
-// []
-class Vector final : public ASTNode {
+class Collection : public ASTNode {
 public:
-	Vector();
-	virtual ~Vector();
+	virtual ~Collection() override;
 
-	virtual bool isVector() const override { return true; }
-
-private:
-	std::vector<ASTNode*> m_nodes;
-};
-
-// -----------------------------------------
-
-// {}
-class HashMap final : public ASTNode {
-public:
-	HashMap();
-	virtual ~HashMap();
-
-	virtual bool isHashMap() const override { return true; }
-
-private:
-	std::vector<ASTNode*> m_nodes;
-};
-
-// -----------------------------------------
-
-// ()
-class List final : public ASTNode {
-public:
-	List() = default;
-	virtual ~List() override;
-
-	virtual bool isList() const override { return true; }
+	virtual bool isCollection() const override { return true; }
 
 	void addNode(ASTNode* node);
 
 	const std::vector<ASTNode*>& nodes() const { return m_nodes; }
 
+protected:
+	Collection() {}
+
 private:
 	std::vector<ASTNode*> m_nodes;
+};
+
+// -----------------------------------------
+
+// []
+class Vector final : public Collection {
+public:
+	Vector() = default;
+	virtual ~Vector() = default;
+
+	virtual bool isCollection() const override { return false; }
+	virtual bool isVector() const override { return true; }
+};
+
+// -----------------------------------------
+
+// {}
+class HashMap final : public Collection {
+public:
+	HashMap() = default;
+	virtual ~HashMap() = default;
+
+	virtual bool isCollection() const override { return false; }
+	virtual bool isHashMap() const override { return true; }
+};
+
+// -----------------------------------------
+
+// ()
+class List final : public Collection {
+public:
+	List() = default;
+	virtual ~List() = default;
+
+	virtual bool isCollection() const override { return false; }
+	virtual bool isList() const override { return true; }
 };
 
 // -----------------------------------------
@@ -143,6 +156,9 @@ private:
 // -----------------------------------------
 
 // clang-format off
+template<>
+inline bool ASTNode::fastIs<Collection>() const { return isCollection(); }
+
 template<>
 inline bool ASTNode::fastIs<Vector>() const { return isVector(); }
 

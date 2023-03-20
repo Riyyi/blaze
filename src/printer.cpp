@@ -48,7 +48,31 @@ void Printer::dumpImpl(ASTNode* node)
 		}
 	};
 
-	if (is<List>(node)) {
+	if (is<Vector>(node)) {
+		printSpacing();
+		print("[");
+		m_firstNode = false;
+		m_previousNodeIsList = true;
+		Vector* vector = static_cast<Vector*>(node);
+		for (size_t i = 0; i < vector->nodes().size(); ++i) {
+			dumpImpl(vector->nodes()[i]);
+			m_previousNodeIsList = false;
+		}
+		print("]");
+	}
+	else if (is<HashMap>(node)) {
+		printSpacing();
+		print("{{");
+		m_firstNode = false;
+		m_previousNodeIsList = true;
+		HashMap* hash_map = static_cast<HashMap*>(node);
+		for (size_t i = 0; i < hash_map->nodes().size(); ++i) {
+			dumpImpl(hash_map->nodes()[i]);
+			m_previousNodeIsList = false;
+		}
+		print("}}");
+	}
+	else if (is<List>(node)) {
 		printSpacing();
 		print("(");
 		m_firstNode = false;

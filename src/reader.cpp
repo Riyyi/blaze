@@ -59,6 +59,8 @@ void Reader::read()
 		case Token::Type::Value:
 			Error::the().addError("more than one sexp in input");
 			break;
+		case Token::Type::Comment:
+			break;
 		default:
 			Error::the().addError("unknown error");
 			break;
@@ -75,6 +77,22 @@ ASTNode* Reader::readImpl()
 	switch (peek().type) {
 	case Token::Type::Special: // ~@
 		return readSpliceUnquote();
+		break;
+	case Token::Type::BracketOpen: // [
+		return readVector();
+		break;
+	case Token::Type::BracketClose: // ]
+		m_invalid_syntax = true;
+		m_error_character = ']';
+		return nullptr;
+		break;
+	case Token::Type::BraceOpen: // {
+		return readHashMap();
+		break;
+	case Token::Type::BraceClose: // }
+		m_invalid_syntax = true;
+		m_error_character = '}';
+		return nullptr;
 		break;
 	case Token::Type::ParenOpen: // (
 		return readList();
@@ -93,8 +111,18 @@ ASTNode* Reader::readImpl()
 	case Token::Type::Tilde: // ~
 		return readUnquote();
 		break;
+	case Token::Type::Caret: // ^
+		return readWithMeta();
+		break;
+	case Token::Type::At: // @
+		return readDeref();
+		break;
 	case Token::Type::String:
 		return readString();
+		break;
+	case Token::Type::Comment: // ;
+		ignore();
+		return nullptr;
 		break;
 	case Token::Type::Value:
 		return readValue();
@@ -122,6 +150,40 @@ ASTNode* Reader::readSpliceUnquote()
 	list->addNode(readImpl());
 
 	return list;
+}
+
+ASTNode* Reader::readVector()
+{
+	ignore(); // [
+
+	Vector* vector = new Vector();
+	while (!isEOF() && peek().type != Token::Type::BracketClose) {
+		vector->addNode(readImpl());
+	}
+
+	if (!consumeSpecific(Token { .type = Token::Type::BracketClose })) { // ]
+		m_error_character = ']';
+		m_is_unbalanced = true;
+	}
+
+	return vector;
+}
+
+ASTNode* Reader::readHashMap()
+{
+	ignore(); // {
+
+	HashMap* vector = new HashMap();
+	while (!isEOF() && peek().type != Token::Type::BraceClose) {
+		vector->addNode(readImpl());
+	}
+
+	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }
+		m_error_character = '}';
+		m_is_unbalanced = true;
+	}
+
+	return vector;
 }
 
 ASTNode* Reader::readList()
@@ -189,6 +251,43 @@ ASTNode* Reader::readUnquote()
 	return list;
 }
 
+ASTNode* Reader::readWithMeta()
+{
+	ignore(); // ^
+
+	ignore();      // first token
+	if (isEOF()) { // second token
+		Error::the().addError("expected form, got EOF");
+		return nullptr;
+	}
+	retreat();
+
+	List* list = new List();
+	list->addNode(new Symbol("with-meta"));
+	ASTNode* first = readImpl();
+	ASTNode* second = readImpl();
+	list->addNode(second);
+	list->addNode(first);
+
+	return list;
+}
+
+ASTNode* Reader::readDeref()
+{
+	ignore(); // @
+
+	if (isEOF()) {
+		Error::the().addError("expected form, got EOF");
+		return nullptr;
+	}
+
+	List* list = new List();
+	list->addNode(new Symbol("deref"));
+	list->addNode(readImpl());
+
+	return list;
+}
+
 ASTNode* Reader::readString()
 {
 	std::string symbol = consume().symbol;
@@ -246,6 +345,11 @@ bool Reader::consumeSpecific(Token token)
 void Reader::ignore()
 {
 	m_index++;
+}
+
+void Reader::retreat()
+{
+	m_index--;
 }
 
 // -----------------------------------------
