@@ -92,6 +92,7 @@ void Printer::dumpImpl(ASTNode* node)
 		print("}}");
 	}
 	else if (is<String>(node)) {
+		// TODO: Implement string readably printing
 		printSpacing();
 		print("{}", static_cast<String*>(node)->data());
 	}

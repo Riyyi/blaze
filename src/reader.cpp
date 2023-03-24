@@ -38,6 +38,7 @@ void Reader::read()
 
 	m_node = readImpl();
 
+	// TODO: Move these to the appropriate functions
 	// Error checking
 
 	if (m_invalid_syntax) {

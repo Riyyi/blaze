@@ -79,6 +79,7 @@ Function::Function(Lambda lambda)
 
 void Formatter<blaze::ASTNode*>::format(Builder& builder, blaze::ASTNode* value) const
 {
+	// TODO: Call into Printer::dumpImp(), instead of doing it manually
 	if (is<blaze::String>(value)) {
 		return Formatter<std::string>::format(builder, static_cast<blaze::String*>(value)->data());
 	}

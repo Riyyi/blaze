@@ -42,6 +42,8 @@ class GlobalEnvironment final : public Environment {
 public:
 	GlobalEnvironment()
 	{
+		// TODO: Add more native functions
+		// TODO: Move the functions to their own file
 		auto add = [](std::span<ASTNode*> nodes) -> ASTNode* {
 			int64_t result = 0;
 
