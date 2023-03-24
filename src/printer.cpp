@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "lexer.h"
+#include <iterator> // std::next
+
 #include "ruc/format/print.h"
 
 #include "error.h"
+#include "lexer.h"
 #include "printer.h"
 #include "types.h"
 
@@ -53,9 +55,9 @@ void Printer::dumpImpl(ASTNode* node)
 		print("(");
 		m_firstNode = false;
 		m_previousNodeIsList = true;
-		List* list = static_cast<List*>(node);
-		for (size_t i = 0; i < list->nodes().size(); ++i) {
-			dumpImpl(list->nodes()[i]);
+		auto nodes = static_cast<List*>(node)->nodes();
+		for (size_t i = 0; i < nodes.size(); ++i) {
+			dumpImpl(nodes[i]);
 			m_previousNodeIsList = false;
 		}
 		print(")");
@@ -65,9 +67,9 @@ void Printer::dumpImpl(ASTNode* node)
 		print("[");
 		m_firstNode = false;
 		m_previousNodeIsList = true;
-		Vector* vector = static_cast<Vector*>(node);
-		for (size_t i = 0; i < vector->nodes().size(); ++i) {
-			dumpImpl(vector->nodes()[i]);
+		auto nodes = static_cast<Vector*>(node)->nodes();
+		for (size_t i = 0; i < nodes.size(); ++i) {
+			dumpImpl(nodes[i]);
 			m_previousNodeIsList = false;
 		}
 		print("]");
@@ -77,12 +79,16 @@ void Printer::dumpImpl(ASTNode* node)
 		print("{{");
 		m_firstNode = false;
 		m_previousNodeIsList = true;
-		HashMap* hash_map = static_cast<HashMap*>(node);
-		for (auto element : hash_map->elements()) {
-			print("{} ", element.first.front() == 0x7f ? ":" + element.first.substr(1) : element.first); // 127
-			dumpImpl(element.second);
-			m_previousNodeIsList = false;
+		auto elements = static_cast<HashMap*>(node)->elements();
+		for (auto it = elements.begin(); it != elements.end(); ++it) {
+			print("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
+			dumpImpl(it->second);
+
+			if (it != elements.end() && std::next(it) != elements.end()) {
+				print(" ");
+			}
 		}
+		m_previousNodeIsList = false;
 		print("}}");
 	}
 	else if (is<String>(node)) {
