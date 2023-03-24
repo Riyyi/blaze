@@ -28,9 +28,11 @@ public:
 	virtual bool isHashMap() const { return false; }
 	virtual bool isList() const { return false; }
 	virtual bool isString() const { return false; }
+	virtual bool isKeyword() const { return false; }
 	virtual bool isNumber() const { return false; }
-	virtual bool isSpecialSymbol() const { return false; }
+	virtual bool isValue() const { return false; }
 	virtual bool isSymbol() const { return false; }
+	virtual bool isFunction() const { return false; }
 
 protected:
 	ASTNode() {}
@@ -109,6 +111,21 @@ private:
 
 // -----------------------------------------
 
+// :keyword
+class Keyword final : public ASTNode {
+public:
+	Keyword(const std::string& data);
+	virtual ~Keyword() = default;
+
+	virtual bool isKeyword() const override { return true; }
+
+	const std::string& keyword() const { return m_data; }
+
+private:
+	std::string m_data;
+};
+
+// -----------------------------------------
 // 123
 class Number final : public ASTNode {
 public:
@@ -125,21 +142,7 @@ private:
 
 // -----------------------------------------
 
-// true, false, nil
-class SpecialSymbol final : public ASTNode {
-public:
-	SpecialSymbol();
-	virtual ~SpecialSymbol();
-
-	virtual bool isSpecialSymbol() const override { return true; }
-
-private:
-	std::string m_symbol;
-};
-
-// -----------------------------------------
-
-// Other symbols
+// Symbols
 class Symbol final : public ASTNode {
 public:
 	Symbol(const std::string& symbol);
@@ -147,10 +150,27 @@ public:
 
 	virtual bool isSymbol() const override { return true; }
 
-	std::string symbol() const { return m_symbol; }
+	const std::string& symbol() const { return m_symbol; }
 
 private:
 	std::string m_symbol;
+};
+
+// -----------------------------------------
+
+// true, false, nil
+class Value final : public ASTNode {
+public:
+	Value(const std::string& value);
+	virtual ~Value() = default;
+
+	virtual bool isValue() const override { return true; }
+
+	const std::string& value() const { return m_value; }
+
+private:
+	std::string m_value;
+};
 };
 
 // -----------------------------------------
@@ -172,13 +192,16 @@ template<>
 inline bool ASTNode::fastIs<String>() const { return isString(); }
 
 template<>
+inline bool ASTNode::fastIs<Keyword>() const { return isKeyword(); }
+
+template<>
 inline bool ASTNode::fastIs<Number>() const { return isNumber(); }
 
 template<>
-inline bool ASTNode::fastIs<SpecialSymbol>() const { return isSpecialSymbol(); }
+inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
 
 template<>
-inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
+inline bool ASTNode::fastIs<Value>() const { return isValue(); }
 // clang-format on
 
 } // namespace blaze

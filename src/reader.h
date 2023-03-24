@@ -45,7 +45,8 @@ private:
 	ASTNode* readWithMeta();      // ^
 	ASTNode* readDeref();         // @
 	ASTNode* readString();        // "foobar"
-	ASTNode* readValue();
+	ASTNode* readKeyword();       // :keyword
+	ASTNode* readValue();         // true, false, nil
 
 	void dumpImpl(ASTNode* node);
 

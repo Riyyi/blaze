@@ -88,6 +88,10 @@ void Printer::dumpImpl(ASTNode* node)
 		printSpacing();
 		print("{}", static_cast<String*>(node)->data());
 	}
+	else if (is<Keyword>(node)) {
+		printSpacing();
+		print(":{}", static_cast<Keyword*>(node)->keyword().substr(1));
+	}
 	else if (is<Number>(node)) {
 		printSpacing();
 		print("{}", static_cast<Number*>(node)->number());

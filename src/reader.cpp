@@ -117,14 +117,17 @@ ASTNode* Reader::readImpl()
 	case Token::Type::At: // @
 		return readDeref();
 		break;
-	case Token::Type::String:
+	case Token::Type::String: // "foobar"
 		return readString();
+		break;
+	case Token::Type::Keyword: // :keyword
+		return readKeyword();
 		break;
 	case Token::Type::Comment: // ;
 		ignore();
 		return nullptr;
 		break;
-	case Token::Type::Value:
+	case Token::Type::Value: // true, false, nil
 		return readValue();
 		break;
 	default:
@@ -299,6 +302,11 @@ ASTNode* Reader::readString()
 	}
 
 	return new String(symbol);
+}
+
+ASTNode* Reader::readKeyword()
+{
+	return new Keyword(consume().symbol);
 }
 
 ASTNode* Reader::readValue()

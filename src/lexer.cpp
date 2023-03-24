@@ -5,7 +5,7 @@
  */
 
 #include <algorithm>
-#include <string>
+#include <string> // std::to_string
 #include <unordered_set>
 
 #include "ruc/format/print.h"
@@ -70,6 +70,11 @@ void Lexer::tokenize()
 			break;
 		case '"':
 			if (!consumeString()) {
+				return;
+			}
+			break;
+		case ':':
+			if (!consumeKeyword()) {
 				return;
 			}
 			break;
@@ -162,14 +167,28 @@ bool Lexer::consumeString()
 	return true;
 }
 
-bool Lexer::consumeComment()
+bool Lexer::consumeKeyword()
 {
 	size_t column = m_column;
-	std::string comment = "";
+	std::string keyword;
+	keyword += 0x7f; // 127
 
-	ignore(); // ;
+	ignore(); // :
 
 	static std::unordered_set<char> exit = {
+		'[',
+		']',
+		'{',
+		'}',
+		'(',
+		')',
+		'\'',
+		'`',
+		',',
+		'"',
+		';',
+		' ',
+		'\t',
 		'\r',
 		'\n',
 		'\0',
@@ -183,17 +202,13 @@ bool Lexer::consumeComment()
 			break;
 		}
 
-		comment += character;
+		keyword += character;
 		ignore();
 	}
 
-	// Trim comment
-	comment.erase(comment.begin(),
-	              std::find_if(comment.begin(), comment.end(), [](char c) { return !std::isspace(c); }));
-	comment.erase(std::find_if(comment.rbegin(), comment.rend(), [](char c) { return !std::isspace(c); }).base(),
-	              comment.end());
+	m_tokens.push_back({ Token::Type::Keyword, m_line, column, keyword });
 
-	m_tokens.push_back({ Token::Type::Comment, m_line, column, comment });
+	retreat();
 
 	return true;
 }
@@ -237,6 +252,42 @@ bool Lexer::consumeValue()
 	m_tokens.push_back({ Token::Type::Value, m_line, column, value });
 
 	retreat();
+
+	return true;
+}
+
+bool Lexer::consumeComment()
+{
+	size_t column = m_column;
+	std::string comment = "";
+
+	ignore(); // ;
+
+	static std::unordered_set<char> exit = {
+		'\r',
+		'\n',
+		'\0',
+	};
+
+	char character = 0;
+	for (;;) {
+		character = peek();
+
+		if (exit.find(character) != exit.end()) {
+			break;
+		}
+
+		comment += character;
+		ignore();
+	}
+
+	// Trim comment
+	comment.erase(comment.begin(),
+	              std::find_if(comment.begin(), comment.end(), [](char c) { return !std::isspace(c); }));
+	comment.erase(std::find_if(comment.rbegin(), comment.rend(), [](char c) { return !std::isspace(c); }).base(),
+	              comment.end());
+
+	m_tokens.push_back({ Token::Type::Comment, m_line, column, comment });
 
 	return true;
 }

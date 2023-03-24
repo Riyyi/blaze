@@ -5,6 +5,7 @@
  */
 
 #include <cstdint> // int64_t
+#include <string>
 
 #include "ast.h"
 
@@ -31,6 +32,13 @@ String::String(const std::string& data)
 
 // -----------------------------------------
 
+Keyword::Keyword(const std::string& data)
+	: m_data(data)
+{
+}
+
+// -----------------------------------------
+
 Number::Number(int64_t number)
 	: m_number(number)
 {
@@ -40,6 +48,13 @@ Number::Number(int64_t number)
 
 Symbol::Symbol(const std::string& symbol)
 	: m_symbol(symbol)
+{
+}
+
+// -----------------------------------------
+
+Value::Value(const std::string& value)
+	: m_value(value)
 {
 }
 
