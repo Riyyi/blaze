@@ -216,7 +216,7 @@ bool Lexer::consumeKeyword()
 bool Lexer::consumeValue()
 {
 	size_t column = m_column;
-	std::string value = "";
+	std::string value;
 
 	static std::unordered_set<char> exit = {
 		'[',
@@ -259,7 +259,7 @@ bool Lexer::consumeValue()
 bool Lexer::consumeComment()
 {
 	size_t column = m_column;
-	std::string comment = "";
+	std::string comment;
 
 	ignore(); // ;
 

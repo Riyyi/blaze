@@ -78,8 +78,9 @@ void Printer::dumpImpl(ASTNode* node)
 		m_firstNode = false;
 		m_previousNodeIsList = true;
 		HashMap* hash_map = static_cast<HashMap*>(node);
-		for (size_t i = 0; i < hash_map->nodes().size(); ++i) {
-			dumpImpl(hash_map->nodes()[i]);
+		for (auto element : hash_map->elements()) {
+			print("{} ", element.first.front() == 0x7f ? ":" + element.first.substr(1) : element.first); // 127
+			dumpImpl(element.second);
 			m_previousNodeIsList = false;
 		}
 		print("}}");

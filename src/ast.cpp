@@ -26,6 +26,13 @@ void Collection::addNode(ASTNode* node)
 
 // -----------------------------------------
 
+void HashMap::addElement(const std::string& key, ASTNode* value)
+{
+	m_elements.emplace(key, value);
+}
+
+// -----------------------------------------
+
 String::String(const std::string& data)
 	: m_data(data)
 {

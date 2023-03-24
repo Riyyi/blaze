@@ -193,9 +193,27 @@ ASTNode* Reader::readHashMap()
 {
 	ignore(); // {
 
-	HashMap* vector = new HashMap();
+	HashMap* hash_map = new HashMap();
 	while (!isEOF() && peek().type != Token::Type::BraceClose) {
-		vector->addNode(readImpl());
+		ASTNode* key = readImpl();
+		ASTNode* value = readImpl();
+
+		if (!key && !value) {
+			break;
+		}
+
+		if (!key || !value) {
+			Error::the().addError("hash-map requires an even-sized list");
+			return nullptr;
+		}
+
+		if (!is<String>(key) && !is<Keyword>(key)) {
+			Error::the().addError(format("{} is not a string or keyword", key));
+			return nullptr;
+		}
+
+		std::string keyString = is<String>(key) ? static_cast<String*>(key)->data() : static_cast<Keyword*>(key)->keyword();
+		hash_map->addElement(keyString, value);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }
@@ -203,7 +221,7 @@ ASTNode* Reader::readHashMap()
 		m_is_unbalanced = true;
 	}
 
-	return vector;
+	return hash_map;
 }
 
 ASTNode* Reader::readQuote()

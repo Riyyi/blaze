@@ -63,9 +63,12 @@ ASTNode* Eval::evalAst(ASTNode* ast, Environment* env)
 		return result;
 	}
 	else if (is<HashMap>(ast)) {
-		// TODO
-		VERIFY_NOT_REACHED();
-		return nullptr;
+		auto result = new HashMap();
+		auto elements = static_cast<HashMap*>(ast)->elements();
+		for (auto& element : elements) {
+			result->addElement(element.first, evalImpl(element.second, env));
+		}
+		return result;
 	}
 
 	return ast;

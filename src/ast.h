@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <typeinfo> // typeid
+#include <unordered_map>
 #include <vector>
 
 #include "ruc/format/formatter.h"
@@ -90,13 +91,21 @@ public:
 // -----------------------------------------
 
 // {}
-class HashMap final : public Collection {
+class HashMap final : public ASTNode {
 public:
 	HashMap() = default;
 	virtual ~HashMap() = default;
 
-	virtual bool isCollection() const override { return false; }
 	virtual bool isHashMap() const override { return true; }
+
+	void addElement(const std::string& key, ASTNode* value);
+
+	const std::unordered_map<std::string, ASTNode*>& elements() const { return m_elements; }
+	size_t size() const { return m_elements.size(); }
+	bool empty() const { return m_elements.size() == 0; }
+
+private:
+	std::unordered_map<std::string, ASTNode*> m_elements;
 };
 
 // -----------------------------------------
