@@ -38,6 +38,12 @@ void Lexer::tokenize()
 		case '~': // ~@ or ~
 			consumeSpliceUnquoteOrUnquote();
 			break;
+		case '(':
+			m_tokens.push_back({ Token::Type::ParenOpen, m_line, m_column, "(" });
+			break;
+		case ')':
+			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, ")" });
+			break;
 		case '[':
 			m_tokens.push_back({ Token::Type::BracketOpen, m_line, m_column, "[" });
 			break;
@@ -49,12 +55,6 @@ void Lexer::tokenize()
 			break;
 		case '}':
 			m_tokens.push_back({ Token::Type::BraceClose, m_line, m_column, "}" });
-			break;
-		case '(':
-			m_tokens.push_back({ Token::Type::ParenOpen, m_line, m_column, "(" });
-			break;
-		case ')':
-			m_tokens.push_back({ Token::Type::ParenClose, m_line, m_column, ")" });
 			break;
 		case '\'':
 			m_tokens.push_back({ Token::Type::Quote, m_line, m_column, "'" });

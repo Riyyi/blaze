@@ -48,7 +48,19 @@ void Printer::dumpImpl(ASTNode* node)
 		}
 	};
 
-	if (is<Vector>(node)) {
+	if (is<List>(node)) {
+		printSpacing();
+		print("(");
+		m_firstNode = false;
+		m_previousNodeIsList = true;
+		List* list = static_cast<List*>(node);
+		for (size_t i = 0; i < list->nodes().size(); ++i) {
+			dumpImpl(list->nodes()[i]);
+			m_previousNodeIsList = false;
+		}
+		print(")");
+	}
+	else if (is<Vector>(node)) {
 		printSpacing();
 		print("[");
 		m_firstNode = false;
@@ -71,18 +83,6 @@ void Printer::dumpImpl(ASTNode* node)
 			m_previousNodeIsList = false;
 		}
 		print("}}");
-	}
-	else if (is<List>(node)) {
-		printSpacing();
-		print("(");
-		m_firstNode = false;
-		m_previousNodeIsList = true;
-		List* list = static_cast<List*>(node);
-		for (size_t i = 0; i < list->nodes().size(); ++i) {
-			dumpImpl(list->nodes()[i]);
-			m_previousNodeIsList = false;
-		}
-		print(")");
 	}
 	else if (is<String>(node)) {
 		printSpacing();

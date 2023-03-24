@@ -20,12 +20,12 @@ struct Token {
 	enum class Type : uint8_t {
 		None,
 		Special,      // ~@
+		ParenOpen,    // (
+		ParenClose,   // )
 		BracketOpen,  // [
 		BracketClose, // ]
 		BraceOpen,    // {
 		BraceClose,   // }
-		ParenOpen,    // (
-		ParenClose,   // )
 		Quote,        // '
 		Backtick,     // `
 		Tilde,        // ~

@@ -65,6 +65,18 @@ private:
 
 // -----------------------------------------
 
+// ()
+class List final : public Collection {
+public:
+	List() = default;
+	virtual ~List() = default;
+
+	virtual bool isCollection() const override { return false; }
+	virtual bool isList() const override { return true; }
+};
+
+// -----------------------------------------
+
 // []
 class Vector final : public Collection {
 public:
@@ -85,18 +97,6 @@ public:
 
 	virtual bool isCollection() const override { return false; }
 	virtual bool isHashMap() const override { return true; }
-};
-
-// -----------------------------------------
-
-// ()
-class List final : public Collection {
-public:
-	List() = default;
-	virtual ~List() = default;
-
-	virtual bool isCollection() const override { return false; }
-	virtual bool isList() const override { return true; }
 };
 
 // -----------------------------------------
@@ -202,13 +202,13 @@ template<>
 inline bool ASTNode::fastIs<Collection>() const { return isCollection(); }
 
 template<>
+inline bool ASTNode::fastIs<List>() const { return isList(); }
+
+template<>
 inline bool ASTNode::fastIs<Vector>() const { return isVector(); }
 
 template<>
 inline bool ASTNode::fastIs<HashMap>() const { return isHashMap(); }
-
-template<>
-inline bool ASTNode::fastIs<List>() const { return isList(); }
 
 template<>
 inline bool ASTNode::fastIs<String>() const { return isString(); }

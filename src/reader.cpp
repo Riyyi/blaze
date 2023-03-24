@@ -155,6 +155,23 @@ ASTNode* Reader::readSpliceUnquote()
 	return list;
 }
 
+ASTNode* Reader::readList()
+{
+	ignore(); // (
+
+	List* list = new List();
+	while (!isEOF() && peek().type != Token::Type::ParenClose) {
+		list->addNode(readImpl());
+	}
+
+	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
+		m_error_character = ')';
+		m_is_unbalanced = true;
+	}
+
+	return list;
+}
+
 ASTNode* Reader::readVector()
 {
 	ignore(); // [
@@ -187,23 +204,6 @@ ASTNode* Reader::readHashMap()
 	}
 
 	return vector;
-}
-
-ASTNode* Reader::readList()
-{
-	ignore(); // (
-
-	List* list = new List();
-	while (!isEOF() && peek().type != Token::Type::ParenClose) {
-		list->addNode(readImpl());
-	}
-
-	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
-		m_error_character = ')';
-		m_is_unbalanced = true;
-	}
-
-	return list;
 }
 
 ASTNode* Reader::readQuote()

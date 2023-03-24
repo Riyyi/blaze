@@ -36,9 +36,9 @@ private:
 
 	ASTNode* readImpl();
 	ASTNode* readSpliceUnquote(); // ~@
+	ASTNode* readList();          // ()
 	ASTNode* readVector();        // []
 	ASTNode* readHashMap();       // {}
-	ASTNode* readList();          // ()
 	ASTNode* readQuote();         // '
 	ASTNode* readQuasiQuote();    // `
 	ASTNode* readUnquote();       // ~
