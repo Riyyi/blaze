@@ -12,6 +12,8 @@
 #include <typeinfo> // typeid
 #include <vector>
 
+#include "ruc/format/formatter.h"
+
 namespace blaze {
 
 class ASTNode {
@@ -205,3 +207,10 @@ inline bool ASTNode::fastIs<Value>() const { return isValue(); }
 // clang-format on
 
 } // namespace blaze
+
+// -----------------------------------------
+
+template<>
+struct ruc::format::Formatter<blaze::ASTNode*> : public Formatter<std::string> {
+	void format(Builder& builder, blaze::ASTNode* value) const;
+};

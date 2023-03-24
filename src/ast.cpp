@@ -8,6 +8,7 @@
 #include <string>
 
 #include "ast.h"
+#include "types.h"
 
 namespace blaze {
 
@@ -59,3 +60,25 @@ Value::Value(const std::string& value)
 }
 
 } // namespace blaze
+
+// -----------------------------------------
+
+void Formatter<blaze::ASTNode*>::format(Builder& builder, blaze::ASTNode* value) const
+{
+	if (is<blaze::String>(value)) {
+		return Formatter<std::string>::format(builder, static_cast<blaze::String*>(value)->data());
+	}
+	if (is<blaze::Keyword>(value)) {
+		return Formatter<std::string>::format(builder, ":" + static_cast<blaze::Keyword*>(value)->keyword().substr(1));
+	}
+	else if (is<blaze::Number>(value)) {
+		Formatter<int64_t> formatter { .specifier = specifier };
+		return formatter.format(builder, static_cast<blaze::Number*>(value)->number());
+	}
+	else if (is<blaze::Value>(value)) {
+		return Formatter<std::string>::format(builder, static_cast<blaze::Value*>(value)->value());
+	}
+	else if (is<blaze::Symbol>(value)) {
+		return Formatter<std::string>::format(builder, static_cast<blaze::Symbol*>(value)->symbol());
+	}
+}
