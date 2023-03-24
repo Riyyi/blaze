@@ -74,7 +74,7 @@ target_link_libraries(${PROJECT} ruc)
 # Execute target
 
 add_custom_target(run
-    COMMAND ${PROJECT}
+    COMMAND ${PROJECT} -c
 	DEPENDS ${PROJECT})
 
 # ------------------------------------------
