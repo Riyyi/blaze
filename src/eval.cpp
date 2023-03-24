@@ -42,7 +42,7 @@ ASTNode* Eval::evalAst(ASTNode* ast, Environment* env)
 	if (is<Symbol>(ast)) {
 		auto result = env->lookup(static_cast<Symbol*>(ast)->symbol());
 		if (!result) {
-			Error::the().addError(format("'{}' not found", ast));
+			Error::the().addError(format("symbol’s function definition is void: {}", ast));
 		}
 		return result;
 	}
@@ -79,6 +79,7 @@ ASTNode* Eval::apply(List* evaluated_list)
 	auto nodes = evaluated_list->nodes();
 
 	if (!is<Function>(nodes[0])) {
+		Error::the().addError(format("invalid function: {}", nodes[0]));
 		return nullptr;
 	}
 
