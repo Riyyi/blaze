@@ -6,7 +6,9 @@
 
 #pragma once
 
-#include <cstdint> // int64_t
+#include <cstdint>    // int64_t
+#include <functional> // std::function
+#include <span>
 #include <string>
 #include <string_view>
 #include <typeinfo> // typeid
@@ -51,6 +53,8 @@ public:
 	void addNode(ASTNode* node);
 
 	const std::vector<ASTNode*>& nodes() const { return m_nodes; }
+	size_t size() const { return m_nodes.size(); }
+	bool empty() const { return m_nodes.size() == 0; }
 
 protected:
 	Collection() {}
@@ -173,6 +177,22 @@ public:
 private:
 	std::string m_value;
 };
+
+// -----------------------------------------
+
+using Lambda = std::function<ASTNode*(std::span<ASTNode*>)>;
+
+class Function final : public ASTNode {
+public:
+	Function(Lambda lambda);
+	virtual ~Function() = default;
+
+	virtual bool isFunction() const override { return true; }
+
+	Lambda lambda() const { return m_lambda; }
+
+private:
+	Lambda m_lambda;
 };
 
 // -----------------------------------------
@@ -204,6 +224,9 @@ inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
 
 template<>
 inline bool ASTNode::fastIs<Value>() const { return isValue(); }
+
+template<>
+inline bool ASTNode::fastIs<Function>() const { return isFunction(); }
 // clang-format on
 
 } // namespace blaze

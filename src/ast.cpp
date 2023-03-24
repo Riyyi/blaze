@@ -59,6 +59,13 @@ Value::Value(const std::string& value)
 {
 }
 
+// -----------------------------------------
+
+Function::Function(Lambda lambda)
+	: m_lambda(lambda)
+{
+}
+
 } // namespace blaze
 
 // -----------------------------------------

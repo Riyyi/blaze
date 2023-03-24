@@ -4,6 +4,8 @@
 #include <string>   // std::getline
 #include <string_view>
 
+#include "environment.h"
+#include "eval.h"
 #include "ruc/argparser.h"
 #include "ruc/format/color.h"
 
@@ -14,7 +16,7 @@
 #include "reader.h"
 #include "settings.h"
 
-#if 0
+#if 1
 auto read(std::string_view input) -> blaze::ASTNode*
 {
 	blaze::Lexer lexer(input);
@@ -34,7 +36,10 @@ auto read(std::string_view input) -> blaze::ASTNode*
 
 auto eval(blaze::ASTNode* ast) -> blaze::ASTNode*
 {
-	return ast;
+	blaze::GlobalEnvironment env;
+	blaze::Eval eval(ast, &env);
+	eval.eval();
+	return eval.ast();
 }
 
 auto print(blaze::ASTNode* exp) -> void
@@ -104,3 +109,5 @@ auto main(int argc, char* argv[]) -> int
 	return 0;
 }
 #endif
+
+// - Add AST node printing support to ruc::format
