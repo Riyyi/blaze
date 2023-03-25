@@ -15,7 +15,7 @@
 #include "settings.h"
 
 #if 0
-auto read(std::string_view input) -> blaze::ASTNode*
+auto read(std::string_view input) -> blaze::ASTNodePtr
 {
 	blaze::Lexer lexer(input);
 	lexer.tokenize();
@@ -32,15 +32,15 @@ auto read(std::string_view input) -> blaze::ASTNode*
 	return reader.node();
 }
 
-auto eval(blaze::ASTNode* ast) -> blaze::ASTNode*
+auto eval(blaze::ASTNodePtr ast) -> blaze::ASTNodePtr
 {
 	return ast;
 }
 
-auto print(blaze::ASTNode* exp) -> void
+auto print(blaze::ASTNodePtr exp) -> std::string
 {
-	blaze::Printer printer(exp);
-	printer.dump();
+	blaze::Printer printer;
+	return printer.print(exp);
 }
 
 auto rep(std::string_view input) -> void
@@ -48,7 +48,7 @@ auto rep(std::string_view input) -> void
 	blaze::Error::the().clearErrors();
 	blaze::Error::the().setInput(input);
 
-	print(eval(read(input)));
+	print("{}\n", print(eval(read(input))).c_str());
 }
 
 static auto cleanup(int signal) -> void

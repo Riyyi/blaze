@@ -8,6 +8,7 @@
 
 #include <cstdint> // int64_t
 #include <iostream>
+#include <memory>
 #include <span>
 #include <string_view>
 #include <unordered_map>
@@ -27,7 +28,7 @@ public:
 	Environment() = default;
 	virtual ~Environment() = default;
 
-	ASTNode* lookup(const std::string& symbol)
+	ASTNodePtr lookup(const std::string& symbol)
 	{
 		m_current_key = symbol;
 		return m_values.find(symbol) != m_values.end() ? m_values[symbol] : nullptr;
@@ -35,7 +36,7 @@ public:
 
 protected:
 	std::string m_current_key;
-	std::unordered_map<std::string, ASTNode*> m_values;
+	std::unordered_map<std::string, ASTNodePtr> m_values;
 };
 
 class GlobalEnvironment final : public Environment {
@@ -44,62 +45,62 @@ public:
 	{
 		// TODO: Add more native functions
 		// TODO: Move the functions to their own file
-		auto add = [](std::span<ASTNode*> nodes) -> ASTNode* {
+		auto add = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
 			int64_t result = 0;
 
 			for (auto node : nodes) {
-				if (!is<Number>(node)) {
+				if (!is<Number>(node.get())) {
 					Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
 					return nullptr;
 				}
 
-				result += static_cast<Number*>(node)->number();
+				result += static_pointer_cast<Number>(node)->number();
 			}
 
-			return new Number(result);
+			return makePtr<Number>(result);
 		};
 
-		auto sub = [](std::span<ASTNode*> nodes) -> ASTNode* {
+		auto sub = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
 			int64_t result = 0;
 
 			if (nodes.size() == 0) {
-				return new Number(0);
+				return makePtr<Number>(0);
 			}
 
 			for (auto node : nodes) {
-				if (!is<Number>(node)) {
+				if (!is<Number>(node.get())) {
 					Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
 					return nullptr;
 				}
 			}
 
 			// Start with the first number
-			result += static_cast<Number*>(nodes[0])->number();
+			result += static_pointer_cast<Number>(nodes[0])->number();
 
 			// Skip the first node
 			for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
-				result -= static_cast<Number*>(*it)->number();
+				result -= static_pointer_cast<Number>(*it)->number();
 			}
 
-			return new Number(result);
+			return makePtr<Number>(result);
 		};
 
-		auto mul = [](std::span<ASTNode*> nodes) -> ASTNode* {
+		auto mul = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
 			int64_t result = 1;
 
 			for (auto node : nodes) {
-				if (!is<Number>(node)) {
+				if (!is<Number>(node.get())) {
 					Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
 					return nullptr;
 				}
 
-				result *= static_cast<Number*>(node)->number();
+				result *= static_pointer_cast<Number>(node)->number();
 			}
 
-			return new Number(result);
+			return makePtr<Number>(result);
 		};
 
-		auto div = [this](std::span<ASTNode*> nodes) -> ASTNode* {
+		auto div = [this](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
 			double result = 0;
 
 			if (nodes.size() == 0) {
@@ -108,27 +109,27 @@ public:
 			}
 
 			for (auto node : nodes) {
-				if (!is<Number>(node)) {
+				if (!is<Number>(node.get())) {
 					Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
 					return nullptr;
 				}
 			}
 
 			// Start with the first number
-			result += static_cast<Number*>(nodes[0])->number();
+			result += static_pointer_cast<Number>(nodes[0])->number();
 
 			// Skip the first node
 			for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
-				result /= static_cast<Number*>(*it)->number();
+				result /= static_pointer_cast<Number>(*it)->number();
 			}
 
-			return new Number((int64_t)result);
+			return makePtr<Number>((int64_t)result);
 		};
 
-		m_values.emplace("+", new Function(add));
-		m_values.emplace("-", new Function(sub));
-		m_values.emplace("*", new Function(mul));
-		m_values.emplace("/", new Function(div));
+		m_values.emplace("+", makePtr<Function>(add));
+		m_values.emplace("-", makePtr<Function>(sub));
+		m_values.emplace("*", makePtr<Function>(mul));
+		m_values.emplace("/", makePtr<Function>(div));
 	}
 	virtual ~GlobalEnvironment() = default;
 };

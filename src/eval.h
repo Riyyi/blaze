@@ -13,19 +13,19 @@ namespace blaze {
 
 class Eval {
 public:
-	Eval(ASTNode* ast, Environment* env);
+	Eval(ASTNodePtr ast, Environment* env);
 	virtual ~Eval() = default;
 
 	void eval();
 
-	ASTNode* ast() const { return m_ast; }
+	ASTNodePtr ast() const { return m_ast; }
 
 private:
-	ASTNode* evalImpl(ASTNode* ast, Environment* env);
-	ASTNode* evalAst(ASTNode* ast, Environment* env);
-	ASTNode* apply(List* evaluated_list);
+	ASTNodePtr evalImpl(ASTNodePtr ast, Environment* env);
+	ASTNodePtr evalAst(ASTNodePtr ast, Environment* env);
+	ASTNodePtr apply(std::shared_ptr<List> evaluated_list);
 
-	ASTNode* m_ast { nullptr };
+	ASTNodePtr m_ast { nullptr };
 	Environment* m_env { nullptr };
 };
 

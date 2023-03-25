@@ -27,7 +27,7 @@ Printer::~Printer()
 
 // -----------------------------------------
 
-std::string Printer::print(ASTNode* node)
+std::string Printer::print(ASTNodePtr node)
 {
 	if (Error::the().hasAnyError()) {
 		init();
@@ -38,7 +38,7 @@ std::string Printer::print(ASTNode* node)
 	return printNoErrorCheck(node);
 }
 
-std::string Printer::printNoErrorCheck(ASTNode* node)
+std::string Printer::printNoErrorCheck(ASTNodePtr node)
 {
 	init();
 
@@ -60,7 +60,7 @@ void Printer::init()
 	m_print = "";
 }
 
-void Printer::printImpl(ASTNode* node)
+void Printer::printImpl(ASTNodePtr node)
 {
 	auto printSpacing = [this]() -> void {
 		if (!m_first_node && !m_previous_node_is_list) {
@@ -68,36 +68,37 @@ void Printer::printImpl(ASTNode* node)
 		}
 	};
 
-	if (is<List>(node)) {
+	ASTNode* node_raw_ptr = node.get();
+	if (is<List>(node_raw_ptr)) {
 		printSpacing();
 		m_print += '(';
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto nodes = static_cast<List*>(node)->nodes();
+		auto nodes = static_pointer_cast<List>(node)->nodes();
 		for (size_t i = 0; i < nodes.size(); ++i) {
 			printImpl(nodes[i]);
 			m_previous_node_is_list = false;
 		}
 		m_print += ')';
 	}
-	else if (is<Vector>(node)) {
+	else if (is<Vector>(node_raw_ptr)) {
 		printSpacing();
 		m_print += '[';
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto nodes = static_cast<Vector*>(node)->nodes();
+		auto nodes = static_pointer_cast<Vector>(node)->nodes();
 		for (size_t i = 0; i < nodes.size(); ++i) {
 			printImpl(nodes[i]);
 			m_previous_node_is_list = false;
 		}
 		m_print += ']';
 	}
-	else if (is<HashMap>(node)) {
+	else if (is<HashMap>(node_raw_ptr)) {
 		printSpacing();
 		m_print += "{";
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto elements = static_cast<HashMap*>(node)->elements();
+		auto elements = static_pointer_cast<HashMap>(node)->elements();
 		for (auto it = elements.begin(); it != elements.end(); ++it) {
 			m_print += format("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
 			printImpl(it->second);
@@ -109,22 +110,22 @@ void Printer::printImpl(ASTNode* node)
 		m_previous_node_is_list = false;
 		m_print += '}';
 	}
-	else if (is<String>(node)) {
+	else if (is<String>(node_raw_ptr)) {
 		// TODO: Implement string readably printing
 		printSpacing();
-		m_print += format("{}", static_cast<String*>(node)->data());
+		m_print += format("{}", static_pointer_cast<String>(node)->data());
 	}
-	else if (is<Keyword>(node)) {
+	else if (is<Keyword>(node_raw_ptr)) {
 		printSpacing();
-		m_print += format(":{}", static_cast<Keyword*>(node)->keyword().substr(1));
+		m_print += format(":{}", static_pointer_cast<Keyword>(node)->keyword().substr(1));
 	}
-	else if (is<Number>(node)) {
+	else if (is<Number>(node_raw_ptr)) {
 		printSpacing();
-		m_print += format("{}", static_cast<Number*>(node)->number());
+		m_print += format("{}", static_pointer_cast<Number>(node)->number());
 	}
-	else if (is<Symbol>(node)) {
+	else if (is<Symbol>(node_raw_ptr)) {
 		printSpacing();
-		m_print += format("{}", static_cast<Symbol*>(node)->symbol());
+		m_print += format("{}", static_pointer_cast<Symbol>(node)->symbol());
 	}
 }
 

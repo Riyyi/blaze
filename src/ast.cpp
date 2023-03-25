@@ -5,6 +5,7 @@
  */
 
 #include <cstdint> // int64_t
+#include <memory>
 #include <string>
 
 #include "ast.h"
@@ -13,21 +14,14 @@
 
 namespace blaze {
 
-Collection::~Collection()
-{
-	for (auto node : m_nodes) {
-		delete node;
-	}
-}
-
-void Collection::addNode(ASTNode* node)
+void Collection::addNode(ASTNodePtr node)
 {
 	m_nodes.push_back(node);
 }
 
 // -----------------------------------------
 
-void HashMap::addElement(const std::string& key, ASTNode* value)
+void HashMap::addElement(const std::string& key, ASTNodePtr value)
 {
 	m_elements.emplace(key, value);
 }
@@ -78,7 +72,7 @@ Function::Function(Lambda lambda)
 
 // -----------------------------------------
 
-void Formatter<blaze::ASTNode*>::format(Builder& builder, blaze::ASTNode* value) const
+void Formatter<blaze::ASTNodePtr>::format(Builder& builder, blaze::ASTNodePtr value) const
 {
 	blaze::Printer printer;
 	return Formatter<std::string>::format(builder, printer.printNoErrorCheck(value));

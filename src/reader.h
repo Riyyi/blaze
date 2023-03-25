@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstddef> // size_t
+#include <memory>  // std::shared_ptr
 #include <vector>
 
 #include "ast.h"
@@ -24,7 +25,7 @@ public:
 
 	void dump();
 
-	ASTNode* node() { return m_node; }
+	ASTNodePtr node() { return m_node; }
 
 private:
 	bool isEOF() const;
@@ -34,21 +35,21 @@ private:
 	void ignore();
 	void retreat();
 
-	ASTNode* readImpl();
-	ASTNode* readSpliceUnquote(); // ~@
-	ASTNode* readList();          // ()
-	ASTNode* readVector();        // []
-	ASTNode* readHashMap();       // {}
-	ASTNode* readQuote();         // '
-	ASTNode* readQuasiQuote();    // `
-	ASTNode* readUnquote();       // ~
-	ASTNode* readWithMeta();      // ^
-	ASTNode* readDeref();         // @
-	ASTNode* readString();        // "foobar"
-	ASTNode* readKeyword();       // :keyword
-	ASTNode* readValue();         // number, "true", "false", "nil", symbol
+	ASTNodePtr readImpl();
+	ASTNodePtr readSpliceUnquote(); // ~@
+	ASTNodePtr readList();          // ()
+	ASTNodePtr readVector();        // []
+	ASTNodePtr readHashMap();       // {}
+	ASTNodePtr readQuote();         // '
+	ASTNodePtr readQuasiQuote();    // `
+	ASTNodePtr readUnquote();       // ~
+	ASTNodePtr readWithMeta();      // ^
+	ASTNodePtr readDeref();         // @
+	ASTNodePtr readString();        // "foobar"
+	ASTNodePtr readKeyword();       // :keyword
+	ASTNodePtr readValue();         // number, "true", "false", "nil", symbol
 
-	void dumpImpl(ASTNode* node);
+	void dumpImpl(ASTNodePtr node);
 
 	size_t m_index { 0 };
 	size_t m_indentation { 0 };
@@ -58,7 +59,7 @@ private:
 	bool m_invalid_syntax { false };
 	bool m_is_unbalanced { false };
 
-	ASTNode* m_node { nullptr };
+	ASTNodePtr m_node { nullptr };
 };
 
 } // namespace blaze

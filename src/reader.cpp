@@ -7,6 +7,7 @@
 #include <cstddef> // size_t
 #include <cstdint> // uint64_t
 #include <cstdlib> // std::strtoll
+#include <memory>  // makePtr, std::shared_ptr
 #include <utility> // std::move
 
 #include "error.h"
@@ -55,7 +56,7 @@ void Reader::read()
 	}
 }
 
-ASTNode* Reader::readImpl()
+ASTNodePtr Reader::readImpl()
 {
 	if (m_tokens.size() == 0) {
 		return nullptr;
@@ -123,7 +124,7 @@ ASTNode* Reader::readImpl()
 	return nullptr;
 }
 
-ASTNode* Reader::readSpliceUnquote()
+ASTNodePtr Reader::readSpliceUnquote()
 {
 	ignore(); // ~@
 
@@ -132,18 +133,18 @@ ASTNode* Reader::readSpliceUnquote()
 		return nullptr;
 	}
 
-	List* list = new List();
-	list->addNode(new Symbol("splice-unquote"));
+	auto list = makePtr<List>();
+	list->addNode(makePtr<Symbol>("splice-unquote"));
 	list->addNode(readImpl());
 
 	return list;
 }
 
-ASTNode* Reader::readList()
+ASTNodePtr Reader::readList()
 {
 	ignore(); // (
 
-	List* list = new List();
+	auto list = makePtr<List>();
 	while (!isEOF() && peek().type != Token::Type::ParenClose) {
 		list->addNode(readImpl());
 	}
@@ -156,11 +157,11 @@ ASTNode* Reader::readList()
 	return list;
 }
 
-ASTNode* Reader::readVector()
+ASTNodePtr Reader::readVector()
 {
 	ignore(); // [
 
-	Vector* vector = new Vector();
+	auto vector = makePtr<Vector>();
 	while (!isEOF() && peek().type != Token::Type::BracketClose) {
 		vector->addNode(readImpl());
 	}
@@ -172,30 +173,30 @@ ASTNode* Reader::readVector()
 	return vector;
 }
 
-ASTNode* Reader::readHashMap()
+ASTNodePtr Reader::readHashMap()
 {
 	ignore(); // {
 
-	HashMap* hash_map = new HashMap();
+	auto hash_map = makePtr<HashMap>();
 	while (!isEOF() && peek().type != Token::Type::BraceClose) {
-		ASTNode* key = readImpl();
-		ASTNode* value = readImpl();
+		auto key = readImpl();
+		auto value = readImpl();
 
-		if (!key && !value) {
+		if (key == nullptr && value == nullptr) {
 			break;
 		}
 
-		if (!key || !value) {
+		if (key == nullptr || value == nullptr) {
 			Error::the().addError("hash-map requires an even-sized list");
 			return nullptr;
 		}
 
-		if (!is<String>(key) && !is<Keyword>(key)) {
+		if (!is<String>(key.get()) && !is<Keyword>(key.get())) {
 			Error::the().addError(format("{} is not a string or keyword", key));
 			return nullptr;
 		}
 
-		std::string keyString = is<String>(key) ? static_cast<String*>(key)->data() : static_cast<Keyword*>(key)->keyword();
+		std::string keyString = is<String>(key.get()) ? static_pointer_cast<String>(key)->data() : static_pointer_cast<Keyword>(key)->keyword();
 		hash_map->addElement(keyString, value);
 	}
 
@@ -206,7 +207,7 @@ ASTNode* Reader::readHashMap()
 	return hash_map;
 }
 
-ASTNode* Reader::readQuote()
+ASTNodePtr Reader::readQuote()
 {
 	ignore(); // '
 
@@ -215,14 +216,14 @@ ASTNode* Reader::readQuote()
 		return nullptr;
 	}
 
-	List* list = new List();
-	list->addNode(new Symbol("quote"));
+	auto list = makePtr<List>();
+	list->addNode(makePtr<Symbol>("quote"));
 	list->addNode(readImpl());
 
 	return list;
 }
 
-ASTNode* Reader::readQuasiQuote()
+ASTNodePtr Reader::readQuasiQuote()
 {
 	ignore(); // `
 
@@ -231,14 +232,14 @@ ASTNode* Reader::readQuasiQuote()
 		return nullptr;
 	}
 
-	List* list = new List();
-	list->addNode(new Symbol("quasiquote"));
+	auto list = makePtr<List>();
+	list->addNode(makePtr<Symbol>("quasiquote"));
 	list->addNode(readImpl());
 
 	return list;
 }
 
-ASTNode* Reader::readUnquote()
+ASTNodePtr Reader::readUnquote()
 {
 	ignore(); // ~
 
@@ -247,14 +248,14 @@ ASTNode* Reader::readUnquote()
 		return nullptr;
 	}
 
-	List* list = new List();
-	list->addNode(new Symbol("unquote"));
+	auto list = makePtr<List>();
+	list->addNode(makePtr<Symbol>("unquote"));
 	list->addNode(readImpl());
 
 	return list;
 }
 
-ASTNode* Reader::readWithMeta()
+ASTNodePtr Reader::readWithMeta()
 {
 	ignore(); // ^
 
@@ -265,17 +266,17 @@ ASTNode* Reader::readWithMeta()
 	}
 	retreat();
 
-	List* list = new List();
-	list->addNode(new Symbol("with-meta"));
-	ASTNode* first = readImpl();
-	ASTNode* second = readImpl();
+	auto list = makePtr<List>();
+	list->addNode(makePtr<Symbol>("with-meta"));
+	ASTNodePtr first = readImpl();
+	ASTNodePtr second = readImpl();
 	list->addNode(second);
 	list->addNode(first);
 
 	return list;
 }
 
-ASTNode* Reader::readDeref()
+ASTNodePtr Reader::readDeref()
 {
 	ignore(); // @
 
@@ -284,14 +285,14 @@ ASTNode* Reader::readDeref()
 		return nullptr;
 	}
 
-	List* list = new List();
-	list->addNode(new Symbol("deref"));
+	auto list = makePtr<List>();
+	list->addNode(makePtr<Symbol>("deref"));
 	list->addNode(readImpl());
 
 	return list;
 }
 
-ASTNode* Reader::readString()
+ASTNodePtr Reader::readString()
 {
 	std::string symbol = consume().symbol;
 
@@ -300,24 +301,24 @@ ASTNode* Reader::readString()
 		Error::the().addError("expected '\"', got EOF");
 	}
 
-	return new String(symbol);
+	return makePtr<String>(symbol);
 }
 
-ASTNode* Reader::readKeyword()
+ASTNodePtr Reader::readKeyword()
 {
-	return new Keyword(consume().symbol);
+	return makePtr<Keyword>(consume().symbol);
 }
 
-ASTNode* Reader::readValue()
+ASTNodePtr Reader::readValue()
 {
 	Token token = consume();
 	char* end_ptr = nullptr;
 	int64_t result = std::strtoll(token.symbol.c_str(), &end_ptr, 10);
 	if (end_ptr == token.symbol.c_str() + token.symbol.size()) {
-		return new Number(result);
+		return makePtr<Number>(result);
 	}
 
-	return new Symbol(token.symbol);
+	return makePtr<Symbol>(token.symbol);
 }
 
 // -----------------------------------------
@@ -366,12 +367,13 @@ void Reader::dump()
 	dumpImpl(m_node);
 }
 
-void Reader::dumpImpl(ASTNode* node)
+void Reader::dumpImpl(ASTNodePtr node)
 {
 	std::string indentation = std::string(m_indentation * 2, ' ');
 
-	if (is<List>(node)) {
-		List* list = static_cast<List*>(node);
+	ASTNode* node_raw_ptr = node.get();
+	if (is<List>(node_raw_ptr)) {
+		List* list = static_cast<List*>(node_raw_ptr);
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Blue), "ListContainer");
 		print(" <");
@@ -384,20 +386,25 @@ void Reader::dumpImpl(ASTNode* node)
 		m_indentation--;
 		return;
 	}
-	else if (is<String>(node)) {
+	else if (is<String>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "StringNode");
-		print(" <{}>", static_cast<String*>(node)->data());
+		print(" <{}>", static_cast<String*>(node_raw_ptr)->data());
 	}
-	else if (is<Number>(node)) {
+	else if (is<Keyword>(node_raw_ptr)) {
+		print("{}", indentation);
+		print(fg(ruc::format::TerminalColor::Yellow), "KeywordNode");
+		print(" <{}>", static_cast<Keyword*>(node_raw_ptr)->keyword());
+	}
+	else if (is<Number>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "NumberNode");
-		print(" <{}>", static_cast<Number*>(node)->number());
+		print(" <{}>", static_cast<Number*>(node_raw_ptr)->number());
 	}
-	else if (is<Symbol>(node)) {
+	else if (is<Symbol>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "SymbolNode");
-		print(" <{}>", static_cast<Symbol*>(node)->symbol());
+		print(" <{}>", static_cast<Symbol*>(node_raw_ptr)->symbol());
 	}
 	print("\n");
 }

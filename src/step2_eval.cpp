@@ -16,7 +16,7 @@
 #include "settings.h"
 
 #if 1
-auto read(std::string_view input) -> blaze::ASTNode*
+auto read(std::string_view input) -> blaze::ASTNodePtr
 {
 	blaze::Lexer lexer(input);
 	lexer.tokenize();
@@ -33,7 +33,7 @@ auto read(std::string_view input) -> blaze::ASTNode*
 	return reader.node();
 }
 
-auto eval(blaze::ASTNode* ast) -> blaze::ASTNode*
+auto eval(blaze::ASTNodePtr ast) -> blaze::ASTNodePtr
 {
 	blaze::GlobalEnvironment env;
 	blaze::Eval eval(ast, &env);
@@ -42,7 +42,7 @@ auto eval(blaze::ASTNode* ast) -> blaze::ASTNode*
 	return eval.ast();
 }
 
-auto print(blaze::ASTNode* exp) -> std::string
+auto print(blaze::ASTNodePtr exp) -> std::string
 {
 	blaze::Printer printer;
 

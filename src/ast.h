@@ -8,6 +8,7 @@
 
 #include <cstdint>    // int64_t
 #include <functional> // std::function
+#include <memory>     // std::shared_ptr
 #include <span>
 #include <string>
 #include <string_view>
@@ -18,6 +19,9 @@
 #include "ruc/format/formatter.h"
 
 namespace blaze {
+
+class ASTNode;
+typedef std::shared_ptr<ASTNode>  ASTNodePtr;
 
 class ASTNode {
 public:
@@ -47,13 +51,13 @@ protected:
 
 class Collection : public ASTNode {
 public:
-	virtual ~Collection() override;
+	virtual ~Collection() = default;
 
 	virtual bool isCollection() const override { return true; }
 
-	void addNode(ASTNode* node);
+	void addNode(ASTNodePtr node);
 
-	const std::vector<ASTNode*>& nodes() const { return m_nodes; }
+	const std::vector<ASTNodePtr>& nodes() const { return m_nodes; }
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }
 
@@ -61,7 +65,7 @@ protected:
 	Collection() {}
 
 private:
-	std::vector<ASTNode*> m_nodes;
+	std::vector<ASTNodePtr> m_nodes;
 };
 
 // -----------------------------------------
@@ -98,14 +102,14 @@ public:
 
 	virtual bool isHashMap() const override { return true; }
 
-	void addElement(const std::string& key, ASTNode* value);
+	void addElement(const std::string& key, ASTNodePtr value);
 
-	const std::unordered_map<std::string, ASTNode*>& elements() const { return m_elements; }
+	const std::unordered_map<std::string, ASTNodePtr>& elements() const { return m_elements; }
 	size_t size() const { return m_elements.size(); }
 	bool empty() const { return m_elements.size() == 0; }
 
 private:
-	std::unordered_map<std::string, ASTNode*> m_elements;
+	std::unordered_map<std::string, ASTNodePtr> m_elements;
 };
 
 // -----------------------------------------
@@ -113,7 +117,7 @@ private:
 // "string"
 class String final : public ASTNode {
 public:
-	String(const std::string& data);
+	explicit String(const std::string& data);
 	virtual ~String() = default;
 
 	virtual bool isString() const override { return true; }
@@ -129,7 +133,7 @@ private:
 // :keyword
 class Keyword final : public ASTNode {
 public:
-	Keyword(const std::string& data);
+	explicit Keyword(const std::string& data);
 	virtual ~Keyword() = default;
 
 	virtual bool isKeyword() const override { return true; }
@@ -144,7 +148,7 @@ private:
 // 123
 class Number final : public ASTNode {
 public:
-	Number(int64_t number);
+	explicit Number(int64_t number);
 	virtual ~Number() = default;
 
 	virtual bool isNumber() const override { return true; }
@@ -160,7 +164,7 @@ private:
 // Symbols
 class Symbol final : public ASTNode {
 public:
-	Symbol(const std::string& symbol);
+	explicit Symbol(const std::string& symbol);
 	virtual ~Symbol() = default;
 
 	virtual bool isSymbol() const override { return true; }
@@ -176,7 +180,7 @@ private:
 // true, false, nil
 class Value final : public ASTNode {
 public:
-	Value(const std::string& value);
+	explicit Value(const std::string& value);
 	virtual ~Value() = default;
 
 	virtual bool isValue() const override { return true; }
@@ -189,11 +193,11 @@ private:
 
 // -----------------------------------------
 
-using Lambda = std::function<ASTNode*(std::span<ASTNode*>)>;
+using Lambda = std::function<ASTNodePtr(std::span<ASTNodePtr>)>;
 
 class Function final : public ASTNode {
 public:
-	Function(Lambda lambda);
+	explicit Function(Lambda lambda);
 	virtual ~Function() = default;
 
 	virtual bool isFunction() const override { return true; }
@@ -203,6 +207,14 @@ public:
 private:
 	Lambda m_lambda;
 };
+
+// -----------------------------------------
+
+template<typename T, typename... Args>
+std::shared_ptr<T> makePtr(Args&&... args)
+{
+	return std::make_shared<T>(std::forward<Args>(args)...);
+}
 
 // -----------------------------------------
 
@@ -243,6 +255,6 @@ inline bool ASTNode::fastIs<Function>() const { return isFunction(); }
 // -----------------------------------------
 
 template<>
-struct ruc::format::Formatter<blaze::ASTNode*> : public Formatter<std::string> {
-	void format(Builder& builder, blaze::ASTNode* value) const;
+struct ruc::format::Formatter<blaze::ASTNodePtr> : public Formatter<std::string> {
+	void format(Builder& builder, blaze::ASTNodePtr value) const;
 };
