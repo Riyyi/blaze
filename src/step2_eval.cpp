@@ -104,5 +104,3 @@ auto main(int argc, char* argv[]) -> int
 	return 0;
 }
 #endif
-
-// - Add AST node printing support to ruc::format

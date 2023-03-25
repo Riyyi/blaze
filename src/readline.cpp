@@ -9,6 +9,8 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <readline/tilde.h>
+#include <string>
+#include <string_view>
 
 #include "ruc/format/color.h"
 
@@ -18,7 +20,7 @@ namespace blaze {
 
 Readline::Readline(bool pretty_print, std::string_view history_path)
 	: m_pretty_print(pretty_print)
-	, m_history_path(history_path)
+	, m_history_path(tilde_expand(history_path.data()))
 {
 	if (!pretty_print) {
 		m_prompt = "user> ";
@@ -28,8 +30,15 @@ Readline::Readline(bool pretty_print, std::string_view history_path)
 		m_prompt += format(" \033[1m");
 	}
 
-	read_history(tilde_expand(history_path.data()));
+	read_history(m_history_path);
 }
+
+Readline::~Readline()
+{
+	std::free(m_history_path);
+}
+
+// -----------------------------------------
 
 bool Readline::get(std::string& output)
 {
@@ -40,7 +49,7 @@ bool Readline::get(std::string& output)
 
 	// Add input to in-memory history
 	add_history(line);
-	append_history(1, m_history_path.data());
+	append_history(1, m_history_path);
 
 	output = line;
 	std::free(line);

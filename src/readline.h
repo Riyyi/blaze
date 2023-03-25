@@ -16,14 +16,14 @@ namespace blaze {
 class Readline {
 public:
 	Readline(bool pretty_print, std::string_view history_path);
-	virtual ~Readline() {}
+	virtual ~Readline();
 
 	bool get(std::string& output);
 
 private:
 	bool m_pretty_print { false };
 	std::string m_prompt;
-	std::string_view m_history_path;
+	char* m_history_path;
 };
 
 } // namespace blaze
