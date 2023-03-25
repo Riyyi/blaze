@@ -5,9 +5,11 @@
  */
 
 #include <iterator> // std::next
+#include <string>
 
-#include "ruc/format/print.h"
+#include "ruc/format/format.h"
 
+#include "ast.h"
 #include "error.h"
 #include "lexer.h"
 #include "printer.h"
@@ -15,113 +17,128 @@
 
 namespace blaze {
 
-Printer::Printer(ASTNode* node)
-	: m_node(node)
+Printer::Printer()
 {
 }
 
 Printer::~Printer()
 {
-	delete m_node;
 }
 
 // -----------------------------------------
 
-void Printer::dump()
+std::string Printer::print(ASTNode* node)
 {
 	if (Error::the().hasAnyError()) {
-		dumpError();
-		return;
+		init();
+		printError();
+		return m_print;
 	}
 
-	if (m_node == nullptr) {
-		return;
-	}
-
-	dumpImpl(m_node);
-	print("\n");
+	return printNoErrorCheck(node);
 }
 
-void Printer::dumpImpl(ASTNode* node)
+std::string Printer::printNoErrorCheck(ASTNode* node)
+{
+	init();
+
+	if (node == nullptr) {
+		return {};
+	}
+
+	printImpl(node);
+
+	return m_print;
+}
+
+// -----------------------------------------
+
+void Printer::init()
+{
+	m_first_node = true;
+	m_previous_node_is_list = false;
+	m_print = "";
+}
+
+void Printer::printImpl(ASTNode* node)
 {
 	auto printSpacing = [this]() -> void {
-		if (!m_firstNode && !m_previousNodeIsList) {
-			print(" ");
+		if (!m_first_node && !m_previous_node_is_list) {
+			m_print += ' ';
 		}
 	};
 
 	if (is<List>(node)) {
 		printSpacing();
-		print("(");
-		m_firstNode = false;
-		m_previousNodeIsList = true;
+		m_print += '(';
+		m_first_node = false;
+		m_previous_node_is_list = true;
 		auto nodes = static_cast<List*>(node)->nodes();
 		for (size_t i = 0; i < nodes.size(); ++i) {
-			dumpImpl(nodes[i]);
-			m_previousNodeIsList = false;
+			printImpl(nodes[i]);
+			m_previous_node_is_list = false;
 		}
-		print(")");
+		m_print += ')';
 	}
 	else if (is<Vector>(node)) {
 		printSpacing();
-		print("[");
-		m_firstNode = false;
-		m_previousNodeIsList = true;
+		m_print += '[';
+		m_first_node = false;
+		m_previous_node_is_list = true;
 		auto nodes = static_cast<Vector*>(node)->nodes();
 		for (size_t i = 0; i < nodes.size(); ++i) {
-			dumpImpl(nodes[i]);
-			m_previousNodeIsList = false;
+			printImpl(nodes[i]);
+			m_previous_node_is_list = false;
 		}
-		print("]");
+		m_print += ']';
 	}
 	else if (is<HashMap>(node)) {
 		printSpacing();
-		print("{{");
-		m_firstNode = false;
-		m_previousNodeIsList = true;
+		m_print += "{";
+		m_first_node = false;
+		m_previous_node_is_list = true;
 		auto elements = static_cast<HashMap*>(node)->elements();
 		for (auto it = elements.begin(); it != elements.end(); ++it) {
-			print("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
-			dumpImpl(it->second);
+			m_print += format("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
+			printImpl(it->second);
 
 			if (it != elements.end() && std::next(it) != elements.end()) {
-				print(" ");
+				m_print += ' ';
 			}
 		}
-		m_previousNodeIsList = false;
-		print("}}");
+		m_previous_node_is_list = false;
+		m_print += '}';
 	}
 	else if (is<String>(node)) {
 		// TODO: Implement string readably printing
 		printSpacing();
-		print("{}", static_cast<String*>(node)->data());
+		m_print += format("{}", static_cast<String*>(node)->data());
 	}
 	else if (is<Keyword>(node)) {
 		printSpacing();
-		print(":{}", static_cast<Keyword*>(node)->keyword().substr(1));
+		m_print += format(":{}", static_cast<Keyword*>(node)->keyword().substr(1));
 	}
 	else if (is<Number>(node)) {
 		printSpacing();
-		print("{}", static_cast<Number*>(node)->number());
+		m_print += format("{}", static_cast<Number*>(node)->number());
 	}
 	else if (is<Symbol>(node)) {
 		printSpacing();
-		print("{}", static_cast<Symbol*>(node)->symbol());
+		m_print += format("{}", static_cast<Symbol*>(node)->symbol());
 	}
 }
 
-void Printer::dumpError()
+void Printer::printError()
 {
-	print("Error: ");
+	m_print = "Error: ";
 	if (Error::the().hasTokenError()) {
 		Token error = Error::the().tokenError();
-		print("{}", error.symbol);
+		m_print += format("{}", error.symbol);
 	}
 	else if (Error::the().hasOtherError()) {
 		std::string error = Error::the().otherError();
-		print("{}", error);
+		m_print += format("{}", error);
 	}
-	print("\n");
 }
 
 } // namespace blaze

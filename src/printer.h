@@ -7,24 +7,27 @@
 #pragma once
 
 #include "ast.h"
+#include <string>
 
 namespace blaze {
 
 // Serializer -> return to string
 class Printer {
 public:
-	Printer(ASTNode* node);
+	Printer();
 	virtual ~Printer();
 
-	void dump();
+	std::string print(ASTNode* node);
+	std::string printNoErrorCheck(ASTNode* node);
 
 private:
-	void dumpImpl(ASTNode* node);
-	void dumpError();
+	void init();
+	void printImpl(ASTNode* node);
+	void printError();
 
-	bool m_firstNode { true };
-	bool m_previousNodeIsList { false };
-	ASTNode* m_node { nullptr };
+	bool m_first_node { true };
+	bool m_previous_node_is_list { false };
+	std::string m_print;
 };
 
 } // namespace blaze

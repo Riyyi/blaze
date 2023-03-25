@@ -38,21 +38,23 @@ auto eval(blaze::ASTNode* ast) -> blaze::ASTNode*
 	blaze::GlobalEnvironment env;
 	blaze::Eval eval(ast, &env);
 	eval.eval();
+
 	return eval.ast();
 }
 
-auto print(blaze::ASTNode* exp) -> void
+auto print(blaze::ASTNode* exp) -> std::string
 {
-	blaze::Printer printer(exp);
-	printer.dump();
+	blaze::Printer printer;
+
+	return printer.print(exp);
 }
 
-auto rep(std::string_view input) -> void
+auto rep(std::string_view input) -> std::string
 {
 	blaze::Error::the().clearErrors();
 	blaze::Error::the().setInput(input);
 
-	print(eval(read(input)));
+	return print(eval(read(input)));
 }
 
 static auto cleanup(int signal) -> void
@@ -92,7 +94,7 @@ auto main(int argc, char* argv[]) -> int
 		if (pretty_print) {
 			print("\033[0m");
 		}
-		rep(input);
+		print("{}\n", rep(input));
 	}
 
 	if (pretty_print) {
