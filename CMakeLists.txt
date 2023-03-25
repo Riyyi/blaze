@@ -68,7 +68,7 @@ file(GLOB_RECURSE PROJECT_SOURCES "src/*.cpp")
 add_executable(${PROJECT} ${PROJECT_SOURCES})
 target_include_directories(${PROJECT} PRIVATE
 	"src")
-target_link_libraries(${PROJECT} ruc)
+target_link_libraries(${PROJECT} readline ruc)
 
 # ------------------------------------------
 # Execute target
