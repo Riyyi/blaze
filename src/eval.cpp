@@ -42,7 +42,7 @@ ASTNode* Eval::evalAst(ASTNode* ast, Environment* env)
 	if (is<Symbol>(ast)) {
 		auto result = env->lookup(static_cast<Symbol*>(ast)->symbol());
 		if (!result) {
-			Error::the().addError(format("symbol’s function definition is void: {}", ast));
+			Error::the().addError(format("symbol's function definition is void: {}", ast));
 		}
 		return result;
 	}
