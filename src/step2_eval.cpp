@@ -75,7 +75,7 @@ auto main(int argc, char* argv[]) -> int
 	arg_parser.addOption(dump_lexer, 'l', "dump-lexer", nullptr, nullptr);
 	arg_parser.addOption(dump_reader, 'r', "dump-reader", nullptr, nullptr);
 	arg_parser.addOption(pretty_print, 'c', "color", nullptr, nullptr);
-	arg_parser.addOption(history_path, 'h', "history", nullptr, nullptr);
+	arg_parser.addOption(history_path, 'h', "history", nullptr, nullptr, nullptr, ruc::ArgParser::Required::Yes);
 	arg_parser.parse(argc, argv);
 
 	// Set settings
