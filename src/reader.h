@@ -46,7 +46,7 @@ private:
 	ASTNode* readDeref();         // @
 	ASTNode* readString();        // "foobar"
 	ASTNode* readKeyword();       // :keyword
-	ASTNode* readValue();         // true, false, nil
+	ASTNode* readValue();         // number, "true", "false", "nil", symbol
 
 	void dumpImpl(ASTNode* node);
 

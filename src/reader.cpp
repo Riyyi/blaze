@@ -38,32 +38,18 @@ void Reader::read()
 
 	m_node = readImpl();
 
-	// TODO: Move these to the appropriate functions
-	// Error checking
-
-	if (m_invalid_syntax) {
-		Error::the().addError("invalid read syntax: '" + std::string(1, m_error_character) + "'");
+	if (Error::the().hasOtherError()) {
 		return;
 	}
 
-	if (m_is_unbalanced) {
-		Error::the().addError("expected '" + std::string(1, m_error_character) + "', got EOF");
-		return;
-	}
-
+	// Check for multiple expressions
 	if (!isEOF()) {
 		Token::Type type = peek().type;
 		switch (type) {
-		case Token::Type::ParenOpen:  // (
-		case Token::Type::ParenClose: // )
-		case Token::Type::String:
-		case Token::Type::Value:
-			Error::the().addError("more than one sexp in input");
-			break;
 		case Token::Type::Comment:
 			break;
 		default:
-			Error::the().addError("unknown error");
+			Error::the().addError("more than one sexp in input");
 			break;
 		};
 	}
@@ -79,28 +65,25 @@ ASTNode* Reader::readImpl()
 	case Token::Type::Special: // ~@
 		return readSpliceUnquote();
 		break;
+	case Token::Type::ParenOpen: // (
+		return readList();
+		break;
+	case Token::Type::ParenClose: // )
+		Error::the().addError("invalid read syntax: ')'");
+		return nullptr;
+		break;
 	case Token::Type::BracketOpen: // [
 		return readVector();
 		break;
 	case Token::Type::BracketClose: // ]
-		m_invalid_syntax = true;
-		m_error_character = ']';
+		Error::the().addError("invalid read syntax: ']'");
 		return nullptr;
 		break;
 	case Token::Type::BraceOpen: // {
 		return readHashMap();
 		break;
 	case Token::Type::BraceClose: // }
-		m_invalid_syntax = true;
-		m_error_character = '}';
-		return nullptr;
-		break;
-	case Token::Type::ParenOpen: // (
-		return readList();
-		break;
-	case Token::Type::ParenClose: // )
-		m_invalid_syntax = true;
-		m_error_character = ')';
+		Error::the().addError("invalid read syntax: '}'");
 		return nullptr;
 		break;
 	case Token::Type::Quote: // '
@@ -166,8 +149,8 @@ ASTNode* Reader::readList()
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
-		m_error_character = ')';
-		m_is_unbalanced = true;
+		Error::the().addError("expected ')', got EOF");
+		return nullptr;
 	}
 
 	return list;
@@ -183,8 +166,7 @@ ASTNode* Reader::readVector()
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BracketClose })) { // ]
-		m_error_character = ']';
-		m_is_unbalanced = true;
+		Error::the().addError("expected ']', got EOF");
 	}
 
 	return vector;
@@ -218,8 +200,7 @@ ASTNode* Reader::readHashMap()
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }
-		m_error_character = '}';
-		m_is_unbalanced = true;
+		Error::the().addError("expected '}', got EOF");
 	}
 
 	return hash_map;
@@ -316,8 +297,7 @@ ASTNode* Reader::readString()
 
 	// Unbalanced string
 	if (symbol.size() < 2 || symbol.front() != '"' || symbol.back() != '"') {
-		m_error_character = '"';
-		m_is_unbalanced = true;
+		Error::the().addError("expected '\"', got EOF");
 	}
 
 	return new String(symbol);
