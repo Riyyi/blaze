@@ -38,11 +38,22 @@ public:
 	virtual ~GlobalEnvironment() = default;
 
 private:
-	// TODO: Add more native functions
-	void add();
-	void sub();
-	void mul();
-	void div();
+	void add(); // +
+	void sub(); // -
+	void mul(); // *
+	void div(); // /
+
+	void lt();  // <
+	void lte(); // <=
+	void gt();  // >
+	void gte(); // >=
+
+	void list();     // list
+	void is_list();  // list?
+	void is_empty(); // empty?
+	void count();    // count
+
+	// void equal(); // =
 };
 
 } // namespace blaze

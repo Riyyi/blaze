@@ -16,7 +16,7 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 0
+#if 1
 static blaze::EnvironmentPtr env = blaze::makePtr<blaze::GlobalEnvironment>();
 
 auto read(std::string_view input) -> blaze::ASTNodePtr
