@@ -91,3 +91,7 @@ add_dependencies(test1 ${PROJECT})
 add_custom_target(test2
     COMMAND env STEP=step_eval MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step2_eval.mal -- ./${PROJECT})
 add_dependencies(test2 ${PROJECT})
+
+add_custom_target(test3
+    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step3_env.mal -- ./${PROJECT})
+add_dependencies(test3 ${PROJECT})

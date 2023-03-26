@@ -74,6 +74,7 @@ Function::Function(Lambda lambda)
 
 void Formatter<blaze::ASTNodePtr>::format(Builder& builder, blaze::ASTNodePtr value) const
 {
+	// printf("ASDJASJKDASJKDNAJK\n");
 	blaze::Printer printer;
 	return Formatter<std::string>::format(builder, printer.printNoErrorCheck(value));
 }

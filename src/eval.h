@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "ast.h"
 #include "environment.h"
 
@@ -13,7 +15,7 @@ namespace blaze {
 
 class Eval {
 public:
-	Eval(ASTNodePtr ast, Environment* env);
+	Eval(ASTNodePtr ast, EnvironmentPtr env);
 	virtual ~Eval() = default;
 
 	void eval();
@@ -21,12 +23,14 @@ public:
 	ASTNodePtr ast() const { return m_ast; }
 
 private:
-	ASTNodePtr evalImpl(ASTNodePtr ast, Environment* env);
-	ASTNodePtr evalAst(ASTNodePtr ast, Environment* env);
+	ASTNodePtr evalImpl(ASTNodePtr ast, EnvironmentPtr env);
+	ASTNodePtr evalAst(ASTNodePtr ast, EnvironmentPtr env);
+	ASTNodePtr evalDef(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr env);
+	ASTNodePtr evalLet(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr env);
 	ASTNodePtr apply(std::shared_ptr<List> evaluated_list);
 
-	ASTNodePtr m_ast { nullptr };
-	Environment* m_env { nullptr };
+	ASTNodePtr m_ast;
+	EnvironmentPtr m_env;
 };
 
 } // namespace blaze

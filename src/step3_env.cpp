@@ -8,6 +8,7 @@
 
 #include "ast.h"
 #include "environment.h"
+#include "error.h"
 #include "eval.h"
 #include "lexer.h"
 #include "printer.h"
@@ -15,7 +16,9 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 0
+#if 1
+static blaze::EnvironmentPtr env = blaze::makePtr<blaze::GlobalEnvironment>();
+
 auto read(std::string_view input) -> blaze::ASTNodePtr
 {
 	blaze::Lexer lexer(input);
@@ -35,8 +38,7 @@ auto read(std::string_view input) -> blaze::ASTNodePtr
 
 auto eval(blaze::ASTNodePtr ast) -> blaze::ASTNodePtr
 {
-	blaze::GlobalEnvironment env;
-	blaze::Eval eval(ast, &env);
+	blaze::Eval eval(ast, env);
 	eval.eval();
 
 	return eval.ast();
