@@ -124,6 +124,16 @@ void Printer::printImpl(ASTNodePtr node)
 		printSpacing();
 		m_print += format("{}", std::static_pointer_cast<Number>(node)->number());
 	}
+	else if (is<Value>(node_raw_ptr)) {
+		printSpacing();
+		std::string value;
+		switch (std::static_pointer_cast<Value>(node)->state()) {
+		case Value::Nil: value = "nil"; break;
+		case Value::True: value = "true"; break;
+		case Value::False: value = "false"; break;
+		}
+		m_print += format("{}", value);
+	}
 	else if (is<Symbol>(node_raw_ptr)) {
 		printSpacing();
 		m_print += format("{}", std::static_pointer_cast<Symbol>(node)->symbol());

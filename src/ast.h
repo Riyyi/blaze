@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <cstdint>    // int64_t
+#include <cstdint>    // int64_t, uint8_t
 #include <functional> // std::function
 #include <memory>     // std::shared_ptr
 #include <span>
@@ -180,15 +180,21 @@ private:
 // true, false, nil
 class Value final : public ASTNode {
 public:
-	explicit Value(const std::string& value);
+	enum State : uint8_t {
+		Nil,
+		True,
+		False,
+	};
+
+	explicit Value(State state);
 	virtual ~Value() = default;
 
 	virtual bool isValue() const override { return true; }
 
-	const std::string& value() const { return m_value; }
+	State state() const { return m_state; }
 
 private:
-	std::string m_value;
+	State m_state;
 };
 
 // -----------------------------------------

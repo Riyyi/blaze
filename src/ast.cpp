@@ -56,8 +56,8 @@ Symbol::Symbol(const std::string& symbol)
 
 // -----------------------------------------
 
-Value::Value(const std::string& value)
-	: m_value(value)
+Value::Value(State state)
+	: m_state(state)
 {
 }
 

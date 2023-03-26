@@ -318,6 +318,16 @@ ASTNodePtr Reader::readValue()
 		return makePtr<Number>(result);
 	}
 
+	if (token.symbol == "nil") {
+		return makePtr<Value>(Value::Nil);
+	}
+	else if (token.symbol == "true") {
+		return makePtr<Value>(Value::True);
+	}
+	else if (token.symbol == "false") {
+		return makePtr<Value>(Value::False);
+	}
+
 	return makePtr<Symbol>(token.symbol);
 }
 
@@ -373,7 +383,7 @@ void Reader::dumpImpl(ASTNodePtr node)
 
 	ASTNode* node_raw_ptr = node.get();
 	if (is<List>(node_raw_ptr)) {
-		List* list = static_cast<List*>(node_raw_ptr);
+		auto list = std::static_pointer_cast<List>(node);
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Blue), "ListContainer");
 		print(" <");
@@ -389,22 +399,27 @@ void Reader::dumpImpl(ASTNodePtr node)
 	else if (is<String>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "StringNode");
-		print(" <{}>", static_cast<String*>(node_raw_ptr)->data());
+		print(" <{}>", node);
 	}
 	else if (is<Keyword>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "KeywordNode");
-		print(" <{}>", static_cast<Keyword*>(node_raw_ptr)->keyword());
+		print(" <{}>", node);
 	}
 	else if (is<Number>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "NumberNode");
-		print(" <{}>", static_cast<Number*>(node_raw_ptr)->number());
+		print(" <{}>", node);
+	}
+	else if (is<Value>(node_raw_ptr)) {
+		print("{}", indentation);
+		print(fg(ruc::format::TerminalColor::Yellow), "ValueNode");
+		print(" <{}>", node);
 	}
 	else if (is<Symbol>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "SymbolNode");
-		print(" <{}>", static_cast<Symbol*>(node_raw_ptr)->symbol());
+		print(" <{}>", node);
 	}
 	print("\n");
 }

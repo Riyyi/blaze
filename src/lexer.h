@@ -33,7 +33,7 @@ struct Token {
 		At,           // @
 		String,       // "foobar"
 		Keyword,      // :keyword
-		Value,        // number, "true", "false", "nil", symbol
+		Value,        // number, "nil", "true", "false", symbol
 		Comment,      // ;
 		Error,
 	};
