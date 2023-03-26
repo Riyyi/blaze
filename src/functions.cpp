@@ -22,7 +22,7 @@ void GlobalEnvironment::add()
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
+				Error::the().addError(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 
@@ -46,7 +46,7 @@ void GlobalEnvironment::sub()
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
+				Error::the().addError(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 		}
@@ -72,7 +72,7 @@ void GlobalEnvironment::mul()
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
+				Error::the().addError(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 

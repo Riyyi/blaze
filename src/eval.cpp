@@ -7,6 +7,7 @@
 #include <memory> // std::static_pointer_cast
 #include <span>   // std::span
 #include <string>
+#include <vector>
 
 #include "ast.h"
 #include "environment.h"
@@ -30,6 +31,10 @@ void Eval::eval()
 
 ASTNodePtr Eval::evalImpl(ASTNodePtr ast, EnvironmentPtr env)
 {
+	if (ast == nullptr || env == nullptr) {
+		return nullptr;
+	}
+
 	if (!is<List>(ast.get())) {
 		return evalAst(ast, env);
 	}
@@ -52,16 +57,22 @@ ASTNodePtr Eval::evalImpl(ASTNodePtr ast, EnvironmentPtr env)
 		}
 	}
 
+	// Function call
 	return apply(std::static_pointer_cast<List>(evalAst(ast, env)));
 }
 
 ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 {
+	if (ast == nullptr || env == nullptr) {
+		return nullptr;
+	}
+
 	ASTNode* ast_raw_ptr = ast.get();
 	if (is<Symbol>(ast_raw_ptr)) {
 		auto result = env->get(std::static_pointer_cast<Symbol>(ast)->symbol());
 		if (!result) {
 			Error::the().addError(format("'{}' not found", ast));
+			return nullptr;
 		}
 		return result;
 	}
@@ -69,7 +80,11 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 		auto result = makePtr<List>();
 		auto nodes = std::static_pointer_cast<List>(ast)->nodes();
 		for (auto node : nodes) {
-			result->addNode(evalImpl(node, env));
+			ASTNodePtr eval_node = evalImpl(node, env);
+			if (eval_node == nullptr) {
+				return nullptr;
+			}
+			result->addNode(eval_node);
 		}
 		return result;
 	}
@@ -77,7 +92,11 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 		auto result = makePtr<Vector>();
 		auto nodes = std::static_pointer_cast<Vector>(ast)->nodes();
 		for (auto node : nodes) {
-			result->addNode(evalImpl(node, env));
+			ASTNodePtr eval_node = evalImpl(node, env);
+			if (eval_node == nullptr) {
+				return nullptr;
+			}
+			result->addNode(eval_node);
 		}
 		return result;
 	}
@@ -85,7 +104,11 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 		auto result = makePtr<HashMap>();
 		auto elements = std::static_pointer_cast<HashMap>(ast)->elements();
 		for (auto& element : elements) {
-			result->addElement(element.first, evalImpl(element.second, env));
+			ASTNodePtr element_node = evalImpl(element.second, env);
+			if (element_node == nullptr) {
+				return nullptr;
+			}
+			result->addElement(element.first, element_node);
 		}
 		return result;
 	}
@@ -107,9 +130,15 @@ ASTNodePtr Eval::evalDef(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr en
 	}
 
 	std::string symbol = std::static_pointer_cast<Symbol>(nodes[1])->symbol();
+	ASTNodePtr value = evalImpl(nodes[2], env);
+
+	// Dont overwrite symbols after an error
+	if (Error::the().hasAnyError()) {
+		return nullptr;
+	}
 
 	// Modify existing environment
-	return env->set(symbol, evalImpl(nodes[2], env));
+	return env->set(symbol, value);
 }
 
 ASTNodePtr Eval::evalLet(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr env)
@@ -119,33 +148,42 @@ ASTNodePtr Eval::evalLet(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr en
 		return nullptr;
 	}
 
-	// Create new environment
-	auto let_env = makePtr<Environment>(env);
-
-	// First argument needs to be a List
-	if (!is<List>(nodes[1].get())) {
-		Error::the().addError(format("wrong type argument: list, {}", nodes[1]));
+	// First argument needs to be a List or Vector
+	if (!is<List>(nodes[1].get()) && !is<Vector>(nodes[1].get())) {
+		Error::the().addError(format("wrong argument type: list, '{}'", nodes[1]));
 		return nullptr;
 	}
 
-	// List needs to have an even number of elements
-	auto bindings = std::static_pointer_cast<List>(nodes[1]);
-	auto binding_nodes = bindings->nodes();
-	if (bindings->nodes().size() % 2 != 0) {
-		// FIXME: Print correct value
-		Error::the().addError("FIXME");
-		// Error::the().addError(format("wrong number of arguments: {}, {}", bindings, bindings->nodes().size()));
+	// Get the nodes out of the List or Vector
+	std::vector<ASTNodePtr> binding_nodes;
+	if (is<List>(nodes[1].get())) {
+		auto bindings = std::static_pointer_cast<List>(nodes[1]);
+		binding_nodes = bindings->nodes();
+	}
+	else {
+		auto bindings = std::static_pointer_cast<Vector>(nodes[1]);
+		binding_nodes = bindings->nodes();
 	}
 
+	// List or Vector needs to have an even number of elements
 	size_t count = binding_nodes.size();
+	if (count % 2 != 0) {
+		Error::the().addError(format("wrong number of arguments: {}, {}", "let* bindings", count));
+		return nullptr;
+	}
+
+	// Create new environment
+	auto let_env = makePtr<Environment>(env);
+
 	for (size_t i = 0; i < count; i += 2) {
 		// First element needs to be a Symbol
 		if (!is<Symbol>(binding_nodes[i].get())) {
-			Error::the().addError(format("wrong type argument: symbol, {}", binding_nodes[i]));
+			Error::the().addError(format("wrong argument type: symbol, '{}'", binding_nodes[i]));
+			return nullptr;
 		}
 
 		std::string key = std::static_pointer_cast<Symbol>(binding_nodes[i])->symbol();
-		ASTNodePtr value = evalAst(binding_nodes[i + 1], let_env);
+		ASTNodePtr value = evalImpl(binding_nodes[i + 1], let_env);
 		let_env->set(key, value);
 	}
 
@@ -156,6 +194,10 @@ ASTNodePtr Eval::evalLet(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr en
 
 ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 {
+	if (evaluated_list == nullptr) {
+		return nullptr;
+	}
+
 	auto nodes = evaluated_list->nodes();
 
 	if (!is<Function>(nodes[0].get())) {
