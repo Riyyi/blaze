@@ -7,7 +7,7 @@
 #include <cstddef> // size_t
 #include <cstdint> // uint64_t
 #include <cstdlib> // std::strtoll
-#include <memory>  // makePtr, std::shared_ptr
+#include <memory>  // std::static_pointer_cast
 #include <utility> // std::move
 
 #include "error.h"
@@ -196,7 +196,7 @@ ASTNodePtr Reader::readHashMap()
 			return nullptr;
 		}
 
-		std::string keyString = is<String>(key.get()) ? static_pointer_cast<String>(key)->data() : static_pointer_cast<Keyword>(key)->keyword();
+		std::string keyString = is<String>(key.get()) ? std::static_pointer_cast<String>(key)->data() : std::static_pointer_cast<Keyword>(key)->keyword();
 		hash_map->addElement(keyString, value);
 	}
 

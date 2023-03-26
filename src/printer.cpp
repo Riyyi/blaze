@@ -5,6 +5,7 @@
  */
 
 #include <iterator> // std::next
+#include <memory>   // std::static_pointer_cast
 #include <string>
 
 #include "ruc/format/format.h"
@@ -74,7 +75,7 @@ void Printer::printImpl(ASTNodePtr node)
 		m_print += '(';
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto nodes = static_pointer_cast<List>(node)->nodes();
+		auto nodes = std::static_pointer_cast<List>(node)->nodes();
 		for (size_t i = 0; i < nodes.size(); ++i) {
 			printImpl(nodes[i]);
 			m_previous_node_is_list = false;
@@ -86,7 +87,7 @@ void Printer::printImpl(ASTNodePtr node)
 		m_print += '[';
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto nodes = static_pointer_cast<Vector>(node)->nodes();
+		auto nodes = std::static_pointer_cast<Vector>(node)->nodes();
 		for (size_t i = 0; i < nodes.size(); ++i) {
 			printImpl(nodes[i]);
 			m_previous_node_is_list = false;
@@ -98,7 +99,7 @@ void Printer::printImpl(ASTNodePtr node)
 		m_print += "{";
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto elements = static_pointer_cast<HashMap>(node)->elements();
+		auto elements = std::static_pointer_cast<HashMap>(node)->elements();
 		for (auto it = elements.begin(); it != elements.end(); ++it) {
 			m_print += format("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
 			printImpl(it->second);
@@ -113,19 +114,19 @@ void Printer::printImpl(ASTNodePtr node)
 	else if (is<String>(node_raw_ptr)) {
 		// TODO: Implement string readably printing
 		printSpacing();
-		m_print += format("{}", static_pointer_cast<String>(node)->data());
+		m_print += format("{}", std::static_pointer_cast<String>(node)->data());
 	}
 	else if (is<Keyword>(node_raw_ptr)) {
 		printSpacing();
-		m_print += format(":{}", static_pointer_cast<Keyword>(node)->keyword().substr(1));
+		m_print += format(":{}", std::static_pointer_cast<Keyword>(node)->keyword().substr(1));
 	}
 	else if (is<Number>(node_raw_ptr)) {
 		printSpacing();
-		m_print += format("{}", static_pointer_cast<Number>(node)->number());
+		m_print += format("{}", std::static_pointer_cast<Number>(node)->number());
 	}
 	else if (is<Symbol>(node_raw_ptr)) {
 		printSpacing();
-		m_print += format("{}", static_pointer_cast<Symbol>(node)->symbol());
+		m_print += format("{}", std::static_pointer_cast<Symbol>(node)->symbol());
 	}
 }
 

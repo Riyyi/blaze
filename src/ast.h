@@ -21,7 +21,7 @@
 namespace blaze {
 
 class ASTNode;
-typedef std::shared_ptr<ASTNode>  ASTNodePtr;
+typedef std::shared_ptr<ASTNode> ASTNodePtr;
 
 class ASTNode {
 public:
