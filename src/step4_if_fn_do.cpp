@@ -48,7 +48,7 @@ auto print(blaze::ASTNodePtr exp) -> std::string
 {
 	blaze::Printer printer;
 
-	return printer.print(exp);
+	return printer.print(exp, true);
 }
 
 auto rep(std::string_view input) -> std::string

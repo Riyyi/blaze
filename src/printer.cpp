@@ -15,6 +15,7 @@
 #include "lexer.h"
 #include "printer.h"
 #include "types.h"
+#include "util.h"
 
 namespace blaze {
 
@@ -28,7 +29,7 @@ Printer::~Printer()
 
 // -----------------------------------------
 
-std::string Printer::print(ASTNodePtr node)
+std::string Printer::print(ASTNodePtr node, bool print_readably)
 {
 	if (Error::the().hasAnyError()) {
 		init();
@@ -36,10 +37,10 @@ std::string Printer::print(ASTNodePtr node)
 		return m_print;
 	}
 
-	return printNoErrorCheck(node);
+	return printNoErrorCheck(node, print_readably);
 }
 
-std::string Printer::printNoErrorCheck(ASTNodePtr node)
+std::string Printer::printNoErrorCheck(ASTNodePtr node, bool print_readably)
 {
 	init();
 
@@ -47,7 +48,7 @@ std::string Printer::printNoErrorCheck(ASTNodePtr node)
 		return {};
 	}
 
-	printImpl(node);
+	printImpl(node, print_readably);
 
 	return m_print;
 }
@@ -61,7 +62,7 @@ void Printer::init()
 	m_print = "";
 }
 
-void Printer::printImpl(ASTNodePtr node)
+void Printer::printImpl(ASTNodePtr node, bool print_readably)
 {
 	auto printSpacing = [this]() -> void {
 		if (!m_first_node && !m_previous_node_is_list) {
@@ -104,7 +105,7 @@ void Printer::printImpl(ASTNodePtr node)
 			m_print += format("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
 			printImpl(it->second);
 
-			if (it != elements.end() && std::next(it) != elements.end()) {
+			if (isLast(it, elements)) {
 				m_print += ' ';
 			}
 		}
@@ -112,9 +113,15 @@ void Printer::printImpl(ASTNodePtr node)
 		m_print += '}';
 	}
 	else if (is<String>(node_raw_ptr)) {
-		// TODO: Implement string readably printing
+		std::string text = std::static_pointer_cast<String>(node)->data();
+		if (print_readably) {
+			text = replaceAll(text, "\\", "\\\\");
+			text = replaceAll(text, "\"", "\\\"");
+			text = replaceAll(text, "\n", "\\n");
+			text = "\"" + text + "\"";
+		}
 		printSpacing();
-		m_print += format("{}", std::static_pointer_cast<String>(node)->data());
+		m_print += format("{}", text);
 	}
 	else if (is<Keyword>(node_raw_ptr)) {
 		printSpacing();

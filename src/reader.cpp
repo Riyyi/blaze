@@ -296,11 +296,6 @@ ASTNodePtr Reader::readString()
 {
 	std::string symbol = consume().symbol;
 
-	// Unbalanced string
-	if (symbol.size() < 2 || symbol.front() != '"' || symbol.back() != '"') {
-		Error::the().addError("expected '\"', got EOF");
-	}
-
 	return makePtr<String>(symbol);
 }
 

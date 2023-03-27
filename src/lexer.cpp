@@ -124,7 +124,7 @@ bool Lexer::consumeSpliceUnquoteOrUnquote()
 bool Lexer::consumeString()
 {
 	size_t column = m_column;
-	std::string text = "\"";
+	std::string text;
 
 	static std::unordered_set<char> exit = {
 		'"',
@@ -134,12 +134,11 @@ bool Lexer::consumeString()
 	};
 
 	bool escape = false;
-	char character = consume();
-	for (;;) {
+	char character = consume(); // "
+	while (true) {
 		character = peek();
 
 		if (!escape && character == '\\') {
-			text += '\\';
 			ignore();
 			escape = true;
 			continue;
@@ -149,16 +148,18 @@ bool Lexer::consumeString()
 			break;
 		}
 
-		text += character;
+		if (escape && character == 'n') {
+			text += 0xa; // 10 or \n
+		}
+		else {
+			text += character;
+		}
 		ignore();
 
 		escape = false;
 	}
 
-	if (character == '"') {
-		text += character;
-	}
-	else {
+	if (character != '"') {
 		Error::the().addError({ Token::Type::Error, m_line, column, "expected '\"', got EOF" });
 	}
 
@@ -195,7 +196,7 @@ bool Lexer::consumeKeyword()
 	};
 
 	char character = 0;
-	for (;;) {
+	while (true) {
 		character = peek();
 
 		if (exit.find(character) != exit.end()) {
@@ -238,7 +239,7 @@ bool Lexer::consumeValue()
 	};
 
 	char character = 0;
-	for (;;) {
+	while (true) {
 		character = peek();
 
 		if (exit.find(character) != exit.end()) {
@@ -270,7 +271,7 @@ bool Lexer::consumeComment()
 	};
 
 	char character = 0;
-	for (;;) {
+	while (true) {
 		character = peek();
 
 		if (exit.find(character) != exit.end()) {

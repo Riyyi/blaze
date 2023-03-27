@@ -17,12 +17,12 @@ public:
 	Printer();
 	virtual ~Printer();
 
-	std::string print(ASTNodePtr node);
-	std::string printNoErrorCheck(ASTNodePtr node);
+	std::string print(ASTNodePtr node, bool print_readably = true);
+	std::string printNoErrorCheck(ASTNodePtr node, bool print_readably = true);
 
 private:
 	void init();
-	void printImpl(ASTNodePtr node);
+	void printImpl(ASTNodePtr node, bool print_readably = true);
 	void printError();
 
 	bool m_first_node { true };
