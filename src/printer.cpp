@@ -77,8 +77,8 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		m_first_node = false;
 		m_previous_node_is_list = true;
 		auto nodes = std::static_pointer_cast<List>(node)->nodes();
-		for (size_t i = 0; i < nodes.size(); ++i) {
-			printImpl(nodes[i]);
+		for (auto node : nodes) {
+			printImpl(node);
 			m_previous_node_is_list = false;
 		}
 		m_print += ')';
@@ -89,8 +89,8 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		m_first_node = false;
 		m_previous_node_is_list = true;
 		auto nodes = std::static_pointer_cast<Vector>(node)->nodes();
-		for (size_t i = 0; i < nodes.size(); ++i) {
-			printImpl(nodes[i]);
+		for (auto node : nodes) {
+			printImpl(node);
 			m_previous_node_is_list = false;
 		}
 		m_print += ']';

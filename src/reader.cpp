@@ -378,15 +378,15 @@ void Reader::dumpImpl(ASTNodePtr node)
 
 	ASTNode* node_raw_ptr = node.get();
 	if (is<List>(node_raw_ptr)) {
-		auto list = std::static_pointer_cast<List>(node);
+		auto nodes = std::static_pointer_cast<List>(node)->nodes();
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Blue), "ListContainer");
 		print(" <");
 		print(fg(ruc::format::TerminalColor::Blue), "()");
 		print(">\n");
 		m_indentation++;
-		for (size_t i = 0; i < list->nodes().size(); ++i) {
-			dumpImpl(list->nodes()[i]);
+		for (auto node : nodes) {
+			dumpImpl(node);
 		}
 		m_indentation--;
 		return;

@@ -21,7 +21,7 @@ namespace blaze {
 
 void GlobalEnvironment::add()
 {
-	auto add = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto add = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		int64_t result = 0;
 
 		for (auto node : nodes) {
@@ -41,7 +41,7 @@ void GlobalEnvironment::add()
 
 void GlobalEnvironment::sub()
 {
-	auto sub = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto sub = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		if (nodes.size() == 0) {
 			return makePtr<Number>(0);
 		}
@@ -54,7 +54,7 @@ void GlobalEnvironment::sub()
 		}
 
 		// Start with the first number
-		int64_t result = std::static_pointer_cast<Number>(nodes[0])->number();
+		int64_t result = std::static_pointer_cast<Number>(nodes.front())->number();
 
 		// Skip the first node
 		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
@@ -69,7 +69,7 @@ void GlobalEnvironment::sub()
 
 void GlobalEnvironment::mul()
 {
-	auto mul = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto mul = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		int64_t result = 1;
 
 		for (auto node : nodes) {
@@ -89,7 +89,7 @@ void GlobalEnvironment::mul()
 
 void GlobalEnvironment::div()
 {
-	auto div = [this](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto div = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		if (nodes.size() == 0) {
 			Error::the().addError(format("wrong number of arguments: {}, 0", m_current_key));
 			return nullptr;
@@ -103,7 +103,7 @@ void GlobalEnvironment::div()
 		}
 
 		// Start with the first number
-		double result = std::static_pointer_cast<Number>(nodes[0])->number();
+		double result = std::static_pointer_cast<Number>(nodes.front())->number();
 
 		// Skip the first node
 		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
@@ -119,7 +119,7 @@ void GlobalEnvironment::div()
 // -----------------------------------------
 
 #define NUMBER_COMPARE(symbol, comparison_symbol)                                                                \
-	auto lambda = [this](std::span<ASTNodePtr> nodes) -> ASTNodePtr {                                            \
+	auto lambda = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {                                            \
 		bool result = true;                                                                                      \
                                                                                                                  \
 		if (nodes.size() < 2) {                                                                                  \
@@ -135,7 +135,7 @@ void GlobalEnvironment::div()
 		}                                                                                                        \
                                                                                                                  \
 		/* Start with the first number */                                                                        \
-		int64_t number = std::static_pointer_cast<Number>(nodes[0])->number();                                   \
+		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                              \
                                                                                                                  \
 		/* Skip the first node */                                                                                \
 		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                                      \
@@ -176,7 +176,7 @@ void GlobalEnvironment::gte()
 
 void GlobalEnvironment::list()
 {
-	auto list = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto list = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		auto list = makePtr<List>();
 
 		for (auto node : nodes) {
@@ -191,7 +191,7 @@ void GlobalEnvironment::list()
 
 void GlobalEnvironment::isList()
 {
-	auto is_list = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto is_list = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		bool result = true;
 
 		for (auto node : nodes) {
@@ -209,7 +209,7 @@ void GlobalEnvironment::isList()
 
 void GlobalEnvironment::isEmpty()
 {
-	auto is_empty = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto is_empty = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		bool result = true;
 
 		for (auto node : nodes) {
@@ -232,7 +232,7 @@ void GlobalEnvironment::isEmpty()
 
 void GlobalEnvironment::count()
 {
-	auto count = [this](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto count = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		if (nodes.size() > 1) {
 			Error::the().addError(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
 			return nullptr;
@@ -259,7 +259,7 @@ void GlobalEnvironment::count()
 // -----------------------------------------
 
 #define PRINTER_STRING(symbol, concatenation, print_readably)                       \
-	auto lambda = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {                   \
+	auto lambda = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {                   \
 		std::string result;                                                         \
                                                                                     \
 		Printer printer;                                                            \
@@ -287,7 +287,7 @@ void GlobalEnvironment::prStr()
 }
 
 #define PRINTER_PRINT(symbol, print_readably)                            \
-	auto lambda = [](std::span<ASTNodePtr> nodes) -> ASTNodePtr {        \
+	auto lambda = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {        \
 		Printer printer;                                                 \
 		for (auto it = nodes.begin(); it != nodes.end(); ++it) {         \
 			print("{}", printer.printNoErrorCheck(*it, print_readably)); \
@@ -317,7 +317,7 @@ void GlobalEnvironment::println()
 
 void GlobalEnvironment::equal()
 {
-	auto lambda = [this](std::span<ASTNodePtr> nodes) -> ASTNodePtr {
+	auto lambda = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		if (nodes.size() < 2) {
 			Error::the().addError(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
 			return nullptr;
@@ -334,8 +334,10 @@ void GlobalEnvironment::equal()
 					return false;
 				}
 
-				for (size_t i = 0; i < lhs_nodes.size(); ++i) {
-					if (!equal(lhs_nodes[i], rhs_nodes[i])) {
+				auto lhs_it = lhs_nodes.begin();
+				auto rhs_it = rhs_nodes.begin();
+				for (; lhs_it != lhs_nodes.end(); ++lhs_it, ++rhs_it) {
+					if (!equal(*lhs_it, *rhs_it)) {
 						return false;
 					}
 				}
@@ -386,8 +388,10 @@ void GlobalEnvironment::equal()
 		};
 
 		bool result = true;
-		for (size_t i = 0; i < nodes.size() - 1; ++i) {
-			if (!equal(nodes[i], nodes[i + 1])) {
+		auto it = nodes.begin();
+		auto it_next = std::next(nodes.begin());
+		for (; it_next != nodes.end(); ++it, ++it_next) {
+			if (!equal(*it, *it_next)) {
 				result = false;
 				break;
 			}

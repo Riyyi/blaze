@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <iterator> // sd::advance, std::next
+#include <list>
 #include <memory> // std::static_pointer_cast
 #include <span>   // std::span
 #include <string>
-#include <vector>
 
 #include "ast.h"
 #include "environment.h"
@@ -47,8 +48,9 @@ ASTNodePtr Eval::evalImpl(ASTNodePtr ast, EnvironmentPtr env)
 
 	// Environment
 	auto nodes = list->nodes();
-	if (is<Symbol>(nodes[0].get())) {
-		auto symbol = std::static_pointer_cast<Symbol>(nodes[0])->symbol();
+	if (is<Symbol>(nodes.front().get())) {
+		auto symbol = std::static_pointer_cast<Symbol>(nodes.front())->symbol();
+		nodes.pop_front();
 		if (symbol == "def!") {
 			return evalDef(nodes, env);
 		}
@@ -116,21 +118,24 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 	return ast;
 }
 
-ASTNodePtr Eval::evalDef(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr env)
+ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() != 3) {
-		Error::the().addError(format("wrong number of arguments: def!, {}", nodes.size() - 1));
+	if (nodes.size() != 2) {
+		Error::the().addError(format("wrong number of arguments: def!, {}", nodes.size()));
 		return nullptr;
 	}
+
+	auto first_argument = *nodes.begin();
+	auto second_argument = *std::next(nodes.begin());
 
 	// First element needs to be a Symbol
-	if (!is<Symbol>(nodes[1].get())) {
-		Error::the().addError(format("wrong type argument: symbol, {}", nodes[1]));
+	if (!is<Symbol>(first_argument.get())) {
+		Error::the().addError(format("wrong type argument: symbol, {}", first_argument));
 		return nullptr;
 	}
 
-	std::string symbol = std::static_pointer_cast<Symbol>(nodes[1])->symbol();
-	ASTNodePtr value = evalImpl(nodes[2], env);
+	std::string symbol = std::static_pointer_cast<Symbol>(first_argument)->symbol();
+	ASTNodePtr value = evalImpl(second_argument, env);
 
 	// Dont overwrite symbols after an error
 	if (Error::the().hasAnyError()) {
@@ -141,27 +146,30 @@ ASTNodePtr Eval::evalDef(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr en
 	return env->set(symbol, value);
 }
 
-ASTNodePtr Eval::evalLet(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr env)
+ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() != 3) {
-		Error::the().addError(format("wrong number of arguments: let*, {}", nodes.size() - 1));
+	if (nodes.size() != 2) {
+		Error::the().addError(format("wrong number of arguments: let*, {}", nodes.size()));
 		return nullptr;
 	}
 
+	auto first_argument = *nodes.begin();
+	auto second_argument = *std::next(nodes.begin());
+
 	// First argument needs to be a List or Vector
-	if (!is<List>(nodes[1].get()) && !is<Vector>(nodes[1].get())) {
-		Error::the().addError(format("wrong argument type: list, '{}'", nodes[1]));
+	if (!is<List>(first_argument.get()) && !is<Vector>(first_argument.get())) {
+		Error::the().addError(format("wrong argument type: list, '{}'", first_argument));
 		return nullptr;
 	}
 
 	// Get the nodes out of the List or Vector
-	std::vector<ASTNodePtr> binding_nodes;
-	if (is<List>(nodes[1].get())) {
-		auto bindings = std::static_pointer_cast<List>(nodes[1]);
+	std::list<ASTNodePtr> binding_nodes;
+	if (is<List>(first_argument.get())) {
+		auto bindings = std::static_pointer_cast<List>(first_argument);
 		binding_nodes = bindings->nodes();
 	}
 	else {
-		auto bindings = std::static_pointer_cast<Vector>(nodes[1]);
+		auto bindings = std::static_pointer_cast<Vector>(first_argument);
 		binding_nodes = bindings->nodes();
 	}
 
@@ -175,21 +183,21 @@ ASTNodePtr Eval::evalLet(const std::vector<ASTNodePtr>& nodes, EnvironmentPtr en
 	// Create new environment
 	auto let_env = makePtr<Environment>(env);
 
-	for (size_t i = 0; i < count; i += 2) {
+	for (auto it = binding_nodes.begin(); it != binding_nodes.end(); std::advance(it, 2)) {
 		// First element needs to be a Symbol
-		if (!is<Symbol>(binding_nodes[i].get())) {
-			Error::the().addError(format("wrong argument type: symbol, '{}'", binding_nodes[i]));
+		if (!is<Symbol>(*it->get())) {
+			Error::the().addError(format("wrong argument type: symbol, '{}'", *it));
 			return nullptr;
 		}
 
-		std::string key = std::static_pointer_cast<Symbol>(binding_nodes[i])->symbol();
-		ASTNodePtr value = evalImpl(binding_nodes[i + 1], let_env);
+		std::string key = std::static_pointer_cast<Symbol>(*it)->symbol();
+		ASTNodePtr value = evalImpl(*std::next(it), let_env);
 		let_env->set(key, value);
 	}
 
 	// TODO: Remove limitation of 3 arguments
 	//       Eval all values in this new env, return last sexp of the result
-	return evalImpl(nodes[2], let_env);
+	return evalImpl(second_argument, let_env);
 }
 
 ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
@@ -200,17 +208,17 @@ ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 
 	auto nodes = evaluated_list->nodes();
 
-	if (!is<Function>(nodes[0].get())) {
-		Error::the().addError(format("invalid function: {}", nodes[0]));
+	if (!is<Function>(nodes.front().get())) {
+		Error::the().addError(format("invalid function: {}", nodes.front()));
 		return nullptr;
 	}
 
 	// car
-	auto lambda = std::static_pointer_cast<Function>(nodes[0])->lambda();
+	auto lambda = std::static_pointer_cast<Function>(nodes.front())->lambda();
 	// cdr
-	std::span<ASTNodePtr> span { nodes.data() + 1, nodes.size() - 1 };
+	nodes.pop_front();
 
-	return lambda(span);
+	return lambda(nodes);
 }
 
 } // namespace blaze

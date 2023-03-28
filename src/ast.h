@@ -8,13 +8,13 @@
 
 #include <cstdint>    // int64_t, uint8_t
 #include <functional> // std::function
-#include <memory>     // std::shared_ptr
+#include <list>
+#include <memory> // std::shared_ptr
 #include <span>
 #include <string>
 #include <string_view>
 #include <typeinfo> // typeid
 #include <unordered_map>
-#include <vector>
 
 #include "ruc/format/formatter.h"
 
@@ -57,7 +57,7 @@ public:
 
 	void addNode(ASTNodePtr node);
 
-	const std::vector<ASTNodePtr>& nodes() const { return m_nodes; }
+	const std::list<ASTNodePtr>& nodes() const { return m_nodes; }
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }
 
@@ -65,7 +65,7 @@ protected:
 	Collection() {}
 
 private:
-	std::vector<ASTNodePtr> m_nodes;
+	std::list<ASTNodePtr> m_nodes;
 };
 
 // -----------------------------------------
@@ -199,7 +199,7 @@ private:
 
 // -----------------------------------------
 
-using Lambda = std::function<ASTNodePtr(std::span<ASTNodePtr>)>;
+using Lambda = std::function<ASTNodePtr(std::list<ASTNodePtr>)>;
 
 class Function final : public ASTNode {
 public:
