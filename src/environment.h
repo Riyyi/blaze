@@ -48,12 +48,17 @@ private:
 	void gt();  // >
 	void gte(); // >=
 
-	void list();     // list
-	void is_list();  // list?
-	void is_empty(); // empty?
-	void count();    // count
+	void list();    // list
+	void isList();  // list?
+	void isEmpty(); // empty?
+	void count();   // count
 
-	// void equal(); // =
+	void str();     // str
+	void prStr();   // pr-str
+	void prn();     // prn
+	void println(); // println
+
+	void equal(); // =
 };
 
 } // namespace blaze

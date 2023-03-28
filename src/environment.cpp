@@ -64,9 +64,16 @@ GlobalEnvironment::GlobalEnvironment()
 	gte();
 
 	list();
-	is_list();
-	is_empty();
+	isList();
+	isEmpty();
 	count();
+
+	str();
+	prStr();
+	prn();
+	println();
+
+	equal();
 }
 
 } // namespace blaze

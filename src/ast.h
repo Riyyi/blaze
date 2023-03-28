@@ -33,9 +33,9 @@ public:
 	bool fastIs() const = delete;
 
 	virtual bool isCollection() const { return false; }
+	virtual bool isList() const { return false; }
 	virtual bool isVector() const { return false; }
 	virtual bool isHashMap() const { return false; }
-	virtual bool isList() const { return false; }
 	virtual bool isString() const { return false; }
 	virtual bool isKeyword() const { return false; }
 	virtual bool isNumber() const { return false; }
