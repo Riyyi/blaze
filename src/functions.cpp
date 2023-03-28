@@ -233,20 +233,24 @@ void GlobalEnvironment::isEmpty()
 void GlobalEnvironment::count()
 {
 	auto count = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
-		if (nodes.size() > 1) {
+		if (nodes.size() != 1) {
 			Error::the().addError(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
 			return nullptr;
 		}
 
 		size_t result = 0;
-
-		for (auto node : nodes) {
-			if (!is<List>(node.get())) {
-				Error::the().addError(format("wrong argument type: list, '{}'", node));
-				return nullptr;
-			}
-
-			result = std::static_pointer_cast<List>(node)->size();
+		if (is<Value>(nodes.front().get()) && std::static_pointer_cast<Value>(nodes.front())->state() == Value::Nil) {
+			// result = 0
+		}
+		else if (!is<List>(nodes.front().get())) {
+			result = std::static_pointer_cast<List>(nodes.front())->size();
+		}
+		else if (!is<Vector>(nodes.front().get())) {
+			result = std::static_pointer_cast<Vector>(nodes.front())->size();
+		}
+		else {
+			Error::the().addError(format("wrong argument type: list, '{}'", nodes));
+			return nullptr;
 		}
 
 		// FIXME: Add numeric_limits check for implicit cast: size_t > int64_t
