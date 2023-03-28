@@ -161,22 +161,6 @@ private:
 
 // -----------------------------------------
 
-// Symbols
-class Symbol final : public ASTNode {
-public:
-	explicit Symbol(const std::string& symbol);
-	virtual ~Symbol() = default;
-
-	virtual bool isSymbol() const override { return true; }
-
-	const std::string& symbol() const { return m_symbol; }
-
-private:
-	std::string m_symbol;
-};
-
-// -----------------------------------------
-
 // true, false, nil
 class Value final : public ASTNode {
 public:
@@ -195,6 +179,22 @@ public:
 
 private:
 	State m_state;
+};
+
+// -----------------------------------------
+
+// Symbols
+class Symbol final : public ASTNode {
+public:
+	explicit Symbol(const std::string& symbol);
+	virtual ~Symbol() = default;
+
+	virtual bool isSymbol() const override { return true; }
+
+	const std::string& symbol() const { return m_symbol; }
+
+private:
+	std::string m_symbol;
 };
 
 // -----------------------------------------
@@ -247,10 +247,10 @@ template<>
 inline bool ASTNode::fastIs<Number>() const { return isNumber(); }
 
 template<>
-inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
+inline bool ASTNode::fastIs<Value>() const { return isValue(); }
 
 template<>
-inline bool ASTNode::fastIs<Value>() const { return isValue(); }
+inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
 
 template<>
 inline bool ASTNode::fastIs<Function>() const { return isFunction(); }
