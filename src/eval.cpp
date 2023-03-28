@@ -60,6 +60,9 @@ ASTNodePtr Eval::evalImpl(ASTNodePtr ast, EnvironmentPtr env)
 		if (symbol == "do") {
 			return evalDo(nodes, env);
 		}
+		if (symbol == "if") {
+			return evalIf(nodes, env);
+		}
 	}
 
 	// Function call
@@ -217,6 +220,27 @@ ASTNodePtr Eval::evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 
 	// Eval and return last node
 	return evalImpl(nodes.back(), env);
+}
+
+ASTNodePtr Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+{
+	if (nodes.size() != 2 && nodes.size() != 3) {
+		Error::the().addError(format("wrong number of arguments: if, {}", nodes.size()));
+		return nullptr;
+	}
+
+	auto first_argument = *nodes.begin();
+	auto second_argument = *std::next(nodes.begin());
+	auto third_argument = (nodes.size() == 3) ? *std::next(std::next(nodes.begin())) : makePtr<Value>(Value::Nil);
+
+	auto first_evaluated = evalImpl(first_argument, env);
+	if (!is<Value>(first_evaluated.get())
+	    || std::static_pointer_cast<Value>(first_evaluated)->state() == Value::True) {
+		return evalImpl(second_argument, env);
+	}
+	else {
+		return evalImpl(third_argument, env);
+	}
 }
 
 ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
