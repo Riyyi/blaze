@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <iterator> // sd::advance, std::next
+#include <iterator> // sd::advance, std::next, std::prev
 #include <list>
 #include <memory> // std::static_pointer_cast
 #include <span>   // std::span
@@ -56,6 +56,9 @@ ASTNodePtr Eval::evalImpl(ASTNodePtr ast, EnvironmentPtr env)
 		}
 		if (symbol == "let*") {
 			return evalLet(nodes, env);
+		}
+		if (symbol == "do") {
+			return evalDo(nodes, env);
 		}
 	}
 
@@ -198,6 +201,22 @@ ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	// TODO: Remove limitation of 3 arguments
 	//       Eval all values in this new env, return last sexp of the result
 	return evalImpl(second_argument, let_env);
+}
+
+ASTNodePtr Eval::evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+{
+	if (nodes.size() == 0) {
+		Error::the().addError(format("wrong number of arguments: do, {}", nodes.size()));
+		return nullptr;
+	}
+
+	// Evaluate all nodes except the last
+	for (auto it = nodes.begin(); it != std::prev(nodes.end(), 1); ++it) {
+		evalImpl(*it, env);
+	}
+
+	// Eval and return last node
+	return evalImpl(nodes.back(), env);
 }
 
 ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)

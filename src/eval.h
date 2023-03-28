@@ -27,6 +27,7 @@ private:
 	ASTNodePtr evalAst(ASTNodePtr ast, EnvironmentPtr env);
 	ASTNodePtr evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
 	ASTNodePtr evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
+	ASTNodePtr evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
 	ASTNodePtr apply(std::shared_ptr<List> evaluated_list);
 
 	ASTNodePtr m_ast;
