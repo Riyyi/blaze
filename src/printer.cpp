@@ -145,6 +145,14 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		printSpacing();
 		m_print += format("{}", std::static_pointer_cast<Symbol>(node)->symbol());
 	}
+	else if (is<Function>(node_raw_ptr)) {
+		printSpacing();
+		m_print += format("#<builtin-function>");
+	}
+	else if (is<Lambda>(node_raw_ptr)) {
+		printSpacing();
+		m_print += format("#<user-function>");
+	}
 }
 
 void Printer::printError()

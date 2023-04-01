@@ -14,7 +14,7 @@
 #include "environment.h"
 #include "error.h"
 #include "eval.h"
-#include "ruc/meta/assert.h"
+#include "forward.h"
 #include "types.h"
 
 namespace blaze {
@@ -62,6 +62,9 @@ ASTNodePtr Eval::evalImpl(ASTNodePtr ast, EnvironmentPtr env)
 		}
 		if (symbol == "if") {
 			return evalIf(nodes, env);
+		}
+		if (symbol == "fn*") {
+			return evalFn(nodes, env);
 		}
 	}
 
@@ -136,7 +139,7 @@ ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 
 	// First element needs to be a Symbol
 	if (!is<Symbol>(first_argument.get())) {
-		Error::the().addError(format("wrong type argument: symbol, {}", first_argument));
+		Error::the().addError(format("wrong argument type: symbol, {}", first_argument));
 		return nullptr;
 	}
 
@@ -187,7 +190,7 @@ ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	}
 
 	// Create new environment
-	auto let_env = makePtr<Environment>(env);
+	auto let_env = Environment::create(env);
 
 	for (auto it = binding_nodes.begin(); it != binding_nodes.end(); std::advance(it, 2)) {
 		// First element needs to be a Symbol
@@ -243,6 +246,42 @@ ASTNodePtr Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	}
 }
 
+#define ARG_COUNT_CHECK(name, size, comparison)                                         \
+	if (size comparison) {                                                              \
+		Error::the().addError(format("wrong number of arguments: {}, {}", name, size)); \
+		return nullptr;                                                                 \
+	}
+
+#define AST_CHECK(type, value)                                                      \
+	if (!is<type>(value.get())) {                                                   \
+		Error::the().addError(format("wrong argument type: {}, {}", #type, value)); \
+		return nullptr;                                                             \
+	}
+
+#define AST_CAST(type, value, variable) \
+	AST_CHECK(type, value)              \
+	auto variable = std::static_pointer_cast<type>(value);
+
+ASTNodePtr Eval::evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+{
+	ARG_COUNT_CHECK("fn*", nodes.size(), != 2);
+
+	auto first_argument = *nodes.begin();
+	auto second_argument = *std::next(nodes.begin());
+
+	// First element needs to be a List
+	AST_CAST(List, first_argument, list);
+
+	std::vector<std::string> bindings;
+	for (auto node : list->nodes()) {
+		// All nodes need to be a Symbol
+		AST_CAST(Symbol, node, symbol);
+		bindings.push_back(symbol->symbol());
+	}
+
+	return makePtr<Lambda>(bindings, second_argument, env);
+}
+
 ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 {
 	if (evaluated_list == nullptr) {
@@ -251,17 +290,32 @@ ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 
 	auto nodes = evaluated_list->nodes();
 
-	if (!is<Function>(nodes.front().get())) {
+	if (!is<Function>(nodes.front().get()) && !is<Lambda>(nodes.front().get())) {
 		Error::the().addError(format("invalid function: {}", nodes.front()));
 		return nullptr;
 	}
 
+	// Function
+
+	if (is<Function>(nodes.front().get())) {
+		// car
+		auto function = std::static_pointer_cast<Function>(nodes.front())->function();
+		// cdr
+		nodes.pop_front();
+
+		return function(nodes);
+	}
+
+	// Lambda
+
 	// car
-	auto lambda = std::static_pointer_cast<Function>(nodes.front())->lambda();
+	auto lambda = std::static_pointer_cast<Lambda>(nodes.front());
 	// cdr
 	nodes.pop_front();
 
-	return lambda(nodes);
+	auto lambda_env = Environment::create(lambda->env(), lambda->bindings(), nodes);
+
+	return evalImpl(lambda->body(), lambda_env);
 }
 
 } // namespace blaze

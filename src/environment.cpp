@@ -8,12 +8,41 @@
 
 #include "ast.h"
 #include "environment.h"
+#include "error.h"
+#include "forward.h"
 
 namespace blaze {
 
-Environment::Environment(EnvironmentPtr outer)
-	: m_outer(outer)
+EnvironmentPtr Environment::create()
 {
+	return std::shared_ptr<Environment>(new Environment);
+}
+
+EnvironmentPtr Environment::create(EnvironmentPtr outer)
+{
+	auto env = create();
+
+	env->m_outer = outer;
+
+	return env;
+}
+
+EnvironmentPtr Environment::create(EnvironmentPtr outer, std::vector<std::string> bindings, std::list<ASTNodePtr> arguments)
+{
+	auto env = create(outer);
+
+	if (bindings.size() != arguments.size()) {
+		Error::the().addError(format("wrong number of arguments: fn*, {}", arguments.size()));
+		return nullptr;
+	}
+
+	auto bindings_it = bindings.begin();
+	auto arguments_it = arguments.begin();
+	for (; bindings_it != bindings.end(); ++bindings_it, ++arguments_it) {
+		env->m_values.emplace(*bindings_it, *arguments_it);
+	}
+
+	return env;
 }
 
 // -----------------------------------------

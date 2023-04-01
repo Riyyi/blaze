@@ -8,8 +8,8 @@
 
 #include <list>
 
-#include "ast.h"
 #include "environment.h"
+#include "forward.h"
 
 namespace blaze {
 
@@ -29,6 +29,7 @@ private:
 	ASTNodePtr evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
 	ASTNodePtr evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
 	ASTNodePtr evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
+	ASTNodePtr evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
 	ASTNodePtr apply(std::shared_ptr<List> evaluated_list);
 
 	ASTNodePtr m_ast;

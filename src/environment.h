@@ -6,27 +6,32 @@
 
 #pragma once
 
+#include <list>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-#include "ast.h"
+#include "badge.h"
+#include "forward.h"
 
 namespace blaze {
 
-class Environment;
-typedef std::shared_ptr<Environment> EnvironmentPtr;
-
 class Environment {
 public:
-	Environment() = default;
-	Environment(EnvironmentPtr outer);
 	virtual ~Environment() = default;
+
+	// Factory functions instead of constructors because it can fail in the bindings/arguments case
+	static EnvironmentPtr create();
+	static EnvironmentPtr create(EnvironmentPtr outer);
+	static EnvironmentPtr create(EnvironmentPtr outer, std::vector<std::string> bindings, std::list<ASTNodePtr> arguments);
 
 	bool exists(const std::string& symbol);
 	ASTNodePtr set(const std::string& symbol, ASTNodePtr value);
 	ASTNodePtr get(const std::string& symbol);
 
 protected:
+	Environment() {}
+
 	std::string m_current_key;
 	std::unordered_map<std::string, ASTNodePtr> m_values;
 	EnvironmentPtr m_outer { nullptr };

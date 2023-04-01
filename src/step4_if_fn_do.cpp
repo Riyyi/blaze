@@ -10,6 +10,7 @@
 #include "environment.h"
 #include "error.h"
 #include "eval.h"
+#include "forward.h"
 #include "lexer.h"
 #include "printer.h"
 #include "reader.h"

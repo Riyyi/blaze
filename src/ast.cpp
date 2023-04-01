@@ -9,6 +9,8 @@
 #include <string>
 
 #include "ast.h"
+#include "environment.h"
+#include "forward.h"
 #include "printer.h"
 #include "types.h"
 
@@ -63,8 +65,17 @@ Value::Value(State state)
 
 // -----------------------------------------
 
-Function::Function(Lambda lambda)
-	: m_lambda(lambda)
+Function::Function(FunctionType function)
+	: m_function(function)
+{
+}
+
+// -----------------------------------------
+
+Lambda::Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPtr env)
+	: m_bindings(bindings)
+	, m_body(body)
+	, m_env(env)
 {
 }
 
@@ -74,7 +85,6 @@ Function::Function(Lambda lambda)
 
 void Formatter<blaze::ASTNodePtr>::format(Builder& builder, blaze::ASTNodePtr value) const
 {
-	// printf("ASDJASJKDASJKDNAJK\n");
 	blaze::Printer printer;
 	return Formatter<std::string>::format(builder, printer.printNoErrorCheck(value));
 }

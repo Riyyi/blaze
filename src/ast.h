@@ -15,13 +15,13 @@
 #include <string_view>
 #include <typeinfo> // typeid
 #include <unordered_map>
+#include <vector>
 
 #include "ruc/format/formatter.h"
 
-namespace blaze {
+#include "forward.h"
 
-class ASTNode;
-typedef std::shared_ptr<ASTNode> ASTNodePtr;
+namespace blaze {
 
 class ASTNode {
 public:
@@ -42,6 +42,7 @@ public:
 	virtual bool isValue() const { return false; }
 	virtual bool isSymbol() const { return false; }
 	virtual bool isFunction() const { return false; }
+	virtual bool isLambda() const { return false; }
 
 protected:
 	ASTNode() {}
@@ -199,19 +200,38 @@ private:
 
 // -----------------------------------------
 
-using Lambda = std::function<ASTNodePtr(std::list<ASTNodePtr>)>;
+using FunctionType = std::function<ASTNodePtr(std::list<ASTNodePtr>)>;
 
 class Function final : public ASTNode {
 public:
-	explicit Function(Lambda lambda);
+	explicit Function(FunctionType function);
 	virtual ~Function() = default;
 
 	virtual bool isFunction() const override { return true; }
 
-	Lambda lambda() const { return m_lambda; }
+	FunctionType function() const { return m_function; }
 
 private:
-	Lambda m_lambda;
+	FunctionType m_function;
+};
+
+// -----------------------------------------
+
+class Lambda final : public ASTNode {
+public:
+	Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPtr env);
+	virtual ~Lambda() = default;
+
+	virtual bool isLambda() const override { return true; }
+
+	std::vector<std::string> bindings() const { return m_bindings; }
+	ASTNodePtr body() const { return m_body; }
+	EnvironmentPtr env() const { return m_env; }
+
+private:
+	std::vector<std::string> m_bindings;
+	ASTNodePtr m_body;
+	EnvironmentPtr m_env;
 };
 
 // -----------------------------------------
@@ -254,6 +274,9 @@ inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
 
 template<>
 inline bool ASTNode::fastIs<Function>() const { return isFunction(); }
+
+template<>
+inline bool ASTNode::fastIs<Lambda>() const { return isLambda(); }
 // clang-format on
 
 } // namespace blaze

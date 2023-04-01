@@ -13,6 +13,7 @@
 #include "ast.h"
 #include "environment.h"
 #include "error.h"
+#include "forward.h"
 #include "printer.h"
 #include "types.h"
 #include "util.h"
@@ -97,7 +98,7 @@ void GlobalEnvironment::div()
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong type argument: number-or-marker-p, '{}'", node));
+				Error::the().addError(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 		}
