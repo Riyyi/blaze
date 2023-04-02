@@ -78,7 +78,7 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		m_previous_node_is_list = true;
 		auto nodes = std::static_pointer_cast<List>(node)->nodes();
 		for (auto node : nodes) {
-			printImpl(node);
+			printImpl(node, print_readably);
 			m_previous_node_is_list = false;
 		}
 		m_print += ')';
@@ -90,7 +90,7 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		m_previous_node_is_list = true;
 		auto nodes = std::static_pointer_cast<Vector>(node)->nodes();
 		for (auto node : nodes) {
-			printImpl(node);
+			printImpl(node, print_readably);
 			m_previous_node_is_list = false;
 		}
 		m_print += ']';
@@ -103,7 +103,7 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		auto elements = std::static_pointer_cast<HashMap>(node)->elements();
 		for (auto it = elements.begin(); it != elements.end(); ++it) {
 			m_print += format("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
-			printImpl(it->second);
+			printImpl(it->second, print_readably);
 
 			if (isLast(it, elements)) {
 				m_print += ' ';
