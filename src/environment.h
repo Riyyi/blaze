@@ -9,9 +9,7 @@
 #include <list>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
-#include "badge.h"
 #include "forward.h"
 
 namespace blaze {
@@ -32,38 +30,8 @@ public:
 protected:
 	Environment() {}
 
-	std::string m_current_key;
-	std::unordered_map<std::string, ASTNodePtr> m_values;
 	EnvironmentPtr m_outer { nullptr };
-};
-
-class GlobalEnvironment final : public Environment {
-public:
-	GlobalEnvironment();
-	virtual ~GlobalEnvironment() = default;
-
-private:
-	void add(); // +
-	void sub(); // -
-	void mul(); // *
-	void div(); // /
-
-	void lt();  // <
-	void lte(); // <=
-	void gt();  // >
-	void gte(); // >=
-
-	void list();    // list
-	void isList();  // list?
-	void isEmpty(); // empty?
-	void count();   // count
-
-	void str();     // str
-	void prStr();   // pr-str
-	void prn();     // prn
-	void println(); // println
-
-	void equal(); // =
+	std::unordered_map<std::string, ASTNodePtr> m_values;
 };
 
 } // namespace blaze

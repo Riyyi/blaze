@@ -202,14 +202,16 @@ using FunctionType = std::function<ASTNodePtr(std::list<ASTNodePtr>)>;
 
 class Function final : public ASTNode {
 public:
-	explicit Function(FunctionType function);
+	explicit Function(const std::string& name, FunctionType function);
 	virtual ~Function() = default;
 
 	virtual bool isFunction() const override { return true; }
 
+	const std::string& name() const { return m_name; }
 	FunctionType function() const { return m_function; }
 
 private:
+	const std::string m_name;
 	FunctionType m_function;
 };
 

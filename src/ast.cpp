@@ -65,8 +65,9 @@ Value::Value(State state)
 
 // -----------------------------------------
 
-Function::Function(FunctionType function)
-	: m_function(function)
+Function::Function(const std::string& name, FunctionType function)
+	: m_name(name)
+	, m_function(function)
 {
 }
 

@@ -18,53 +18,14 @@
 #include "settings.h"
 
 #if 1
-static blaze::EnvironmentPtr env = blaze::makePtr<blaze::GlobalEnvironment>();
+static blaze::EnvironmentPtr s_outer_env = blaze::Environment::create();
 
-auto read(std::string_view input) -> blaze::ASTNodePtr
-{
-	blaze::Lexer lexer(input);
-	lexer.tokenize();
-	if (blaze::Settings::the().get("dump-lexer") == "1") {
-		lexer.dump();
-	}
-
-	blaze::Reader reader(std::move(lexer.tokens()));
-	reader.read();
-	if (blaze::Settings::the().get("dump-reader") == "1") {
-		reader.dump();
-	}
-
-	return reader.node();
-}
-
-auto eval(blaze::ASTNodePtr ast) -> blaze::ASTNodePtr
-{
-	blaze::Eval eval(ast, env);
-	eval.eval();
-
-	return eval.ast();
-}
-
-auto print(blaze::ASTNodePtr exp) -> std::string
-{
-	blaze::Printer printer;
-
-	return printer.print(exp, true);
-}
-
-auto rep(std::string_view input) -> std::string
-{
-	blaze::Error::the().clearErrors();
-	blaze::Error::the().setInput(input);
-
-	return print(eval(read(input)));
-}
-
-static auto cleanup(int signal) -> void
-{
-	print("\033[0m\n");
-	std::exit(signal);
-}
+static auto cleanup(int signal) -> void;
+static auto installLambdas(blaze::EnvironmentPtr env) -> void;
+static auto rep(std::string_view input, blaze::EnvironmentPtr env) -> std::string;
+static auto read(std::string_view input) -> blaze::ASTNodePtr;
+static auto eval(blaze::ASTNodePtr ast, blaze::EnvironmentPtr env) -> blaze::ASTNodePtr;
+static auto print(blaze::ASTNodePtr exp) -> std::string;
 
 auto main(int argc, char* argv[]) -> int
 {
@@ -90,6 +51,9 @@ auto main(int argc, char* argv[]) -> int
 	std::signal(SIGINT, cleanup);
 	std::signal(SIGTERM, cleanup);
 
+	installFunctions(s_outer_env);
+	installLambdas(s_outer_env);
+
 	blaze::Readline readline(pretty_print, history_path);
 
 	std::string input;
@@ -97,7 +61,7 @@ auto main(int argc, char* argv[]) -> int
 		if (pretty_print) {
 			print("\033[0m");
 		}
-		print("{}\n", rep(input));
+		print("{}\n", rep(input, s_outer_env));
 	}
 
 	if (pretty_print) {
@@ -105,5 +69,62 @@ auto main(int argc, char* argv[]) -> int
 	}
 
 	return 0;
+}
+
+static auto cleanup(int signal) -> void
+{
+	print("\033[0m\n");
+	std::exit(signal);
+}
+
+static std::string_view lambdaTable[] = {
+	"(def! not (fn* (cond) (if cond false true)))",
+};
+
+static auto installLambdas(blaze::EnvironmentPtr env) -> void
+{
+	for (auto function : lambdaTable) {
+		rep(function, env);
+	}
+}
+
+static auto rep(std::string_view input, blaze::EnvironmentPtr env) -> std::string
+{
+	blaze::Error::the().clearErrors();
+	blaze::Error::the().setInput(input);
+
+	return print(eval(read(input), env));
+}
+
+static auto read(std::string_view input) -> blaze::ASTNodePtr
+{
+	blaze::Lexer lexer(input);
+	lexer.tokenize();
+	if (blaze::Settings::the().get("dump-lexer") == "1") {
+		lexer.dump();
+	}
+
+	blaze::Reader reader(std::move(lexer.tokens()));
+	reader.read();
+	if (blaze::Settings::the().get("dump-reader") == "1") {
+		reader.dump();
+	}
+
+	return reader.node();
+}
+
+static auto eval(blaze::ASTNodePtr ast, blaze::EnvironmentPtr env) -> blaze::ASTNodePtr
+{
+	blaze::Eval eval(ast, env);
+	eval.eval();
+
+	return eval.ast();
+}
+
+static auto print(blaze::ASTNodePtr exp) -> std::string
+{
+	blaze::Printer printer;
+
+	return printer.print(exp, true);
 }
 #endif

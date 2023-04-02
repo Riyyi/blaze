@@ -7,7 +7,6 @@
 #include <memory> // std::static_pointer_cast
 #include <string>
 
-#include "ruc/format/color.h"
 #include "ruc/format/format.h"
 
 #include "ast.h"
@@ -18,11 +17,34 @@
 #include "types.h"
 #include "util.h"
 
+// At the top-level you cant invoke any function, but you can create variables.
+// Using a struct's constructor you can work around this limitation.
+// Also the line number in the file is used to make the struct names unique.
+
+#define FUNCTION_STRUCT_NAME(unique) __functionStruct##unique
+
+#define ADD_FUNCTION_IMPL(unique, symbol, lambda)     \
+	struct FUNCTION_STRUCT_NAME(unique) {             \
+		FUNCTION_STRUCT_NAME(unique)                  \
+		(std::string __symbol, FunctionType __lambda) \
+		{                                             \
+			s_functions.emplace(__symbol, __lambda);  \
+		}                                             \
+	};                                                \
+	static struct FUNCTION_STRUCT_NAME(unique)        \
+		FUNCTION_STRUCT_NAME(unique)(                 \
+			symbol,                                   \
+			[](std::list<ASTNodePtr> nodes) -> ASTNodePtr lambda);
+
+#define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__LINE__, symbol, lambda);
+
 namespace blaze {
 
-void GlobalEnvironment::add()
-{
-	auto add = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+static std::unordered_map<std::string, FunctionType> s_functions;
+
+ADD_FUNCTION(
+	"+",
+	{
 		int64_t result = 0;
 
 		for (auto node : nodes) {
@@ -35,14 +57,11 @@ void GlobalEnvironment::add()
 		}
 
 		return makePtr<Number>(result);
-	};
+	});
 
-	m_values.emplace("+", makePtr<Function>(add));
-}
-
-void GlobalEnvironment::sub()
-{
-	auto sub = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"-",
+	{
 		if (nodes.size() == 0) {
 			return makePtr<Number>(0);
 		}
@@ -63,14 +82,11 @@ void GlobalEnvironment::sub()
 		}
 
 		return makePtr<Number>(result);
-	};
+	});
 
-	m_values.emplace("-", makePtr<Function>(sub));
-}
-
-void GlobalEnvironment::mul()
-{
-	auto mul = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"*",
+	{
 		int64_t result = 1;
 
 		for (auto node : nodes) {
@@ -83,16 +99,13 @@ void GlobalEnvironment::mul()
 		}
 
 		return makePtr<Number>(result);
-	};
+	});
 
-	m_values.emplace("*", makePtr<Function>(mul));
-}
-
-void GlobalEnvironment::div()
-{
-	auto div = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"/",
+	{
 		if (nodes.size() == 0) {
-			Error::the().add(format("wrong number of arguments: {}, 0", m_current_key));
+			Error::the().add(format("wrong number of arguments: /, 0"));
 			return nullptr;
 		}
 
@@ -112,72 +125,52 @@ void GlobalEnvironment::div()
 		}
 
 		return makePtr<Number>((int64_t)result);
-	};
+	});
 
-	m_values.emplace("/", makePtr<Function>(div));
-}
+// // -----------------------------------------
 
-// -----------------------------------------
+#define NUMBER_COMPARE(operator)                                                                        \
+	{                                                                                                   \
+		bool result = true;                                                                             \
+                                                                                                        \
+		if (nodes.size() < 2) {                                                                         \
+			Error::the().add(format("wrong number of arguments: {}, {}", #operator, nodes.size() - 1)); \
+			return nullptr;                                                                             \
+		}                                                                                               \
+                                                                                                        \
+		for (auto node : nodes) {                                                                       \
+			if (!is<Number>(node.get())) {                                                              \
+				Error::the().add(format("wrong argument type: number, '{}'", node));                    \
+				return nullptr;                                                                         \
+			}                                                                                           \
+		}                                                                                               \
+                                                                                                        \
+		/* Start with the first number */                                                               \
+		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                     \
+                                                                                                        \
+		/* Skip the first node */                                                                       \
+		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                             \
+			int64_t current_number = std::static_pointer_cast<Number>(*it)->number();                   \
+			if (!(number operator current_number)) {                                                    \
+				result = false;                                                                         \
+				break;                                                                                  \
+			}                                                                                           \
+			number = current_number;                                                                    \
+		}                                                                                               \
+                                                                                                        \
+		return makePtr<Value>((result) ? Value::True : Value::False);                                   \
+	}
 
-#define NUMBER_COMPARE(symbol, comparison_symbol)                                                           \
-	auto lambda = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {                                       \
-		bool result = true;                                                                                 \
-                                                                                                            \
-		if (nodes.size() < 2) {                                                                             \
-			Error::the().add(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1)); \
-			return nullptr;                                                                                 \
-		}                                                                                                   \
-                                                                                                            \
-		for (auto node : nodes) {                                                                           \
-			if (!is<Number>(node.get())) {                                                                  \
-				Error::the().add(format("wrong argument type: number, '{}'", node));                        \
-				return nullptr;                                                                             \
-			}                                                                                               \
-		}                                                                                                   \
-                                                                                                            \
-		/* Start with the first number */                                                                   \
-		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                         \
-                                                                                                            \
-		/* Skip the first node */                                                                           \
-		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                                 \
-			int64_t current_number = std::static_pointer_cast<Number>(*it)->number();                       \
-			if (number comparison_symbol current_number) {                                                  \
-				result = false;                                                                             \
-				break;                                                                                      \
-			}                                                                                               \
-			number = current_number;                                                                        \
-		}                                                                                                   \
-                                                                                                            \
-		return makePtr<Value>((result) ? Value::True : Value::False);                                       \
-	};                                                                                                      \
-                                                                                                            \
-	m_values.emplace(symbol, makePtr<Function>(lambda));
-
-void GlobalEnvironment::lt()
-{
-	NUMBER_COMPARE("<", >=);
-}
-
-void GlobalEnvironment::lte()
-{
-	NUMBER_COMPARE("<=", >);
-}
-
-void GlobalEnvironment::gt()
-{
-	NUMBER_COMPARE(">", <=);
-}
-
-void GlobalEnvironment::gte()
-{
-	NUMBER_COMPARE(">=", <);
-}
+ADD_FUNCTION("<", NUMBER_COMPARE(<));
+ADD_FUNCTION("<=", NUMBER_COMPARE(<=));
+ADD_FUNCTION(">", NUMBER_COMPARE(>));
+ADD_FUNCTION(">=", NUMBER_COMPARE(>=));
 
 // -----------------------------------------
 
-void GlobalEnvironment::list()
-{
-	auto list = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"list",
+	{
 		auto list = makePtr<List>();
 
 		for (auto node : nodes) {
@@ -185,14 +178,11 @@ void GlobalEnvironment::list()
 		}
 
 		return list;
-	};
+	});
 
-	m_values.emplace("list", makePtr<Function>(list));
-}
-
-void GlobalEnvironment::isList()
-{
-	auto is_list = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"list?",
+	{
 		bool result = true;
 
 		for (auto node : nodes) {
@@ -203,14 +193,11 @@ void GlobalEnvironment::isList()
 		}
 
 		return makePtr<Value>((result) ? Value::True : Value::False);
-	};
+	});
 
-	m_values.emplace("list?", makePtr<Function>(is_list));
-}
-
-void GlobalEnvironment::isEmpty()
-{
-	auto is_empty = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"empty?",
+	{
 		bool result = true;
 
 		for (auto node : nodes) {
@@ -226,16 +213,13 @@ void GlobalEnvironment::isEmpty()
 		}
 
 		return makePtr<Value>((result) ? Value::True : Value::False);
-	};
+	});
 
-	m_values.emplace("empty?", makePtr<Function>(is_empty));
-}
-
-void GlobalEnvironment::count()
-{
-	auto count = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"count",
+	{
 		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
+			Error::the().add(format("wrong number of arguments: count, {}", nodes.size() - 1));
 			return nullptr;
 		}
 
@@ -255,15 +239,12 @@ void GlobalEnvironment::count()
 
 		// FIXME: Add numeric_limits check for implicit cast: size_t > int64_t
 		return makePtr<Number>((int64_t)result);
-	};
-
-	m_values.emplace("count", makePtr<Function>(count));
-}
+	});
 
 // -----------------------------------------
 
-#define PRINTER_STRING(symbol, concatenation, print_readably)                       \
-	auto lambda = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {                   \
+#define PRINTER_STRING(print_readably, concatenation)                               \
+	{                                                                               \
 		std::string result;                                                         \
                                                                                     \
 		Printer printer;                                                            \
@@ -276,22 +257,13 @@ void GlobalEnvironment::count()
 		}                                                                           \
                                                                                     \
 		return makePtr<String>(result);                                             \
-	};                                                                              \
-                                                                                    \
-	m_values.emplace(symbol, makePtr<Function>(lambda));
+	}
 
-void GlobalEnvironment::str()
-{
-	PRINTER_STRING("str", "", false);
-}
+ADD_FUNCTION("str", PRINTER_STRING(false, ""));
+ADD_FUNCTION("pr-str", PRINTER_STRING(true, " "));
 
-void GlobalEnvironment::prStr()
-{
-	PRINTER_STRING("pr-str", " ", true);
-}
-
-#define PRINTER_PRINT(symbol, print_readably)                            \
-	auto lambda = [](std::list<ASTNodePtr> nodes) -> ASTNodePtr {        \
+#define PRINTER_PRINT(print_readably)                                    \
+	{                                                                    \
 		Printer printer;                                                 \
 		for (auto it = nodes.begin(); it != nodes.end(); ++it) {         \
 			print("{}", printer.printNoErrorCheck(*it, print_readably)); \
@@ -303,34 +275,25 @@ void GlobalEnvironment::prStr()
 		print("\n");                                                     \
                                                                          \
 		return makePtr<Value>(Value::Nil);                               \
-	};                                                                   \
-                                                                         \
-	m_values.emplace(symbol, makePtr<Function>(lambda));
+	}
 
-void GlobalEnvironment::prn()
-{
-	PRINTER_PRINT("prn", true);
-}
-
-void GlobalEnvironment::println()
-{
-	PRINTER_PRINT("println", false);
-}
+ADD_FUNCTION("prn", PRINTER_PRINT(true));
+ADD_FUNCTION("println", PRINTER_PRINT(false));
 
 // -----------------------------------------
 
-void GlobalEnvironment::equal()
-{
-	auto lambda = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
+ADD_FUNCTION(
+	"=",
+	{
 		if (nodes.size() < 2) {
-			Error::the().add(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
+			Error::the().add(format("wrong number of arguments: =, {}", nodes.size() - 1));
 			return nullptr;
 		}
 
 		std::function<bool(ASTNodePtr, ASTNodePtr)> equal =
 			[&equal](ASTNodePtr lhs, ASTNodePtr rhs) -> bool {
 			if ((is<List>(lhs.get()) || is<Vector>(lhs.get()))
-			    && (is<List>(rhs.get()) || is<Vector>(rhs.get()))) {
+		        && (is<List>(rhs.get()) || is<Vector>(rhs.get()))) {
 				auto lhs_nodes = std::static_pointer_cast<Collection>(lhs)->nodes();
 				auto rhs_nodes = std::static_pointer_cast<Collection>(rhs)->nodes();
 
@@ -368,23 +331,23 @@ void GlobalEnvironment::equal()
 			}
 
 			if (is<String>(lhs.get()) && is<String>(rhs.get())
-			    && std::static_pointer_cast<String>(lhs)->data() == std::static_pointer_cast<String>(rhs)->data()) {
+		        && std::static_pointer_cast<String>(lhs)->data() == std::static_pointer_cast<String>(rhs)->data()) {
 				return true;
 			}
 			if (is<Keyword>(lhs.get()) && is<Keyword>(rhs.get())
-			    && std::static_pointer_cast<Keyword>(lhs)->keyword() == std::static_pointer_cast<Keyword>(rhs)->keyword()) {
+		        && std::static_pointer_cast<Keyword>(lhs)->keyword() == std::static_pointer_cast<Keyword>(rhs)->keyword()) {
 				return true;
 			}
 			if (is<Number>(lhs.get()) && is<Number>(rhs.get())
-			    && std::static_pointer_cast<Number>(lhs)->number() == std::static_pointer_cast<Number>(rhs)->number()) {
+		        && std::static_pointer_cast<Number>(lhs)->number() == std::static_pointer_cast<Number>(rhs)->number()) {
 				return true;
 			}
 			if (is<Value>(lhs.get()) && is<Value>(rhs.get())
-			    && std::static_pointer_cast<Value>(lhs)->state() == std::static_pointer_cast<Value>(rhs)->state()) {
+		        && std::static_pointer_cast<Value>(lhs)->state() == std::static_pointer_cast<Value>(rhs)->state()) {
 				return true;
 			}
 			if (is<Symbol>(lhs.get()) && is<Symbol>(rhs.get())
-			    && std::static_pointer_cast<Symbol>(lhs)->symbol() == std::static_pointer_cast<Symbol>(rhs)->symbol()) {
+		        && std::static_pointer_cast<Symbol>(lhs)->symbol() == std::static_pointer_cast<Symbol>(rhs)->symbol()) {
 				return true;
 			}
 
@@ -402,9 +365,13 @@ void GlobalEnvironment::equal()
 		}
 
 		return makePtr<Value>((result) ? Value::True : Value::False);
-	};
+	});
 
-	m_values.emplace("=", makePtr<Function>(lambda));
+void installFunctions(EnvironmentPtr env)
+{
+	for (const auto& [name, lambda] : s_functions) {
+		env->set(name, makePtr<Function>(name, lambda));
+	}
 }
 
 } // namespace blaze

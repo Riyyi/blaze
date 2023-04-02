@@ -6,7 +6,7 @@
 
 #include <memory> // std::static_pointer_cast
 
-#include "ruc/format/print.h"
+#include "ruc/format/format.h"
 
 #include "ast.h"
 #include "environment.h"
@@ -88,8 +88,6 @@ ASTNodePtr Environment::set(const std::string& symbol, ASTNodePtr value)
 
 ASTNodePtr Environment::get(const std::string& symbol)
 {
-	m_current_key = symbol;
-
 	if (exists(symbol)) {
 		return m_values[symbol];
 	}
@@ -99,33 +97,6 @@ ASTNodePtr Environment::get(const std::string& symbol)
 	}
 
 	return nullptr;
-}
-
-// -----------------------------------------
-
-GlobalEnvironment::GlobalEnvironment()
-{
-	add();
-	sub();
-	mul();
-	div();
-
-	lt();
-	lte();
-	gt();
-	gte();
-
-	list();
-	isList();
-	isEmpty();
-	count();
-
-	str();
-	prStr();
-	prn();
-	println();
-
-	equal();
 }
 
 } // namespace blaze
