@@ -13,6 +13,8 @@
 
 namespace blaze {
 
+class List;
+
 class Eval {
 public:
 	Eval(ASTNodePtr ast, EnvironmentPtr env);
