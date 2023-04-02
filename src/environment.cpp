@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <memory> // std::static_pointer_cast
+
 #include "ruc/format/print.h"
 
 #include "ast.h"
@@ -27,19 +29,40 @@ EnvironmentPtr Environment::create(EnvironmentPtr outer)
 	return env;
 }
 
-EnvironmentPtr Environment::create(EnvironmentPtr outer, std::vector<std::string> bindings, std::list<ASTNodePtr> arguments)
+EnvironmentPtr Environment::create(const ASTNodePtr lambda, std::list<ASTNodePtr> arguments)
 {
-	auto env = create(outer);
+	auto lambda_casted = std::static_pointer_cast<Lambda>(lambda);
+	auto env = create(lambda_casted->env());
+	auto bindings = lambda_casted->bindings();
 
-	if (bindings.size() != arguments.size()) {
-		Error::the().addError(format("wrong number of arguments: fn*, {}", arguments.size()));
-		return nullptr;
+	auto it = arguments.begin();
+	for (size_t i = 0; i < bindings.size(); ++i, ++it) {
+		if (bindings[i] == "&") {
+			if (i + 2 != bindings.size()) {
+				Error::the().add(format("invalid function: {}", lambda));
+				return nullptr;
+			}
+
+			auto list = makePtr<List>();
+			for (; it != arguments.end(); ++it) {
+				list->addNode(*it);
+			}
+			env->set(bindings[i + 1], list);
+
+			return env;
+		}
+
+		if (it == arguments.end()) {
+			Error::the().add(format("wrong number of arguments: {}, {}", lambda, arguments.size()));
+			return nullptr;
+		}
+
+		env->set(bindings[i], *it);
 	}
 
-	auto bindings_it = bindings.begin();
-	auto arguments_it = arguments.begin();
-	for (; bindings_it != bindings.end(); ++bindings_it, ++arguments_it) {
-		env->m_values.emplace(*bindings_it, *arguments_it);
+	if (it != arguments.end()) {
+		Error::the().add(format("wrong number of arguments: {}, {}", lambda, arguments.size()));
+		return nullptr;
 	}
 
 	return env;

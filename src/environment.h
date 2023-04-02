@@ -23,7 +23,7 @@ public:
 	// Factory functions instead of constructors because it can fail in the bindings/arguments case
 	static EnvironmentPtr create();
 	static EnvironmentPtr create(EnvironmentPtr outer);
-	static EnvironmentPtr create(EnvironmentPtr outer, std::vector<std::string> bindings, std::list<ASTNodePtr> arguments);
+	static EnvironmentPtr create(const ASTNodePtr lambda, std::list<ASTNodePtr> arguments);
 
 	bool exists(const std::string& symbol);
 	ASTNodePtr set(const std::string& symbol, ASTNodePtr value);

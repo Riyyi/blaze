@@ -307,7 +307,7 @@ ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 	// cdr
 	nodes.pop_front();
 
-	auto lambda_env = Environment::create(lambda->env(), lambda->bindings(), nodes);
+	auto lambda_env = Environment::create(lambda, nodes);
 
 	return evalImpl(lambda->body(), lambda_env);
 }
