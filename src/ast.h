@@ -77,7 +77,6 @@ public:
 	List() = default;
 	virtual ~List() = default;
 
-	virtual bool isCollection() const override { return false; }
 	virtual bool isList() const override { return true; }
 };
 
@@ -89,7 +88,6 @@ public:
 	Vector() = default;
 	virtual ~Vector() = default;
 
-	virtual bool isCollection() const override { return false; }
 	virtual bool isVector() const override { return true; }
 };
 

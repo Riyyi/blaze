@@ -214,12 +214,12 @@ void GlobalEnvironment::isEmpty()
 		bool result = true;
 
 		for (auto node : nodes) {
-			if (!is<List>(node.get())) {
-				Error::the().addError(format("wrong argument type: list, '{}'", node));
+			if (!is<Collection>(node.get())) {
+				Error::the().addError(format("wrong argument type: collection, '{}'", node));
 				return nullptr;
 			}
 
-			if (!std::static_pointer_cast<List>(node)->empty()) {
+			if (!std::static_pointer_cast<Collection>(node)->empty()) {
 				result = false;
 				break;
 			}
@@ -239,18 +239,17 @@ void GlobalEnvironment::count()
 			return nullptr;
 		}
 
+		auto first_argument = nodes.front();
+
 		size_t result = 0;
-		if (is<Value>(nodes.front().get()) && std::static_pointer_cast<Value>(nodes.front())->state() == Value::Nil) {
+		if (is<Value>(first_argument.get()) && std::static_pointer_cast<Value>(nodes.front())->state() == Value::Nil) {
 			// result = 0
 		}
-		else if (!is<List>(nodes.front().get())) {
-			result = std::static_pointer_cast<List>(nodes.front())->size();
-		}
-		else if (!is<Vector>(nodes.front().get())) {
-			result = std::static_pointer_cast<Vector>(nodes.front())->size();
+		else if (is<Collection>(first_argument.get())) {
+			result = std::static_pointer_cast<Collection>(first_argument)->size();
 		}
 		else {
-			Error::the().addError(format("wrong argument type: list, '{}'", nodes));
+			Error::the().addError(format("wrong argument type: collection, '{}'", first_argument));
 			return nullptr;
 		}
 
@@ -330,10 +329,10 @@ void GlobalEnvironment::equal()
 
 		std::function<bool(ASTNodePtr, ASTNodePtr)> equal =
 			[&equal](ASTNodePtr lhs, ASTNodePtr rhs) -> bool {
-			if ((is<List>(lhs.get()) && is<List>(rhs.get()))
-			    || (is<Vector>(lhs.get()) && is<Vector>(rhs.get()))) {
-				auto lhs_nodes = std::static_pointer_cast<List>(lhs)->nodes();
-				auto rhs_nodes = std::static_pointer_cast<List>(rhs)->nodes();
+			if ((is<List>(lhs.get()) || is<Vector>(lhs.get()))
+			    && (is<List>(rhs.get()) || is<Vector>(rhs.get()))) {
+				auto lhs_nodes = std::static_pointer_cast<Collection>(lhs)->nodes();
+				auto rhs_nodes = std::static_pointer_cast<Collection>(rhs)->nodes();
 
 				if (lhs_nodes.size() != rhs_nodes.size()) {
 					return false;

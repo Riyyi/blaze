@@ -71,29 +71,17 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 	};
 
 	ASTNode* node_raw_ptr = node.get();
-	if (is<List>(node_raw_ptr)) {
+	if (is<Collection>(node_raw_ptr)) {
 		printSpacing();
-		m_print += '(';
+		m_print += (is<List>(node_raw_ptr)) ? '(' : '[';
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto nodes = std::static_pointer_cast<List>(node)->nodes();
+		auto nodes = std::static_pointer_cast<Collection>(node)->nodes();
 		for (auto node : nodes) {
 			printImpl(node, print_readably);
 			m_previous_node_is_list = false;
 		}
-		m_print += ')';
-	}
-	else if (is<Vector>(node_raw_ptr)) {
-		printSpacing();
-		m_print += '[';
-		m_first_node = false;
-		m_previous_node_is_list = true;
-		auto nodes = std::static_pointer_cast<Vector>(node)->nodes();
-		for (auto node : nodes) {
-			printImpl(node, print_readably);
-			m_previous_node_is_list = false;
-		}
-		m_print += ']';
+		m_print += (is<List>(node_raw_ptr)) ? ')' : ']';
 	}
 	else if (is<HashMap>(node_raw_ptr)) {
 		printSpacing();

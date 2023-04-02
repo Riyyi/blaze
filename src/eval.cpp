@@ -166,21 +166,15 @@ ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	auto second_argument = *std::next(nodes.begin());
 
 	// First argument needs to be a List or Vector
-	if (!is<List>(first_argument.get()) && !is<Vector>(first_argument.get())) {
-		Error::the().addError(format("wrong argument type: list, '{}'", first_argument));
+	if (!is<Collection>(first_argument.get())) {
+		Error::the().addError(format("wrong argument type: collection, '{}'", first_argument));
 		return nullptr;
 	}
 
 	// Get the nodes out of the List or Vector
 	std::list<ASTNodePtr> binding_nodes;
-	if (is<List>(first_argument.get())) {
-		auto bindings = std::static_pointer_cast<List>(first_argument);
-		binding_nodes = bindings->nodes();
-	}
-	else {
-		auto bindings = std::static_pointer_cast<Vector>(first_argument);
-		binding_nodes = bindings->nodes();
-	}
+	auto bindings = std::static_pointer_cast<Collection>(first_argument);
+	binding_nodes = bindings->nodes();
 
 	// List or Vector needs to have an even number of elements
 	size_t count = binding_nodes.size();
@@ -269,11 +263,11 @@ ASTNodePtr Eval::evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	auto first_argument = *nodes.begin();
 	auto second_argument = *std::next(nodes.begin());
 
-	// First element needs to be a List
-	AST_CAST(List, first_argument, list);
+	// First element needs to be a List or Vector
+	AST_CAST(Collection, first_argument, collection);
 
 	std::vector<std::string> bindings;
-	for (auto node : list->nodes()) {
+	for (auto node : collection->nodes()) {
 		// All nodes need to be a Symbol
 		AST_CAST(Symbol, node, symbol);
 		bindings.push_back(symbol->symbol());

@@ -377,12 +377,12 @@ void Reader::dumpImpl(ASTNodePtr node)
 	std::string indentation = std::string(m_indentation * 2, ' ');
 
 	ASTNode* node_raw_ptr = node.get();
-	if (is<List>(node_raw_ptr)) {
+	if (is<Collection>(node_raw_ptr)) {
 		auto nodes = std::static_pointer_cast<List>(node)->nodes();
 		print("{}", indentation);
-		print(fg(ruc::format::TerminalColor::Blue), "ListContainer");
+		print(fg(ruc::format::TerminalColor::Blue), "{}Container", (is<List>(node_raw_ptr)) ? "List" : "Vector");
 		print(" <");
-		print(fg(ruc::format::TerminalColor::Blue), "()");
+		print(fg(ruc::format::TerminalColor::Blue), "{}", (is<List>(node_raw_ptr)) ? "()" : "{}");
 		print(">\n");
 		m_indentation++;
 		for (auto node : nodes) {
