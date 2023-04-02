@@ -24,8 +24,8 @@ public:
 		m_token_errors.clear();
 		m_other_errors.clear();
 	}
-	void addError(Token error) { m_token_errors.push_back(error); }
-	void addError(const std::string& error) { m_other_errors.push_back(error); }
+	void add(Token error) { m_token_errors.push_back(error); }
+	void add(const std::string& error) { m_other_errors.push_back(error); }
 
 	bool hasTokenError() { return m_token_errors.size() > 0; }
 	bool hasOtherError() { return m_other_errors.size() > 0; }

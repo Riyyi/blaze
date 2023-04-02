@@ -56,7 +56,7 @@ public:
 
 	virtual bool isCollection() const override { return true; }
 
-	void addNode(ASTNodePtr node);
+	void add(ASTNodePtr node);
 
 	const std::list<ASTNodePtr>& nodes() const { return m_nodes; }
 	size_t size() const { return m_nodes.size(); }

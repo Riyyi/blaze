@@ -16,7 +16,7 @@
 
 namespace blaze {
 
-void Collection::addNode(ASTNodePtr node)
+void Collection::add(ASTNodePtr node)
 {
 	m_nodes.push_back(node);
 }

@@ -50,7 +50,7 @@ void Reader::read()
 		case Token::Type::Comment:
 			break;
 		default:
-			Error::the().addError("more than one sexp in input");
+			Error::the().add("more than one sexp in input");
 			break;
 		};
 	}
@@ -70,21 +70,21 @@ ASTNodePtr Reader::readImpl()
 		return readList();
 		break;
 	case Token::Type::ParenClose: // )
-		Error::the().addError("invalid read syntax: ')'");
+		Error::the().add("invalid read syntax: ')'");
 		return nullptr;
 		break;
 	case Token::Type::BracketOpen: // [
 		return readVector();
 		break;
 	case Token::Type::BracketClose: // ]
-		Error::the().addError("invalid read syntax: ']'");
+		Error::the().add("invalid read syntax: ']'");
 		return nullptr;
 		break;
 	case Token::Type::BraceOpen: // {
 		return readHashMap();
 		break;
 	case Token::Type::BraceClose: // }
-		Error::the().addError("invalid read syntax: '}'");
+		Error::the().add("invalid read syntax: '}'");
 		return nullptr;
 		break;
 	case Token::Type::Quote: // '
@@ -129,13 +129,13 @@ ASTNodePtr Reader::readSpliceUnquote()
 	ignore(); // ~@
 
 	if (isEOF()) {
-		Error::the().addError("expected form, got EOF");
+		Error::the().add("expected form, got EOF");
 		return nullptr;
 	}
 
 	auto list = makePtr<List>();
-	list->addNode(makePtr<Symbol>("splice-unquote"));
-	list->addNode(readImpl());
+	list->add(makePtr<Symbol>("splice-unquote"));
+	list->add(readImpl());
 
 	return list;
 }
@@ -146,11 +146,11 @@ ASTNodePtr Reader::readList()
 
 	auto list = makePtr<List>();
 	while (!isEOF() && peek().type != Token::Type::ParenClose) {
-		list->addNode(readImpl());
+		list->add(readImpl());
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
-		Error::the().addError("expected ')', got EOF");
+		Error::the().add("expected ')', got EOF");
 		return nullptr;
 	}
 
@@ -163,11 +163,11 @@ ASTNodePtr Reader::readVector()
 
 	auto vector = makePtr<Vector>();
 	while (!isEOF() && peek().type != Token::Type::BracketClose) {
-		vector->addNode(readImpl());
+		vector->add(readImpl());
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BracketClose })) { // ]
-		Error::the().addError("expected ']', got EOF");
+		Error::the().add("expected ']', got EOF");
 	}
 
 	return vector;
@@ -187,12 +187,12 @@ ASTNodePtr Reader::readHashMap()
 		}
 
 		if (key == nullptr || value == nullptr) {
-			Error::the().addError("hash-map requires an even-sized list");
+			Error::the().add("hash-map requires an even-sized list");
 			return nullptr;
 		}
 
 		if (!is<String>(key.get()) && !is<Keyword>(key.get())) {
-			Error::the().addError(format("{} is not a string or keyword", key));
+			Error::the().add(format("{} is not a string or keyword", key));
 			return nullptr;
 		}
 
@@ -201,7 +201,7 @@ ASTNodePtr Reader::readHashMap()
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }
-		Error::the().addError("expected '}', got EOF");
+		Error::the().add("expected '}', got EOF");
 	}
 
 	return hash_map;
@@ -212,13 +212,13 @@ ASTNodePtr Reader::readQuote()
 	ignore(); // '
 
 	if (isEOF()) {
-		Error::the().addError("expected form, got EOF");
+		Error::the().add("expected form, got EOF");
 		return nullptr;
 	}
 
 	auto list = makePtr<List>();
-	list->addNode(makePtr<Symbol>("quote"));
-	list->addNode(readImpl());
+	list->add(makePtr<Symbol>("quote"));
+	list->add(readImpl());
 
 	return list;
 }
@@ -228,13 +228,13 @@ ASTNodePtr Reader::readQuasiQuote()
 	ignore(); // `
 
 	if (isEOF()) {
-		Error::the().addError("expected form, got EOF");
+		Error::the().add("expected form, got EOF");
 		return nullptr;
 	}
 
 	auto list = makePtr<List>();
-	list->addNode(makePtr<Symbol>("quasiquote"));
-	list->addNode(readImpl());
+	list->add(makePtr<Symbol>("quasiquote"));
+	list->add(readImpl());
 
 	return list;
 }
@@ -244,13 +244,13 @@ ASTNodePtr Reader::readUnquote()
 	ignore(); // ~
 
 	if (isEOF()) {
-		Error::the().addError("expected form, got EOF");
+		Error::the().add("expected form, got EOF");
 		return nullptr;
 	}
 
 	auto list = makePtr<List>();
-	list->addNode(makePtr<Symbol>("unquote"));
-	list->addNode(readImpl());
+	list->add(makePtr<Symbol>("unquote"));
+	list->add(readImpl());
 
 	return list;
 }
@@ -261,17 +261,17 @@ ASTNodePtr Reader::readWithMeta()
 
 	ignore();      // first token
 	if (isEOF()) { // second token
-		Error::the().addError("expected form, got EOF");
+		Error::the().add("expected form, got EOF");
 		return nullptr;
 	}
 	retreat();
 
 	auto list = makePtr<List>();
-	list->addNode(makePtr<Symbol>("with-meta"));
+	list->add(makePtr<Symbol>("with-meta"));
 	ASTNodePtr first = readImpl();
 	ASTNodePtr second = readImpl();
-	list->addNode(second);
-	list->addNode(first);
+	list->add(second);
+	list->add(first);
 
 	return list;
 }
@@ -281,13 +281,13 @@ ASTNodePtr Reader::readDeref()
 	ignore(); // @
 
 	if (isEOF()) {
-		Error::the().addError("expected form, got EOF");
+		Error::the().add("expected form, got EOF");
 		return nullptr;
 	}
 
 	auto list = makePtr<List>();
-	list->addNode(makePtr<Symbol>("deref"));
-	list->addNode(readImpl());
+	list->add(makePtr<Symbol>("deref"));
+	list->add(readImpl());
 
 	return list;
 }

@@ -82,7 +82,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 	if (is<Symbol>(ast_raw_ptr)) {
 		auto result = env->get(std::static_pointer_cast<Symbol>(ast)->symbol());
 		if (!result) {
-			Error::the().addError(format("'{}' not found", ast));
+			Error::the().add(format("'{}' not found", ast));
 			return nullptr;
 		}
 		return result;
@@ -95,7 +95,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 			if (eval_node == nullptr) {
 				return nullptr;
 			}
-			result->addNode(eval_node);
+			result->add(eval_node);
 		}
 		return result;
 	}
@@ -107,7 +107,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 			if (eval_node == nullptr) {
 				return nullptr;
 			}
-			result->addNode(eval_node);
+			result->add(eval_node);
 		}
 		return result;
 	}
@@ -130,7 +130,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() != 2) {
-		Error::the().addError(format("wrong number of arguments: def!, {}", nodes.size()));
+		Error::the().add(format("wrong number of arguments: def!, {}", nodes.size()));
 		return nullptr;
 	}
 
@@ -139,7 +139,7 @@ ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 
 	// First element needs to be a Symbol
 	if (!is<Symbol>(first_argument.get())) {
-		Error::the().addError(format("wrong argument type: symbol, {}", first_argument));
+		Error::the().add(format("wrong argument type: symbol, {}", first_argument));
 		return nullptr;
 	}
 
@@ -158,7 +158,7 @@ ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() != 2) {
-		Error::the().addError(format("wrong number of arguments: let*, {}", nodes.size()));
+		Error::the().add(format("wrong number of arguments: let*, {}", nodes.size()));
 		return nullptr;
 	}
 
@@ -167,7 +167,7 @@ ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 
 	// First argument needs to be a List or Vector
 	if (!is<Collection>(first_argument.get())) {
-		Error::the().addError(format("wrong argument type: collection, '{}'", first_argument));
+		Error::the().add(format("wrong argument type: collection, '{}'", first_argument));
 		return nullptr;
 	}
 
@@ -179,7 +179,7 @@ ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	// List or Vector needs to have an even number of elements
 	size_t count = binding_nodes.size();
 	if (count % 2 != 0) {
-		Error::the().addError(format("wrong number of arguments: {}, {}", "let* bindings", count));
+		Error::the().add(format("wrong number of arguments: {}, {}", "let* bindings", count));
 		return nullptr;
 	}
 
@@ -189,7 +189,7 @@ ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	for (auto it = binding_nodes.begin(); it != binding_nodes.end(); std::advance(it, 2)) {
 		// First element needs to be a Symbol
 		if (!is<Symbol>(*it->get())) {
-			Error::the().addError(format("wrong argument type: symbol, '{}'", *it));
+			Error::the().add(format("wrong argument type: symbol, '{}'", *it));
 			return nullptr;
 		}
 
@@ -206,7 +206,7 @@ ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 ASTNodePtr Eval::evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() == 0) {
-		Error::the().addError(format("wrong number of arguments: do, {}", nodes.size()));
+		Error::the().add(format("wrong number of arguments: do, {}", nodes.size()));
 		return nullptr;
 	}
 
@@ -222,7 +222,7 @@ ASTNodePtr Eval::evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 ASTNodePtr Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() != 2 && nodes.size() != 3) {
-		Error::the().addError(format("wrong number of arguments: if, {}", nodes.size()));
+		Error::the().add(format("wrong number of arguments: if, {}", nodes.size()));
 		return nullptr;
 	}
 
@@ -240,16 +240,16 @@ ASTNodePtr Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	}
 }
 
-#define ARG_COUNT_CHECK(name, size, comparison)                                         \
-	if (size comparison) {                                                              \
-		Error::the().addError(format("wrong number of arguments: {}, {}", name, size)); \
-		return nullptr;                                                                 \
+#define ARG_COUNT_CHECK(name, size, comparison)                                    \
+	if (size comparison) {                                                         \
+		Error::the().add(format("wrong number of arguments: {}, {}", name, size)); \
+		return nullptr;                                                            \
 	}
 
-#define AST_CHECK(type, value)                                                      \
-	if (!is<type>(value.get())) {                                                   \
-		Error::the().addError(format("wrong argument type: {}, {}", #type, value)); \
-		return nullptr;                                                             \
+#define AST_CHECK(type, value)                                                 \
+	if (!is<type>(value.get())) {                                              \
+		Error::the().add(format("wrong argument type: {}, {}", #type, value)); \
+		return nullptr;                                                        \
 	}
 
 #define AST_CAST(type, value, variable) \
@@ -285,7 +285,7 @@ ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 	auto nodes = evaluated_list->nodes();
 
 	if (!is<Function>(nodes.front().get()) && !is<Lambda>(nodes.front().get())) {
-		Error::the().addError(format("invalid function: {}", nodes.front()));
+		Error::the().add(format("invalid function: {}", nodes.front()));
 		return nullptr;
 	}
 

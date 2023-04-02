@@ -45,7 +45,7 @@ EnvironmentPtr Environment::create(const ASTNodePtr lambda, std::list<ASTNodePtr
 
 			auto list = makePtr<List>();
 			for (; it != arguments.end(); ++it) {
-				list->addNode(*it);
+				list->add(*it);
 			}
 			env->set(bindings[i + 1], list);
 

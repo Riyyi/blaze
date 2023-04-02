@@ -160,7 +160,7 @@ bool Lexer::consumeString()
 	}
 
 	if (character != '"') {
-		Error::the().addError({ Token::Type::Error, m_line, column, "expected '\"', got EOF" });
+		Error::the().add({ Token::Type::Error, m_line, column, "expected '\"', got EOF" });
 	}
 
 	m_tokens.push_back({ Token::Type::String, m_line, column, text });

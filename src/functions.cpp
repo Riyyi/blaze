@@ -27,7 +27,7 @@ void GlobalEnvironment::add()
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong argument type: number, '{}'", node));
+				Error::the().add(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 
@@ -49,7 +49,7 @@ void GlobalEnvironment::sub()
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong argument type: number, '{}'", node));
+				Error::the().add(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 		}
@@ -75,7 +75,7 @@ void GlobalEnvironment::mul()
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong argument type: number, '{}'", node));
+				Error::the().add(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 
@@ -92,13 +92,13 @@ void GlobalEnvironment::div()
 {
 	auto div = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		if (nodes.size() == 0) {
-			Error::the().addError(format("wrong number of arguments: {}, 0", m_current_key));
+			Error::the().add(format("wrong number of arguments: {}, 0", m_current_key));
 			return nullptr;
 		}
 
 		for (auto node : nodes) {
 			if (!is<Number>(node.get())) {
-				Error::the().addError(format("wrong argument type: number, '{}'", node));
+				Error::the().add(format("wrong argument type: number, '{}'", node));
 				return nullptr;
 			}
 		}
@@ -119,38 +119,38 @@ void GlobalEnvironment::div()
 
 // -----------------------------------------
 
-#define NUMBER_COMPARE(symbol, comparison_symbol)                                                                \
-	auto lambda = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {                                            \
-		bool result = true;                                                                                      \
-                                                                                                                 \
-		if (nodes.size() < 2) {                                                                                  \
-			Error::the().addError(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1)); \
-			return nullptr;                                                                                      \
-		}                                                                                                        \
-                                                                                                                 \
-		for (auto node : nodes) {                                                                                \
-			if (!is<Number>(node.get())) {                                                                       \
-				Error::the().addError(format("wrong argument type: number, '{}'", node));                        \
-				return nullptr;                                                                                  \
-			}                                                                                                    \
-		}                                                                                                        \
-                                                                                                                 \
-		/* Start with the first number */                                                                        \
-		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                              \
-                                                                                                                 \
-		/* Skip the first node */                                                                                \
-		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                                      \
-			int64_t current_number = std::static_pointer_cast<Number>(*it)->number();                            \
-			if (number comparison_symbol current_number) {                                                       \
-				result = false;                                                                                  \
-				break;                                                                                           \
-			}                                                                                                    \
-			number = current_number;                                                                             \
-		}                                                                                                        \
-                                                                                                                 \
-		return makePtr<Value>((result) ? Value::True : Value::False);                                            \
-	};                                                                                                           \
-                                                                                                                 \
+#define NUMBER_COMPARE(symbol, comparison_symbol)                                                           \
+	auto lambda = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {                                       \
+		bool result = true;                                                                                 \
+                                                                                                            \
+		if (nodes.size() < 2) {                                                                             \
+			Error::the().add(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1)); \
+			return nullptr;                                                                                 \
+		}                                                                                                   \
+                                                                                                            \
+		for (auto node : nodes) {                                                                           \
+			if (!is<Number>(node.get())) {                                                                  \
+				Error::the().add(format("wrong argument type: number, '{}'", node));                        \
+				return nullptr;                                                                             \
+			}                                                                                               \
+		}                                                                                                   \
+                                                                                                            \
+		/* Start with the first number */                                                                   \
+		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                         \
+                                                                                                            \
+		/* Skip the first node */                                                                           \
+		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                                 \
+			int64_t current_number = std::static_pointer_cast<Number>(*it)->number();                       \
+			if (number comparison_symbol current_number) {                                                  \
+				result = false;                                                                             \
+				break;                                                                                      \
+			}                                                                                               \
+			number = current_number;                                                                        \
+		}                                                                                                   \
+                                                                                                            \
+		return makePtr<Value>((result) ? Value::True : Value::False);                                       \
+	};                                                                                                      \
+                                                                                                            \
 	m_values.emplace(symbol, makePtr<Function>(lambda));
 
 void GlobalEnvironment::lt()
@@ -181,7 +181,7 @@ void GlobalEnvironment::list()
 		auto list = makePtr<List>();
 
 		for (auto node : nodes) {
-			list->addNode(node);
+			list->add(node);
 		}
 
 		return list;
@@ -215,7 +215,7 @@ void GlobalEnvironment::isEmpty()
 
 		for (auto node : nodes) {
 			if (!is<Collection>(node.get())) {
-				Error::the().addError(format("wrong argument type: collection, '{}'", node));
+				Error::the().add(format("wrong argument type: collection, '{}'", node));
 				return nullptr;
 			}
 
@@ -235,7 +235,7 @@ void GlobalEnvironment::count()
 {
 	auto count = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		if (nodes.size() != 1) {
-			Error::the().addError(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
+			Error::the().add(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
 			return nullptr;
 		}
 
@@ -249,7 +249,7 @@ void GlobalEnvironment::count()
 			result = std::static_pointer_cast<Collection>(first_argument)->size();
 		}
 		else {
-			Error::the().addError(format("wrong argument type: collection, '{}'", first_argument));
+			Error::the().add(format("wrong argument type: collection, '{}'", first_argument));
 			return nullptr;
 		}
 
@@ -323,7 +323,7 @@ void GlobalEnvironment::equal()
 {
 	auto lambda = [this](std::list<ASTNodePtr> nodes) -> ASTNodePtr {
 		if (nodes.size() < 2) {
-			Error::the().addError(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
+			Error::the().add(format("wrong number of arguments: {}, {}", m_current_key, nodes.size() - 1));
 			return nullptr;
 		}
 
