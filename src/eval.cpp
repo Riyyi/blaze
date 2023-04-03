@@ -25,6 +25,98 @@ Eval::Eval(ASTNodePtr ast, EnvironmentPtr env)
 {
 }
 
+// -----------------------------------------
+
+#define EVAL_LET(ast, nodes, env)                                                                  \
+	{                                                                                              \
+		if (nodes.size() != 2) {                                                                   \
+			Error::the().add(format("wrong number of arguments: let*, {}", nodes.size()));         \
+			return nullptr;                                                                        \
+		}                                                                                          \
+                                                                                                   \
+		auto first_argument = *nodes.begin();                                                      \
+		auto second_argument = *std::next(nodes.begin());                                          \
+                                                                                                   \
+		/* First argument needs to be a List or Vector */                                          \
+		if (!is<Collection>(first_argument.get())) {                                               \
+			Error::the().add(format("wrong argument type: collection, '{}'", first_argument));     \
+			return nullptr;                                                                        \
+		}                                                                                          \
+                                                                                                   \
+		/* Get the nodes out of the List or Vector */                                              \
+		std::list<ASTNodePtr> binding_nodes;                                                       \
+		auto bindings = std::static_pointer_cast<Collection>(first_argument);                      \
+		binding_nodes = bindings->nodes();                                                         \
+                                                                                                   \
+		/* List or Vector needs to have an even number of elements */                              \
+		size_t count = binding_nodes.size();                                                       \
+		if (count % 2 != 0) {                                                                      \
+			Error::the().add(format("wrong number of arguments: {}, {}", "let* bindings", count)); \
+			return nullptr;                                                                        \
+		}                                                                                          \
+                                                                                                   \
+		/* Create new environment */                                                               \
+		auto let_env = Environment::create(env);                                                   \
+                                                                                                   \
+		for (auto it = binding_nodes.begin(); it != binding_nodes.end(); std::advance(it, 2)) {    \
+			/* First element needs to be a Symbol */                                               \
+			if (!is<Symbol>(*it->get())) {                                                         \
+				Error::the().add(format("wrong argument type: symbol, '{}'", *it));                \
+				return nullptr;                                                                    \
+			}                                                                                      \
+                                                                                                   \
+			std::string key = std::static_pointer_cast<Symbol>(*it)->symbol();                     \
+			ASTNodePtr value = evalImpl(*std::next(it), let_env);                                  \
+			let_env->set(key, value);                                                              \
+		}                                                                                          \
+                                                                                                   \
+		/* TODO: Remove limitation of 3 arguments */                                               \
+		/*       Eval all values in this new env, return last sexp of the result */                \
+		ast = second_argument;                                                                     \
+		env = let_env;                                                                             \
+		continue; /* TCO */                                                                        \
+	}
+
+#define EVAL_DO(ast, nodes, env)                                                         \
+	{                                                                                    \
+		if (nodes.size() == 0) {                                                         \
+			Error::the().add(format("wrong number of arguments: do, {}", nodes.size())); \
+			return nullptr;                                                              \
+		}                                                                                \
+                                                                                         \
+		/* Evaluate all nodes except the last */                                         \
+		for (auto it = nodes.begin(); it != std::prev(nodes.end(), 1); ++it) {           \
+			evalImpl(*it, env);                                                          \
+		}                                                                                \
+                                                                                         \
+		/* Eval last node */                                                             \
+		ast = nodes.back();                                                              \
+		continue; /* TCO */                                                              \
+	}
+
+#define EVAL_IF(ast, nodes, env)                                                                                       \
+	{                                                                                                                  \
+		if (nodes.size() != 2 && nodes.size() != 3) {                                                                  \
+			Error::the().add(format("wrong number of arguments: if, {}", nodes.size()));                               \
+			return nullptr;                                                                                            \
+		}                                                                                                              \
+                                                                                                                       \
+		auto first_argument = *nodes.begin();                                                                          \
+		auto second_argument = *std::next(nodes.begin());                                                              \
+		auto third_argument = (nodes.size() == 3) ? *std::next(std::next(nodes.begin())) : makePtr<Value>(Value::Nil); \
+                                                                                                                       \
+		auto first_evaluated = evalImpl(first_argument, env);                                                          \
+		if (!is<Value>(first_evaluated.get())                                                                          \
+		    || std::static_pointer_cast<Value>(first_evaluated)->state() == Value::True) {                             \
+			ast = second_argument;                                                                                     \
+			continue; /* TCO */                                                                                        \
+		}                                                                                                              \
+		else {                                                                                                         \
+			ast = third_argument;                                                                                      \
+			continue; /* TCO */                                                                                        \
+		}                                                                                                              \
+	}
+
 void Eval::eval()
 {
 	m_ast = evalImpl(m_ast, m_env);
@@ -32,44 +124,70 @@ void Eval::eval()
 
 ASTNodePtr Eval::evalImpl(ASTNodePtr ast, EnvironmentPtr env)
 {
-	if (ast == nullptr || env == nullptr) {
-		return nullptr;
+	while (true) {
+		if (ast == nullptr) {
+			return nullptr;
+		}
+
+		if (env == nullptr) {
+			env = m_env;
+		}
+
+		if (!is<List>(ast.get())) {
+			return evalAst(ast, env);
+		}
+
+		auto list = std::static_pointer_cast<List>(ast);
+
+		if (list->empty()) {
+			return ast;
+		}
+
+		// Special forms
+		auto nodes = list->nodes();
+		if (is<Symbol>(nodes.front().get())) {
+			auto symbol = std::static_pointer_cast<Symbol>(nodes.front())->symbol();
+			nodes.pop_front();
+			if (symbol == "def!") {
+				return evalDef(nodes, env);
+			}
+			if (symbol == "let*") {
+				EVAL_LET(ast, nodes, env);
+			}
+			if (symbol == "do") {
+				EVAL_DO(ast, nodes, env);
+			}
+			if (symbol == "if") {
+				EVAL_IF(ast, nodes, env);
+			}
+			if (symbol == "fn*") {
+				return evalFn(nodes, env);
+			}
+		}
+
+		auto evaluated_list = std::static_pointer_cast<List>(evalAst(ast, env));
+
+		if (evaluated_list == nullptr) {
+			return nullptr;
+		}
+
+		// Regular list
+		if (is<Lambda>(evaluated_list->nodes().front().get())) {
+			auto evaluated_nodes = evaluated_list->nodes();
+
+			// car
+			auto lambda = std::static_pointer_cast<Lambda>(evaluated_nodes.front());
+			// cdr
+			evaluated_nodes.pop_front();
+
+			ast = lambda->body();
+			env = Environment::create(lambda, evaluated_nodes);
+			continue; // TCO
+		}
+
+		// Function call
+		return apply(evaluated_list);
 	}
-
-	if (!is<List>(ast.get())) {
-		return evalAst(ast, env);
-	}
-
-	auto list = std::static_pointer_cast<List>(ast);
-
-	if (list->empty()) {
-		return ast;
-	}
-
-	// Environment
-	auto nodes = list->nodes();
-	if (is<Symbol>(nodes.front().get())) {
-		auto symbol = std::static_pointer_cast<Symbol>(nodes.front())->symbol();
-		nodes.pop_front();
-		if (symbol == "def!") {
-			return evalDef(nodes, env);
-		}
-		if (symbol == "let*") {
-			return evalLet(nodes, env);
-		}
-		if (symbol == "do") {
-			return evalDo(nodes, env);
-		}
-		if (symbol == "if") {
-			return evalIf(nodes, env);
-		}
-		if (symbol == "fn*") {
-			return evalFn(nodes, env);
-		}
-	}
-
-	// Function call
-	return apply(std::static_pointer_cast<List>(evalAst(ast, env)));
 }
 
 ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
@@ -144,93 +262,8 @@ ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	return env->set(symbol, value);
 }
 
-ASTNodePtr Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
-{
-	if (nodes.size() != 2) {
-		Error::the().add(format("wrong number of arguments: let*, {}", nodes.size()));
-		return nullptr;
-	}
-
-	auto first_argument = *nodes.begin();
-	auto second_argument = *std::next(nodes.begin());
-
-	// First argument needs to be a List or Vector
-	if (!is<Collection>(first_argument.get())) {
-		Error::the().add(format("wrong argument type: collection, '{}'", first_argument));
-		return nullptr;
-	}
-
-	// Get the nodes out of the List or Vector
-	std::list<ASTNodePtr> binding_nodes;
-	auto bindings = std::static_pointer_cast<Collection>(first_argument);
-	binding_nodes = bindings->nodes();
-
-	// List or Vector needs to have an even number of elements
-	size_t count = binding_nodes.size();
-	if (count % 2 != 0) {
-		Error::the().add(format("wrong number of arguments: {}, {}", "let* bindings", count));
-		return nullptr;
-	}
-
-	// Create new environment
-	auto let_env = Environment::create(env);
-
-	for (auto it = binding_nodes.begin(); it != binding_nodes.end(); std::advance(it, 2)) {
-		// First element needs to be a Symbol
-		if (!is<Symbol>(*it->get())) {
-			Error::the().add(format("wrong argument type: symbol, '{}'", *it));
-			return nullptr;
-		}
-
-		std::string key = std::static_pointer_cast<Symbol>(*it)->symbol();
-		ASTNodePtr value = evalImpl(*std::next(it), let_env);
-		let_env->set(key, value);
-	}
-
-	// TODO: Remove limitation of 3 arguments
-	//       Eval all values in this new env, return last sexp of the result
-	return evalImpl(second_argument, let_env);
-}
-
-ASTNodePtr Eval::evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
-{
-	if (nodes.size() == 0) {
-		Error::the().add(format("wrong number of arguments: do, {}", nodes.size()));
-		return nullptr;
-	}
-
-	// Evaluate all nodes except the last
-	for (auto it = nodes.begin(); it != std::prev(nodes.end(), 1); ++it) {
-		evalImpl(*it, env);
-	}
-
-	// Eval and return last node
-	return evalImpl(nodes.back(), env);
-}
-
-ASTNodePtr Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
-{
-	if (nodes.size() != 2 && nodes.size() != 3) {
-		Error::the().add(format("wrong number of arguments: if, {}", nodes.size()));
-		return nullptr;
-	}
-
-	auto first_argument = *nodes.begin();
-	auto second_argument = *std::next(nodes.begin());
-	auto third_argument = (nodes.size() == 3) ? *std::next(std::next(nodes.begin())) : makePtr<Value>(Value::Nil);
-
-	auto first_evaluated = evalImpl(first_argument, env);
-	if (!is<Value>(first_evaluated.get())
-	    || std::static_pointer_cast<Value>(first_evaluated)->state() == Value::True) {
-		return evalImpl(second_argument, env);
-	}
-	else {
-		return evalImpl(third_argument, env);
-	}
-}
-
-#define ARG_COUNT_CHECK(name, size, comparison)                                    \
-	if (size comparison) {                                                         \
+#define ARG_COUNT_CHECK(name, comparison, size)                                    \
+	if (comparison) {                                                              \
 		Error::the().add(format("wrong number of arguments: {}, {}", name, size)); \
 		return nullptr;                                                            \
 	}
@@ -247,7 +280,7 @@ ASTNodePtr Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 
 ASTNodePtr Eval::evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 {
-	ARG_COUNT_CHECK("fn*", nodes.size(), != 2);
+	ARG_COUNT_CHECK("fn*", nodes.size() != 2, nodes.size());
 
 	auto first_argument = *nodes.begin();
 	auto second_argument = *std::next(nodes.begin());
@@ -273,32 +306,17 @@ ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 
 	auto nodes = evaluated_list->nodes();
 
-	if (!is<Function>(nodes.front().get()) && !is<Lambda>(nodes.front().get())) {
+	if (!is<Function>(nodes.front().get())) {
 		Error::the().add(format("invalid function: {}", nodes.front()));
 		return nullptr;
 	}
 
-	// Function
-
-	if (is<Function>(nodes.front().get())) {
-		// car
-		auto function = std::static_pointer_cast<Function>(nodes.front())->function();
-		// cdr
-		nodes.pop_front();
-
-		return function(nodes);
-	}
-
-	// Lambda
-
 	// car
-	auto lambda = std::static_pointer_cast<Lambda>(nodes.front());
+	auto function = std::static_pointer_cast<Function>(nodes.front())->function();
 	// cdr
 	nodes.pop_front();
 
-	auto lambda_env = Environment::create(lambda, nodes);
-
-	return evalImpl(lambda->body(), lambda_env);
+	return function(nodes);
 }
 
 } // namespace blaze

@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2023 Riyyi
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include <csignal> // std::signal
 #include <cstdlib> // std::exit
 #include <string>
@@ -17,7 +23,7 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 0
+#if 1
 static blaze::EnvironmentPtr s_outer_env = blaze::Environment::create();
 
 static auto cleanup(int signal) -> void;
