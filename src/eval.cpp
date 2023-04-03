@@ -87,21 +87,10 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 		}
 		return result;
 	}
-	else if (is<List>(ast_raw_ptr)) {
-		auto result = makePtr<List>();
-		auto nodes = std::static_pointer_cast<List>(ast)->nodes();
-		for (auto node : nodes) {
-			ASTNodePtr eval_node = evalImpl(node, env);
-			if (eval_node == nullptr) {
-				return nullptr;
-			}
-			result->add(eval_node);
-		}
-		return result;
-	}
-	else if (is<Vector>(ast_raw_ptr)) {
-		auto result = makePtr<Vector>();
-		auto nodes = std::static_pointer_cast<Vector>(ast)->nodes();
+	else if (is<Collection>(ast_raw_ptr)) {
+		std::shared_ptr<Collection> result = nullptr;
+		(is<List>(ast_raw_ptr)) ? result = makePtr<List>() : result = makePtr<Vector>();
+		auto nodes = std::static_pointer_cast<Collection>(ast)->nodes();
 		for (auto node : nodes) {
 			ASTNodePtr eval_node = evalImpl(node, env);
 			if (eval_node == nullptr) {
