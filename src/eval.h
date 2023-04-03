@@ -7,6 +7,7 @@
 #pragma once
 
 #include <list>
+#include <stack>
 
 #include "environment.h"
 #include "forward.h"
@@ -25,7 +26,7 @@ public:
 	ASTNodePtr ast() const { return m_ast; }
 
 private:
-	ASTNodePtr evalImpl(ASTNodePtr ast, EnvironmentPtr env);
+	ASTNodePtr evalImpl();
 	ASTNodePtr evalAst(ASTNodePtr ast, EnvironmentPtr env);
 	ASTNodePtr evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
 	ASTNodePtr evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
@@ -33,6 +34,9 @@ private:
 
 	ASTNodePtr m_ast;
 	EnvironmentPtr m_env;
+
+	std::stack<ASTNodePtr> m_ast_stack;
+	std::stack<EnvironmentPtr> m_env_stack;
 };
 
 } // namespace blaze
