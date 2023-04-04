@@ -129,36 +129,36 @@ ADD_FUNCTION(
 
 // // -----------------------------------------
 
-#define NUMBER_COMPARE(operator)                                                                        \
-	{                                                                                                   \
-		bool result = true;                                                                             \
-                                                                                                        \
-		if (nodes.size() < 2) {                                                                         \
-			Error::the().add(format("wrong number of arguments: {}, {}", #operator, nodes.size() - 1)); \
-			return nullptr;                                                                             \
-		}                                                                                               \
-                                                                                                        \
-		for (auto node : nodes) {                                                                       \
-			if (!is<Number>(node.get())) {                                                              \
-				Error::the().add(format("wrong argument type: number, '{}'", node));                    \
-				return nullptr;                                                                         \
-			}                                                                                           \
-		}                                                                                               \
-                                                                                                        \
-		/* Start with the first number */                                                               \
-		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                     \
-                                                                                                        \
-		/* Skip the first node */                                                                       \
-		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                             \
-			int64_t current_number = std::static_pointer_cast<Number>(*it)->number();                   \
-			if (!(number operator current_number)) {                                                    \
-				result = false;                                                                         \
-				break;                                                                                  \
-			}                                                                                           \
-			number = current_number;                                                                    \
-		}                                                                                               \
-                                                                                                        \
-		return makePtr<Value>((result) ? Value::True : Value::False);                                   \
+#define NUMBER_COMPARE(operator)                                                                    \
+	{                                                                                               \
+		bool result = true;                                                                         \
+                                                                                                    \
+		if (nodes.size() < 2) {                                                                     \
+			Error::the().add(format("wrong number of arguments: {}, {}", #operator, nodes.size())); \
+			return nullptr;                                                                         \
+		}                                                                                           \
+                                                                                                    \
+		for (auto node : nodes) {                                                                   \
+			if (!is<Number>(node.get())) {                                                          \
+				Error::the().add(format("wrong argument type: number, '{}'", node));                \
+				return nullptr;                                                                     \
+			}                                                                                       \
+		}                                                                                           \
+                                                                                                    \
+		/* Start with the first number */                                                           \
+		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                 \
+                                                                                                    \
+		/* Skip the first node */                                                                   \
+		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                         \
+			int64_t current_number = std::static_pointer_cast<Number>(*it)->number();               \
+			if (!(number operator current_number)) {                                                \
+				result = false;                                                                     \
+				break;                                                                              \
+			}                                                                                       \
+			number = current_number;                                                                \
+		}                                                                                           \
+                                                                                                    \
+		return makePtr<Value>((result) ? Value::True : Value::False);                               \
 	}
 
 ADD_FUNCTION("<", NUMBER_COMPARE(<));
@@ -184,6 +184,10 @@ ADD_FUNCTION(
 	"list?",
 	{
 		bool result = true;
+
+		if (nodes.size() == 0) {
+			result = false;
+		}
 
 		for (auto node : nodes) {
 			if (!is<List>(node.get())) {
@@ -219,7 +223,7 @@ ADD_FUNCTION(
 	"count",
 	{
 		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: count, {}", nodes.size() - 1));
+			Error::the().add(format("wrong number of arguments: count, {}", nodes.size()));
 			return nullptr;
 		}
 
@@ -286,7 +290,7 @@ ADD_FUNCTION(
 	"=",
 	{
 		if (nodes.size() < 2) {
-			Error::the().add(format("wrong number of arguments: =, {}", nodes.size() - 1));
+			Error::the().add(format("wrong number of arguments: =, {}", nodes.size()));
 			return nullptr;
 		}
 
