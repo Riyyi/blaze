@@ -23,7 +23,7 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 1
+#if 0
 static blaze::EnvironmentPtr s_outer_env = blaze::Environment::create();
 
 static auto cleanup(int signal) -> void;
