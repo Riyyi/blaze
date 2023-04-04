@@ -197,7 +197,7 @@ ASTNodePtr Reader::readHashMap()
 		}
 
 		std::string keyString = is<String>(key.get()) ? std::static_pointer_cast<String>(key)->data() : std::static_pointer_cast<Keyword>(key)->keyword();
-		hash_map->addElement(keyString, value);
+		hash_map->add(keyString, value);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }

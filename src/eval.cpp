@@ -157,7 +157,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 			if (element_node == nullptr) {
 				return nullptr;
 			}
-			result->addElement(element.first, element_node);
+			result->add(element.first, element_node);
 		}
 		return result;
 	}

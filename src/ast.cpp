@@ -23,7 +23,7 @@ void Collection::add(ASTNodePtr node)
 
 // -----------------------------------------
 
-void HashMap::addElement(const std::string& key, ASTNodePtr value)
+void HashMap::add(const std::string& key, ASTNodePtr value)
 {
 	m_elements.emplace(key, value);
 }

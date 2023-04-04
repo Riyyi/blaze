@@ -101,7 +101,7 @@ public:
 
 	virtual bool isHashMap() const override { return true; }
 
-	void addElement(const std::string& key, ASTNodePtr value);
+	void add(const std::string& key, ASTNodePtr value);
 
 	const std::unordered_map<std::string, ASTNodePtr>& elements() const { return m_elements; }
 	size_t size() const { return m_elements.size(); }
