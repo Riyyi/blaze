@@ -124,7 +124,7 @@ public:
 	const std::string& data() const { return m_data; }
 
 private:
-	std::string m_data;
+	const std::string m_data;
 };
 
 // -----------------------------------------
@@ -140,7 +140,7 @@ public:
 	const std::string& keyword() const { return m_data; }
 
 private:
-	std::string m_data;
+	const std::string m_data;
 };
 
 // -----------------------------------------
@@ -155,7 +155,7 @@ public:
 	int64_t number() const { return m_number; }
 
 private:
-	int64_t m_number { 0 };
+	const int64_t m_number { 0 };
 };
 
 // -----------------------------------------
@@ -177,7 +177,7 @@ public:
 	State state() const { return m_state; }
 
 private:
-	State m_state;
+	const State m_state;
 };
 
 // -----------------------------------------
@@ -193,7 +193,7 @@ public:
 	const std::string& symbol() const { return m_symbol; }
 
 private:
-	std::string m_symbol;
+	const std::string m_symbol;
 };
 
 // -----------------------------------------
@@ -212,7 +212,7 @@ public:
 
 private:
 	const std::string m_name;
-	FunctionType m_function;
+	const FunctionType m_function;
 };
 
 // -----------------------------------------
@@ -229,9 +229,9 @@ public:
 	EnvironmentPtr env() const { return m_env; }
 
 private:
-	std::vector<std::string> m_bindings;
-	ASTNodePtr m_body;
-	EnvironmentPtr m_env;
+	const std::vector<std::string> m_bindings;
+	const ASTNodePtr m_body;
+	const EnvironmentPtr m_env;
 };
 
 // -----------------------------------------
