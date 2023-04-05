@@ -54,8 +54,6 @@ class Collection : public ASTNode {
 public:
 	virtual ~Collection() = default;
 
-	virtual bool isCollection() const override { return true; }
-
 	void add(ASTNodePtr node);
 
 	const std::list<ASTNodePtr>& nodes() const { return m_nodes; }
@@ -66,6 +64,8 @@ protected:
 	Collection() {}
 
 private:
+	virtual bool isCollection() const override { return true; }
+
 	std::list<ASTNodePtr> m_nodes;
 };
 
@@ -77,6 +77,7 @@ public:
 	List() = default;
 	virtual ~List() = default;
 
+private:
 	virtual bool isList() const override { return true; }
 };
 
@@ -88,6 +89,7 @@ public:
 	Vector() = default;
 	virtual ~Vector() = default;
 
+private:
 	virtual bool isVector() const override { return true; }
 };
 
@@ -99,8 +101,6 @@ public:
 	HashMap() = default;
 	virtual ~HashMap() = default;
 
-	virtual bool isHashMap() const override { return true; }
-
 	void add(const std::string& key, ASTNodePtr value);
 
 	const std::unordered_map<std::string, ASTNodePtr>& elements() const { return m_elements; }
@@ -108,6 +108,8 @@ public:
 	bool empty() const { return m_elements.size() == 0; }
 
 private:
+	virtual bool isHashMap() const override { return true; }
+
 	std::unordered_map<std::string, ASTNodePtr> m_elements;
 };
 
@@ -116,14 +118,14 @@ private:
 // "string"
 class String final : public ASTNode {
 public:
-	explicit String(const std::string& data);
+	String(const std::string& data);
 	virtual ~String() = default;
-
-	virtual bool isString() const override { return true; }
 
 	const std::string& data() const { return m_data; }
 
 private:
+	virtual bool isString() const override { return true; }
+
 	const std::string m_data;
 };
 
@@ -132,7 +134,7 @@ private:
 // :keyword
 class Keyword final : public ASTNode {
 public:
-	explicit Keyword(const std::string& data);
+	Keyword(const std::string& data);
 	virtual ~Keyword() = default;
 
 	virtual bool isKeyword() const override { return true; }
@@ -147,14 +149,14 @@ private:
 // 123
 class Number final : public ASTNode {
 public:
-	explicit Number(int64_t number);
+	Number(int64_t number);
 	virtual ~Number() = default;
-
-	virtual bool isNumber() const override { return true; }
 
 	int64_t number() const { return m_number; }
 
 private:
+	virtual bool isNumber() const override { return true; }
+
 	const int64_t m_number { 0 };
 };
 
@@ -169,14 +171,14 @@ public:
 		False,
 	};
 
-	explicit Value(State state);
+	Value(State state);
 	virtual ~Value() = default;
-
-	virtual bool isValue() const override { return true; }
 
 	State state() const { return m_state; }
 
 private:
+	virtual bool isValue() const override { return true; }
+
 	const State m_state;
 };
 
@@ -185,14 +187,14 @@ private:
 // Symbols
 class Symbol final : public ASTNode {
 public:
-	explicit Symbol(const std::string& symbol);
+	Symbol(const std::string& symbol);
 	virtual ~Symbol() = default;
-
-	virtual bool isSymbol() const override { return true; }
 
 	const std::string& symbol() const { return m_symbol; }
 
 private:
+	virtual bool isSymbol() const override { return true; }
+
 	const std::string m_symbol;
 };
 
@@ -202,15 +204,15 @@ using FunctionType = std::function<ASTNodePtr(std::list<ASTNodePtr>)>;
 
 class Function final : public ASTNode {
 public:
-	explicit Function(const std::string& name, FunctionType function);
+	Function(const std::string& name, FunctionType function);
 	virtual ~Function() = default;
-
-	virtual bool isFunction() const override { return true; }
 
 	const std::string& name() const { return m_name; }
 	FunctionType function() const { return m_function; }
 
 private:
+	virtual bool isFunction() const override { return true; }
+
 	const std::string m_name;
 	const FunctionType m_function;
 };
@@ -222,13 +224,13 @@ public:
 	Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPtr env);
 	virtual ~Lambda() = default;
 
-	virtual bool isLambda() const override { return true; }
-
 	std::vector<std::string> bindings() const { return m_bindings; }
 	ASTNodePtr body() const { return m_body; }
 	EnvironmentPtr env() const { return m_env; }
 
 private:
+	virtual bool isLambda() const override { return true; }
+
 	const std::vector<std::string> m_bindings;
 	const ASTNodePtr m_body;
 	const EnvironmentPtr m_env;
