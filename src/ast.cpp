@@ -80,6 +80,13 @@ Lambda::Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPt
 {
 }
 
+// -----------------------------------------
+
+Atom::Atom(ASTNodePtr pointer)
+	: m_value(pointer)
+{
+}
+
 } // namespace blaze
 
 // -----------------------------------------

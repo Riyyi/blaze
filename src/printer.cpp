@@ -141,6 +141,12 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		printSpacing();
 		m_print += format("#<user-function>({:p})", node_raw_ptr);
 	}
+	else if (is<Atom>(node_raw_ptr)) {
+		printSpacing();
+		m_print += "(atom ";
+		printImpl(std::static_pointer_cast<Atom>(node)->deref(), print_readably);
+		m_print += ")";
+	}
 }
 
 void Printer::printError()

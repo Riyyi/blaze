@@ -43,6 +43,7 @@ public:
 	virtual bool isSymbol() const { return false; }
 	virtual bool isFunction() const { return false; }
 	virtual bool isLambda() const { return false; }
+	virtual bool isAtom() const { return false; }
 
 protected:
 	ASTNode() {}
@@ -238,6 +239,23 @@ private:
 
 // -----------------------------------------
 
+class Atom final : public ASTNode {
+public:
+	Atom() = default;
+	Atom(ASTNodePtr pointer);
+	virtual ~Atom() = default;
+
+	ASTNodePtr reset(ASTNodePtr value) { return m_value = value; }
+	ASTNodePtr deref() const { return m_value; }
+
+private:
+	virtual bool isAtom() const override { return true; }
+
+	ASTNodePtr m_value;
+};
+
+// -----------------------------------------
+
 template<typename T, typename... Args>
 std::shared_ptr<T> makePtr(Args&&... args)
 {
@@ -279,6 +297,9 @@ inline bool ASTNode::fastIs<Function>() const { return isFunction(); }
 
 template<>
 inline bool ASTNode::fastIs<Lambda>() const { return isLambda(); }
+
+template<>
+inline bool ASTNode::fastIs<Atom>() const { return isAtom(); }
 // clang-format on
 
 } // namespace blaze
