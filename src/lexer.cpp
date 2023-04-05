@@ -128,8 +128,6 @@ bool Lexer::consumeString()
 
 	static std::unordered_set<char> exit = {
 		'"',
-		'\r',
-		'\n',
 		'\0',
 	};
 
