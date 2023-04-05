@@ -7,6 +7,7 @@
 #include <memory> // std::static_pointer_cast
 #include <string>
 
+#include "ruc/file.h"
 #include "ruc/format/format.h"
 
 #include "ast.h"
@@ -370,6 +371,58 @@ ADD_FUNCTION(
 
 		return makePtr<Value>((result) ? Value::True : Value::False);
 	});
+
+ADD_FUNCTION(
+	"read-string",
+	{
+		if (nodes.size() != 1) {
+			Error::the().add(format("wrong number of arguments: read-string, {}", nodes.size()));
+			return nullptr;
+		}
+
+		if (!is<String>(nodes.front().get())) {
+			Error::the().add(format("wrong argument type: string, '{}'", nodes.front()));
+			return nullptr;
+		}
+
+		std::string input = std::static_pointer_cast<String>(nodes.front())->data();
+
+		return read(input);
+	});
+
+ADD_FUNCTION(
+	"slurp",
+	{
+		if (nodes.size() != 1) {
+			Error::the().add(format("wrong number of arguments: slurp, {}", nodes.size()));
+			return nullptr;
+		}
+
+		if (!is<String>(nodes.front().get())) {
+			Error::the().add(format("wrong argument type: string, '{}'", nodes.front()));
+			return nullptr;
+		}
+
+		std::string path = std::static_pointer_cast<String>(nodes.front())->data();
+
+		auto file = ruc::File(path);
+
+		return makePtr<String>(file.data());
+	});
+
+
+ADD_FUNCTION(
+	"eval",
+	{
+		if (nodes.size() != 1) {
+			Error::the().add(format("wrong number of arguments: eval, {}", nodes.size()));
+			return nullptr;
+		}
+
+		return eval(nodes.front(), nullptr);
+	});
+
+// -----------------------------------------
 
 void installFunctions(EnvironmentPtr env)
 {

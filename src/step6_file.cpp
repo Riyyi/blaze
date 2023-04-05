@@ -53,6 +53,10 @@ auto read(std::string_view input) -> ASTNodePtr
 
 auto eval(ASTNodePtr ast, EnvironmentPtr env) -> ASTNodePtr
 {
+	if (env == nullptr) {
+		env = s_outer_env;
+	}
+
 	Eval eval(ast, env);
 	eval.eval();
 
@@ -76,6 +80,8 @@ static auto rep(std::string_view input, EnvironmentPtr env) -> std::string
 
 static std::string_view lambdaTable[] = {
 	"(def! not (fn* (cond) (if cond false true)))",
+	"(def! load-file (fn* (filename) \
+	    (eval (read-string (str \"(do \" (slurp filename) \"\nnil)\")))))",
 };
 
 static auto installLambdas(EnvironmentPtr env) -> void
