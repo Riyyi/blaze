@@ -18,6 +18,10 @@ namespace blaze {
 
 void Collection::add(ASTNodePtr node)
 {
+	if (node == nullptr) {
+		return;
+	}
+
 	m_nodes.push_back(node);
 }
 
@@ -25,6 +29,10 @@ void Collection::add(ASTNodePtr node)
 
 void HashMap::add(const std::string& key, ASTNodePtr value)
 {
+	if (value == nullptr) {
+		return;
+	}
+
 	m_elements.emplace(key, value);
 }
 
