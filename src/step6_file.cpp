@@ -8,6 +8,7 @@
 #include <cstdlib> // std::exit
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "ruc/argparser.h"
 #include "ruc/format/color.h"
@@ -91,6 +92,17 @@ static auto installLambdas(EnvironmentPtr env) -> void
 	}
 }
 
+static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void
+{
+	auto list = makePtr<List>();
+	if (arguments.size() > 1) {
+		for (auto it = arguments.begin() + 1; it != arguments.end(); ++it) {
+			list->add(makePtr<String>(*it));
+		}
+	}
+	env->set("*ARGV*", list);
+}
+
 } // namespace blaze
 
 auto main(int argc, char* argv[]) -> int
@@ -99,6 +111,7 @@ auto main(int argc, char* argv[]) -> int
 	bool dump_reader = false;
 	bool pretty_print = false;
 	std::string_view history_path = "~/.blaze-history";
+	std::vector<std::string> arguments;
 
 	// CLI arguments
 	ruc::ArgParser arg_parser;
@@ -106,6 +119,7 @@ auto main(int argc, char* argv[]) -> int
 	arg_parser.addOption(dump_reader, 'r', "dump-reader", nullptr, nullptr);
 	arg_parser.addOption(pretty_print, 'c', "color", nullptr, nullptr);
 	arg_parser.addOption(history_path, 'h', "history-path", nullptr, nullptr, nullptr, ruc::ArgParser::Required::Yes);
+	arg_parser.addArgument(arguments, "arguments", nullptr, nullptr, ruc::ArgParser::Required::No);
 	arg_parser.parse(argc, argv);
 
 	// Set settings
@@ -119,6 +133,12 @@ auto main(int argc, char* argv[]) -> int
 
 	installFunctions(blaze::s_outer_env);
 	installLambdas(blaze::s_outer_env);
+	makeArgv(blaze::s_outer_env, arguments);
+
+	if (arguments.size() > 0) {
+		rep(format("(load-file \"{}\")", arguments.front()), blaze::s_outer_env);
+		return 0;
+	}
 
 	blaze::Readline readline(pretty_print, history_path);
 
