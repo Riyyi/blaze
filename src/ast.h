@@ -41,6 +41,7 @@ public:
 	virtual bool isNumber() const { return false; }
 	virtual bool isValue() const { return false; }
 	virtual bool isSymbol() const { return false; }
+	virtual bool isCallable() const { return false; }
 	virtual bool isFunction() const { return false; }
 	virtual bool isLambda() const { return false; }
 	virtual bool isAtom() const { return false; }
@@ -62,7 +63,7 @@ public:
 	bool empty() const { return m_nodes.size() == 0; }
 
 protected:
-	Collection() {}
+	Collection() = default;
 
 private:
 	virtual bool isCollection() const override { return true; }
@@ -201,9 +202,22 @@ private:
 
 // -----------------------------------------
 
+class Callable : public ASTNode {
+public:
+	virtual ~Callable() = default;
+
+protected:
+	Callable() = default;
+
+private:
+	virtual bool isCallable() const override { return true; }
+};
+
+// -----------------------------------------
+
 using FunctionType = std::function<ASTNodePtr(std::list<ASTNodePtr>)>;
 
-class Function final : public ASTNode {
+class Function final : public Callable {
 public:
 	Function(const std::string& name, FunctionType function);
 	virtual ~Function() = default;
@@ -220,7 +234,7 @@ private:
 
 // -----------------------------------------
 
-class Lambda final : public ASTNode {
+class Lambda final : public Callable {
 public:
 	Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPtr env);
 	virtual ~Lambda() = default;
@@ -291,6 +305,9 @@ inline bool ASTNode::fastIs<Value>() const { return isValue(); }
 
 template<>
 inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
+
+template<>
+inline bool ASTNode::fastIs<Callable>() const { return isCallable(); }
 
 template<>
 inline bool ASTNode::fastIs<Function>() const { return isFunction(); }
