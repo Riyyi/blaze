@@ -90,10 +90,10 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		m_previous_node_is_list = true;
 		auto elements = std::static_pointer_cast<HashMap>(node)->elements();
 		for (auto it = elements.begin(); it != elements.end(); ++it) {
-			m_print += format("{} ", it->first.front() == 0x7f ? ":" + it->first.substr(1) : it->first); // 127
+			m_print += format("{} ", (it->first.front() == 0x7f) ? ":" + it->first.substr(1) : '"' + it->first + '"'); // 127
 			printImpl(it->second, print_readably);
 
-			if (isLast(it, elements)) {
+			if (!isLast(it, elements)) {
 				m_print += ' ';
 			}
 		}
