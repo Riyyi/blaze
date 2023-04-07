@@ -29,7 +29,7 @@ EnvironmentPtr Environment::create(EnvironmentPtr outer)
 	return env;
 }
 
-EnvironmentPtr Environment::create(const ASTNodePtr lambda, std::list<ASTNodePtr> arguments)
+EnvironmentPtr Environment::create(const ValuePtr lambda, std::list<ValuePtr> arguments)
 {
 	auto lambda_casted = std::static_pointer_cast<Lambda>(lambda);
 	auto env = create(lambda_casted->env());
@@ -75,7 +75,7 @@ bool Environment::exists(const std::string& symbol)
 	return m_values.find(symbol) != m_values.end();
 }
 
-ASTNodePtr Environment::set(const std::string& symbol, ASTNodePtr value)
+ValuePtr Environment::set(const std::string& symbol, ValuePtr value)
 {
 	if (exists(symbol)) {
 		m_values.erase(symbol);
@@ -86,7 +86,7 @@ ASTNodePtr Environment::set(const std::string& symbol, ASTNodePtr value)
 	return value;
 }
 
-ASTNodePtr Environment::get(const std::string& symbol)
+ValuePtr Environment::get(const std::string& symbol)
 {
 	if (exists(symbol)) {
 		return m_values[symbol];

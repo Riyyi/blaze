@@ -35,7 +35,7 @@
 	static struct FUNCTION_STRUCT_NAME(unique)        \
 		FUNCTION_STRUCT_NAME(unique)(                 \
 			symbol,                                   \
-			[](std::list<ASTNodePtr> nodes) -> ASTNodePtr lambda);
+			[](std::list<ValuePtr> nodes) -> ValuePtr lambda);
 
 #define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__LINE__, symbol, lambda);
 
@@ -159,7 +159,7 @@ ADD_FUNCTION(
 			number = current_number;                                                                \
 		}                                                                                           \
                                                                                                     \
-		return makePtr<Value>((result) ? Value::True : Value::False);                               \
+		return makePtr<Constant>((result) ? Constant::True : Constant::False);                      \
 	}
 
 ADD_FUNCTION("<", NUMBER_COMPARE(<));
@@ -197,7 +197,7 @@ ADD_FUNCTION(
 			}
 		}
 
-		return makePtr<Value>((result) ? Value::True : Value::False);
+		return makePtr<Constant>((result) ? Constant::True : Constant::False);
 	});
 
 ADD_FUNCTION(
@@ -217,7 +217,7 @@ ADD_FUNCTION(
 			}
 		}
 
-		return makePtr<Value>((result) ? Value::True : Value::False);
+		return makePtr<Constant>((result) ? Constant::True : Constant::False);
 	});
 
 ADD_FUNCTION(
@@ -231,7 +231,7 @@ ADD_FUNCTION(
 		auto first_argument = nodes.front();
 
 		size_t result = 0;
-		if (is<Value>(first_argument.get()) && std::static_pointer_cast<Value>(nodes.front())->state() == Value::Nil) {
+		if (is<Constant>(first_argument.get()) && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
 			// result = 0
 		}
 		else if (is<Collection>(first_argument.get())) {
@@ -279,7 +279,7 @@ ADD_FUNCTION("pr-str", PRINTER_STRING(true, " "));
 		}                                                                \
 		print("\n");                                                     \
                                                                          \
-		return makePtr<Value>(Value::Nil);                               \
+		return makePtr<Constant>(Constant::Nil);                         \
 	}
 
 ADD_FUNCTION("prn", PRINTER_PRINT(true));
@@ -295,8 +295,8 @@ ADD_FUNCTION(
 			return nullptr;
 		}
 
-		std::function<bool(ASTNodePtr, ASTNodePtr)> equal =
-			[&equal](ASTNodePtr lhs, ASTNodePtr rhs) -> bool {
+		std::function<bool(ValuePtr, ValuePtr)> equal =
+			[&equal](ValuePtr lhs, ValuePtr rhs) -> bool {
 			if ((is<List>(lhs.get()) || is<Vector>(lhs.get()))
 		        && (is<List>(rhs.get()) || is<Vector>(rhs.get()))) {
 				auto lhs_nodes = std::static_pointer_cast<Collection>(lhs)->nodes();
@@ -347,8 +347,8 @@ ADD_FUNCTION(
 		        && std::static_pointer_cast<Number>(lhs)->number() == std::static_pointer_cast<Number>(rhs)->number()) {
 				return true;
 			}
-			if (is<Value>(lhs.get()) && is<Value>(rhs.get())
-		        && std::static_pointer_cast<Value>(lhs)->state() == std::static_pointer_cast<Value>(rhs)->state()) {
+			if (is<Constant>(lhs.get()) && is<Constant>(rhs.get())
+		        && std::static_pointer_cast<Constant>(lhs)->state() == std::static_pointer_cast<Constant>(rhs)->state()) {
 				return true;
 			}
 			if (is<Symbol>(lhs.get()) && is<Symbol>(rhs.get())
@@ -369,7 +369,7 @@ ADD_FUNCTION(
 			}
 		}
 
-		return makePtr<Value>((result) ? Value::True : Value::False);
+		return makePtr<Constant>((result) ? Constant::True : Constant::False);
 	});
 
 ADD_FUNCTION(
@@ -450,7 +450,7 @@ ADD_FUNCTION(
 			}
 		}
 
-		return makePtr<Value>((result) ? Value::True : Value::False);
+		return makePtr<Constant>((result) ? Constant::True : Constant::False);
 	});
 
 // (deref myatom)
@@ -521,7 +521,7 @@ ADD_FUNCTION(
 		nodes.pop_front();
 		nodes.push_front(atom->deref());
 
-		ASTNodePtr value = nullptr;
+		ValuePtr value = nullptr;
 		if (is<Function>(second_argument.get())) {
 			auto function = std::static_pointer_cast<Function>(second_argument)->function();
 			value = function(nodes);

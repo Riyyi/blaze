@@ -18,27 +18,27 @@ class List;
 
 class Eval {
 public:
-	Eval(ASTNodePtr ast, EnvironmentPtr env);
+	Eval(ValuePtr ast, EnvironmentPtr env);
 	virtual ~Eval() = default;
 
 	void eval();
 
-	ASTNodePtr ast() const { return m_ast; }
+	ValuePtr ast() const { return m_ast; }
 
 private:
-	ASTNodePtr evalImpl();
-	ASTNodePtr evalAst(ASTNodePtr ast, EnvironmentPtr env);
-	ASTNodePtr evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
-	void evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
-	void evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
-	void evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
-	ASTNodePtr evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env);
-	ASTNodePtr apply(std::shared_ptr<List> evaluated_list);
+	ValuePtr evalImpl();
+	ValuePtr evalAst(ValuePtr ast, EnvironmentPtr env);
+	ValuePtr evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	void evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	void evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	void evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr apply(std::shared_ptr<List> evaluated_list);
 
-	ASTNodePtr m_ast;
+	ValuePtr m_ast;
 	EnvironmentPtr m_env;
 
-	std::stack<ASTNodePtr> m_ast_stack;
+	std::stack<ValuePtr> m_ast_stack;
 	std::stack<EnvironmentPtr> m_env_stack;
 };
 

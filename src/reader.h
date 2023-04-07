@@ -25,7 +25,7 @@ public:
 
 	void dump();
 
-	ASTNodePtr node() { return m_node; }
+	ValuePtr node() { return m_node; }
 
 private:
 	bool isEOF() const;
@@ -35,21 +35,21 @@ private:
 	void ignore();
 	void retreat();
 
-	ASTNodePtr readImpl();
-	ASTNodePtr readSpliceUnquote(); // ~@
-	ASTNodePtr readList();          // ()
-	ASTNodePtr readVector();        // []
-	ASTNodePtr readHashMap();       // {}
-	ASTNodePtr readQuote();         // '
-	ASTNodePtr readQuasiQuote();    // `
-	ASTNodePtr readUnquote();       // ~
-	ASTNodePtr readWithMeta();      // ^
-	ASTNodePtr readDeref();         // @
-	ASTNodePtr readString();        // "foobar"
-	ASTNodePtr readKeyword();       // :keyword
-	ASTNodePtr readValue();         // number, "nil", "true", "false", symbol
+	ValuePtr readImpl();
+	ValuePtr readSpliceUnquote(); // ~@
+	ValuePtr readList();          // ()
+	ValuePtr readVector();        // []
+	ValuePtr readHashMap();       // {}
+	ValuePtr readQuote();         // '
+	ValuePtr readQuasiQuote();    // `
+	ValuePtr readUnquote();       // ~
+	ValuePtr readWithMeta();      // ^
+	ValuePtr readDeref();         // @
+	ValuePtr readString();        // "foobar"
+	ValuePtr readKeyword();       // :keyword
+	ValuePtr readValue();         // number, "nil", "true", "false", symbol
 
-	void dumpImpl(ASTNodePtr node);
+	void dumpImpl(ValuePtr node);
 
 	size_t m_index { 0 };
 	size_t m_indentation { 0 };
@@ -59,7 +59,7 @@ private:
 	bool m_invalid_syntax { false };
 	bool m_is_unbalanced { false };
 
-	ASTNodePtr m_node { nullptr };
+	ValuePtr m_node { nullptr };
 };
 
 } // namespace blaze

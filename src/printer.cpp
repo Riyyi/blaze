@@ -29,7 +29,7 @@ Printer::~Printer()
 
 // -----------------------------------------
 
-std::string Printer::print(ASTNodePtr node, bool print_readably)
+std::string Printer::print(ValuePtr node, bool print_readably)
 {
 	if (Error::the().hasAnyError()) {
 		init();
@@ -40,7 +40,7 @@ std::string Printer::print(ASTNodePtr node, bool print_readably)
 	return printNoErrorCheck(node, print_readably);
 }
 
-std::string Printer::printNoErrorCheck(ASTNodePtr node, bool print_readably)
+std::string Printer::printNoErrorCheck(ValuePtr node, bool print_readably)
 {
 	init();
 
@@ -62,7 +62,7 @@ void Printer::init()
 	m_print = "";
 }
 
-void Printer::printImpl(ASTNodePtr node, bool print_readably)
+void Printer::printImpl(ValuePtr node, bool print_readably)
 {
 	auto printSpacing = [this]() -> void {
 		if (!m_first_node && !m_previous_node_is_list) {
@@ -70,7 +70,7 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		}
 	};
 
-	ASTNode* node_raw_ptr = node.get();
+	Value* node_raw_ptr = node.get();
 	if (is<Collection>(node_raw_ptr)) {
 		printSpacing();
 		m_print += (is<List>(node_raw_ptr)) ? '(' : '[';
@@ -119,13 +119,13 @@ void Printer::printImpl(ASTNodePtr node, bool print_readably)
 		printSpacing();
 		m_print += format("{}", std::static_pointer_cast<Number>(node)->number());
 	}
-	else if (is<Value>(node_raw_ptr)) {
+	else if (is<Constant>(node_raw_ptr)) {
 		printSpacing();
 		std::string value;
-		switch (std::static_pointer_cast<Value>(node)->state()) {
-		case Value::Nil: value = "nil"; break;
-		case Value::True: value = "true"; break;
-		case Value::False: value = "false"; break;
+		switch (std::static_pointer_cast<Constant>(node)->state()) {
+		case Constant::Nil: value = "nil"; break;
+		case Constant::True: value = "true"; break;
+		case Constant::False: value = "false"; break;
 		}
 		m_print += format("{}", value);
 	}

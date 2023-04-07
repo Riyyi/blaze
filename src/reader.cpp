@@ -56,7 +56,7 @@ void Reader::read()
 	}
 }
 
-ASTNodePtr Reader::readImpl()
+ValuePtr Reader::readImpl()
 {
 	if (m_tokens.size() == 0) {
 		return nullptr;
@@ -124,7 +124,7 @@ ASTNodePtr Reader::readImpl()
 	return nullptr;
 }
 
-ASTNodePtr Reader::readSpliceUnquote()
+ValuePtr Reader::readSpliceUnquote()
 {
 	ignore(); // ~@
 
@@ -140,7 +140,7 @@ ASTNodePtr Reader::readSpliceUnquote()
 	return list;
 }
 
-ASTNodePtr Reader::readList()
+ValuePtr Reader::readList()
 {
 	ignore(); // (
 
@@ -157,7 +157,7 @@ ASTNodePtr Reader::readList()
 	return list;
 }
 
-ASTNodePtr Reader::readVector()
+ValuePtr Reader::readVector()
 {
 	ignore(); // [
 
@@ -173,7 +173,7 @@ ASTNodePtr Reader::readVector()
 	return vector;
 }
 
-ASTNodePtr Reader::readHashMap()
+ValuePtr Reader::readHashMap()
 {
 	ignore(); // {
 
@@ -207,7 +207,7 @@ ASTNodePtr Reader::readHashMap()
 	return hash_map;
 }
 
-ASTNodePtr Reader::readQuote()
+ValuePtr Reader::readQuote()
 {
 	ignore(); // '
 
@@ -223,7 +223,7 @@ ASTNodePtr Reader::readQuote()
 	return list;
 }
 
-ASTNodePtr Reader::readQuasiQuote()
+ValuePtr Reader::readQuasiQuote()
 {
 	ignore(); // `
 
@@ -239,7 +239,7 @@ ASTNodePtr Reader::readQuasiQuote()
 	return list;
 }
 
-ASTNodePtr Reader::readUnquote()
+ValuePtr Reader::readUnquote()
 {
 	ignore(); // ~
 
@@ -255,7 +255,7 @@ ASTNodePtr Reader::readUnquote()
 	return list;
 }
 
-ASTNodePtr Reader::readWithMeta()
+ValuePtr Reader::readWithMeta()
 {
 	ignore(); // ^
 
@@ -268,15 +268,15 @@ ASTNodePtr Reader::readWithMeta()
 
 	auto list = makePtr<List>();
 	list->add(makePtr<Symbol>("with-meta"));
-	ASTNodePtr first = readImpl();
-	ASTNodePtr second = readImpl();
+	ValuePtr first = readImpl();
+	ValuePtr second = readImpl();
 	list->add(second);
 	list->add(first);
 
 	return list;
 }
 
-ASTNodePtr Reader::readDeref()
+ValuePtr Reader::readDeref()
 {
 	ignore(); // @
 
@@ -292,19 +292,19 @@ ASTNodePtr Reader::readDeref()
 	return list;
 }
 
-ASTNodePtr Reader::readString()
+ValuePtr Reader::readString()
 {
 	std::string symbol = consume().symbol;
 
 	return makePtr<String>(symbol);
 }
 
-ASTNodePtr Reader::readKeyword()
+ValuePtr Reader::readKeyword()
 {
 	return makePtr<Keyword>(consume().symbol);
 }
 
-ASTNodePtr Reader::readValue()
+ValuePtr Reader::readValue()
 {
 	Token token = consume();
 	char* end_ptr = nullptr;
@@ -314,13 +314,13 @@ ASTNodePtr Reader::readValue()
 	}
 
 	if (token.symbol == "nil") {
-		return makePtr<Value>(Value::Nil);
+		return makePtr<Constant>(Constant::Nil);
 	}
 	else if (token.symbol == "true") {
-		return makePtr<Value>(Value::True);
+		return makePtr<Constant>(Constant::True);
 	}
 	else if (token.symbol == "false") {
-		return makePtr<Value>(Value::False);
+		return makePtr<Constant>(Constant::False);
 	}
 
 	return makePtr<Symbol>(token.symbol);
@@ -372,11 +372,11 @@ void Reader::dump()
 	dumpImpl(m_node);
 }
 
-void Reader::dumpImpl(ASTNodePtr node)
+void Reader::dumpImpl(ValuePtr node)
 {
 	std::string indentation = std::string(m_indentation * 2, ' ');
 
-	ASTNode* node_raw_ptr = node.get();
+	Value* node_raw_ptr = node.get();
 	if (is<Collection>(node_raw_ptr)) {
 		auto nodes = std::static_pointer_cast<List>(node)->nodes();
 		print("{}", indentation);
@@ -406,7 +406,7 @@ void Reader::dumpImpl(ASTNodePtr node)
 		print(fg(ruc::format::TerminalColor::Yellow), "NumberNode");
 		print(" <{}>", node);
 	}
-	else if (is<Value>(node_raw_ptr)) {
+	else if (is<Constant>(node_raw_ptr)) {
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Yellow), "ValueNode");
 		print(" <{}>", node);

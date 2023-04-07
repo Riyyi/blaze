@@ -19,7 +19,7 @@
 
 namespace blaze {
 
-Eval::Eval(ASTNodePtr ast, EnvironmentPtr env)
+Eval::Eval(ValuePtr ast, EnvironmentPtr env)
 	: m_ast(ast)
 	, m_env(env)
 {
@@ -29,7 +29,7 @@ Eval::Eval(ASTNodePtr ast, EnvironmentPtr env)
 
 void Eval::eval()
 {
-	m_ast_stack = std::stack<ASTNodePtr>();
+	m_ast_stack = std::stack<ValuePtr>();
 	m_env_stack = std::stack<EnvironmentPtr>();
 	m_ast_stack.push(m_ast);
 	m_env_stack.push(m_env);
@@ -37,9 +37,9 @@ void Eval::eval()
 	m_ast = evalImpl();
 }
 
-ASTNodePtr Eval::evalImpl()
+ValuePtr Eval::evalImpl()
 {
-	ASTNodePtr ast = nullptr;
+	ValuePtr ast = nullptr;
 	EnvironmentPtr env = nullptr;
 
 	while (true) {
@@ -117,13 +117,13 @@ ASTNodePtr Eval::evalImpl()
 	}
 }
 
-ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
+ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 {
 	if (ast == nullptr || env == nullptr) {
 		return nullptr;
 	}
 
-	ASTNode* ast_raw_ptr = ast.get();
+	Value* ast_raw_ptr = ast.get();
 	if (is<Symbol>(ast_raw_ptr)) {
 		auto result = env->get(std::static_pointer_cast<Symbol>(ast)->symbol());
 		if (!result) {
@@ -139,7 +139,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 		for (auto node : nodes) {
 			m_ast_stack.push(node);
 			m_env_stack.push(env);
-			ASTNodePtr eval_node = evalImpl();
+			ValuePtr eval_node = evalImpl();
 			if (eval_node == nullptr) {
 				return nullptr;
 			}
@@ -153,7 +153,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 		for (auto& element : elements) {
 			m_ast_stack.push(element.second);
 			m_env_stack.push(env);
-			ASTNodePtr element_node = evalImpl();
+			ValuePtr element_node = evalImpl();
 			if (element_node == nullptr) {
 				return nullptr;
 			}
@@ -165,7 +165,7 @@ ASTNodePtr Eval::evalAst(ASTNodePtr ast, EnvironmentPtr env)
 	return ast;
 }
 
-ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() != 2) {
 		Error::the().add(format("wrong number of arguments: def!, {}", nodes.size()));
@@ -184,7 +184,7 @@ ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	std::string symbol = std::static_pointer_cast<Symbol>(first_argument)->symbol();
 	m_ast_stack.push(second_argument);
 	m_env_stack.push(env);
-	ASTNodePtr value = evalImpl();
+	ValuePtr value = evalImpl();
 
 	// Dont overwrite symbols after an error
 	if (Error::the().hasAnyError()) {
@@ -195,7 +195,7 @@ ASTNodePtr Eval::evalDef(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	return env->set(symbol, value);
 }
 
-void Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+void Eval::evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() != 2) {
 		Error::the().add(format("wrong number of arguments: let*, {}", nodes.size()));
@@ -212,7 +212,7 @@ void Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	}
 
 	// Get the nodes out of the List or Vector
-	std::list<ASTNodePtr> binding_nodes;
+	std::list<ValuePtr> binding_nodes;
 	auto bindings = std::static_pointer_cast<Collection>(first_argument);
 	binding_nodes = bindings->nodes();
 
@@ -236,7 +236,7 @@ void Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 		std::string key = std::static_pointer_cast<Symbol>(*it)->symbol();
 		m_ast_stack.push(*std::next(it));
 		m_env_stack.push(let_env);
-		ASTNodePtr value = evalImpl();
+		ValuePtr value = evalImpl();
 		let_env->set(key, value);
 	}
 
@@ -247,7 +247,7 @@ void Eval::evalLet(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	return; // TCO
 }
 
-void Eval::evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+void Eval::evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() == 0) {
 		Error::the().add(format("wrong number of arguments: do, {}", nodes.size()));
@@ -267,7 +267,7 @@ void Eval::evalDo(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	return; // TCO
 }
 
-void Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+void Eval::evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() != 2 && nodes.size() != 3) {
 		Error::the().add(format("wrong number of arguments: if, {}", nodes.size()));
@@ -276,13 +276,13 @@ void Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 
 	auto first_argument = *nodes.begin();
 	auto second_argument = *std::next(nodes.begin());
-	auto third_argument = (nodes.size() == 3) ? *std::next(std::next(nodes.begin())) : makePtr<Value>(Value::Nil);
+	auto third_argument = (nodes.size() == 3) ? *std::next(std::next(nodes.begin())) : makePtr<Constant>(Constant::Nil);
 
 	m_ast_stack.push(first_argument);
 	m_env_stack.push(env);
 	auto first_evaluated = evalImpl();
-	if (!is<Value>(first_evaluated.get())
-	    || std::static_pointer_cast<Value>(first_evaluated)->state() == Value::True) {
+	if (!is<Constant>(first_evaluated.get())
+	    || std::static_pointer_cast<Constant>(first_evaluated)->state() == Constant::True) {
 		m_ast_stack.push(second_argument);
 		m_env_stack.push(env);
 		return; // TCO
@@ -309,7 +309,7 @@ void Eval::evalIf(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	AST_CHECK(type, value)              \
 	auto variable = std::static_pointer_cast<type>(value);
 
-ASTNodePtr Eval::evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
 	ARG_COUNT_CHECK("fn*", nodes.size() != 2, nodes.size());
 
@@ -329,7 +329,7 @@ ASTNodePtr Eval::evalFn(const std::list<ASTNodePtr>& nodes, EnvironmentPtr env)
 	return makePtr<Lambda>(bindings, second_argument, env);
 }
 
-ASTNodePtr Eval::apply(std::shared_ptr<List> evaluated_list)
+ValuePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 {
 	if (evaluated_list == nullptr) {
 		return nullptr;

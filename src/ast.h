@@ -23,9 +23,9 @@
 
 namespace blaze {
 
-class ASTNode {
+class Value {
 public:
-	virtual ~ASTNode() = default;
+	virtual ~Value() = default;
 
 	std::string className() const { return typeid(*this).name(); }
 
@@ -39,7 +39,7 @@ public:
 	virtual bool isString() const { return false; }
 	virtual bool isKeyword() const { return false; }
 	virtual bool isNumber() const { return false; }
-	virtual bool isValue() const { return false; }
+	virtual bool isConstant() const { return false; }
 	virtual bool isSymbol() const { return false; }
 	virtual bool isCallable() const { return false; }
 	virtual bool isFunction() const { return false; }
@@ -47,18 +47,18 @@ public:
 	virtual bool isAtom() const { return false; }
 
 protected:
-	ASTNode() {}
+	Value() {}
 };
 
 // -----------------------------------------
 
-class Collection : public ASTNode {
+class Collection : public Value {
 public:
 	virtual ~Collection() = default;
 
-	void add(ASTNodePtr node);
+	void add(ValuePtr node);
 
-	const std::list<ASTNodePtr>& nodes() const { return m_nodes; }
+	const std::list<ValuePtr>& nodes() const { return m_nodes; }
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }
 
@@ -68,7 +68,7 @@ protected:
 private:
 	virtual bool isCollection() const override { return true; }
 
-	std::list<ASTNodePtr> m_nodes;
+	std::list<ValuePtr> m_nodes;
 };
 
 // -----------------------------------------
@@ -98,27 +98,27 @@ private:
 // -----------------------------------------
 
 // {}
-class HashMap final : public ASTNode {
+class HashMap final : public Value {
 public:
 	HashMap() = default;
 	virtual ~HashMap() = default;
 
-	void add(const std::string& key, ASTNodePtr value);
+	void add(const std::string& key, ValuePtr value);
 
-	const std::unordered_map<std::string, ASTNodePtr>& elements() const { return m_elements; }
+	const std::unordered_map<std::string, ValuePtr>& elements() const { return m_elements; }
 	size_t size() const { return m_elements.size(); }
 	bool empty() const { return m_elements.size() == 0; }
 
 private:
 	virtual bool isHashMap() const override { return true; }
 
-	std::unordered_map<std::string, ASTNodePtr> m_elements;
+	std::unordered_map<std::string, ValuePtr> m_elements;
 };
 
 // -----------------------------------------
 
 // "string"
-class String final : public ASTNode {
+class String final : public Value {
 public:
 	String(const std::string& data);
 	virtual ~String() = default;
@@ -134,7 +134,7 @@ private:
 // -----------------------------------------
 
 // :keyword
-class Keyword final : public ASTNode {
+class Keyword final : public Value {
 public:
 	Keyword(const std::string& data);
 	virtual ~Keyword() = default;
@@ -149,7 +149,7 @@ private:
 
 // -----------------------------------------
 // 123
-class Number final : public ASTNode {
+class Number final : public Value {
 public:
 	Number(int64_t number);
 	virtual ~Number() = default;
@@ -165,7 +165,7 @@ private:
 // -----------------------------------------
 
 // true, false, nil
-class Value final : public ASTNode {
+class Constant final : public Value {
 public:
 	enum State : uint8_t {
 		Nil,
@@ -173,13 +173,13 @@ public:
 		False,
 	};
 
-	Value(State state);
-	virtual ~Value() = default;
+	Constant(State state);
+	virtual ~Constant() = default;
 
 	State state() const { return m_state; }
 
 private:
-	virtual bool isValue() const override { return true; }
+	virtual bool isConstant() const override { return true; }
 
 	const State m_state;
 };
@@ -187,7 +187,7 @@ private:
 // -----------------------------------------
 
 // Symbols
-class Symbol final : public ASTNode {
+class Symbol final : public Value {
 public:
 	Symbol(const std::string& symbol);
 	virtual ~Symbol() = default;
@@ -202,7 +202,7 @@ private:
 
 // -----------------------------------------
 
-class Callable : public ASTNode {
+class Callable : public Value {
 public:
 	virtual ~Callable() = default;
 
@@ -215,7 +215,7 @@ private:
 
 // -----------------------------------------
 
-using FunctionType = std::function<ASTNodePtr(std::list<ASTNodePtr>)>;
+using FunctionType = std::function<ValuePtr(std::list<ValuePtr>)>;
 
 class Function final : public Callable {
 public:
@@ -236,36 +236,36 @@ private:
 
 class Lambda final : public Callable {
 public:
-	Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPtr env);
+	Lambda(std::vector<std::string> bindings, ValuePtr body, EnvironmentPtr env);
 	virtual ~Lambda() = default;
 
 	std::vector<std::string> bindings() const { return m_bindings; }
-	ASTNodePtr body() const { return m_body; }
+	ValuePtr body() const { return m_body; }
 	EnvironmentPtr env() const { return m_env; }
 
 private:
 	virtual bool isLambda() const override { return true; }
 
 	const std::vector<std::string> m_bindings;
-	const ASTNodePtr m_body;
+	const ValuePtr m_body;
 	const EnvironmentPtr m_env;
 };
 
 // -----------------------------------------
 
-class Atom final : public ASTNode {
+class Atom final : public Value {
 public:
 	Atom() = default;
-	Atom(ASTNodePtr pointer);
+	Atom(ValuePtr pointer);
 	virtual ~Atom() = default;
 
-	ASTNodePtr reset(ASTNodePtr value) { return m_value = value; }
-	ASTNodePtr deref() const { return m_value; }
+	ValuePtr reset(ValuePtr value) { return m_value = value; }
+	ValuePtr deref() const { return m_value; }
 
 private:
 	virtual bool isAtom() const override { return true; }
 
-	ASTNodePtr m_value;
+	ValuePtr m_value;
 };
 
 // -----------------------------------------
@@ -280,43 +280,43 @@ std::shared_ptr<T> makePtr(Args&&... args)
 
 // clang-format off
 template<>
-inline bool ASTNode::fastIs<Collection>() const { return isCollection(); }
+inline bool Value::fastIs<Collection>() const { return isCollection(); }
 
 template<>
-inline bool ASTNode::fastIs<List>() const { return isList(); }
+inline bool Value::fastIs<List>() const { return isList(); }
 
 template<>
-inline bool ASTNode::fastIs<Vector>() const { return isVector(); }
+inline bool Value::fastIs<Vector>() const { return isVector(); }
 
 template<>
-inline bool ASTNode::fastIs<HashMap>() const { return isHashMap(); }
+inline bool Value::fastIs<HashMap>() const { return isHashMap(); }
 
 template<>
-inline bool ASTNode::fastIs<String>() const { return isString(); }
+inline bool Value::fastIs<String>() const { return isString(); }
 
 template<>
-inline bool ASTNode::fastIs<Keyword>() const { return isKeyword(); }
+inline bool Value::fastIs<Keyword>() const { return isKeyword(); }
 
 template<>
-inline bool ASTNode::fastIs<Number>() const { return isNumber(); }
+inline bool Value::fastIs<Number>() const { return isNumber(); }
 
 template<>
-inline bool ASTNode::fastIs<Value>() const { return isValue(); }
+inline bool Value::fastIs<Constant>() const { return isConstant(); }
 
 template<>
-inline bool ASTNode::fastIs<Symbol>() const { return isSymbol(); }
+inline bool Value::fastIs<Symbol>() const { return isSymbol(); }
 
 template<>
-inline bool ASTNode::fastIs<Callable>() const { return isCallable(); }
+inline bool Value::fastIs<Callable>() const { return isCallable(); }
 
 template<>
-inline bool ASTNode::fastIs<Function>() const { return isFunction(); }
+inline bool Value::fastIs<Function>() const { return isFunction(); }
 
 template<>
-inline bool ASTNode::fastIs<Lambda>() const { return isLambda(); }
+inline bool Value::fastIs<Lambda>() const { return isLambda(); }
 
 template<>
-inline bool ASTNode::fastIs<Atom>() const { return isAtom(); }
+inline bool Value::fastIs<Atom>() const { return isAtom(); }
 // clang-format on
 
 } // namespace blaze
@@ -324,6 +324,6 @@ inline bool ASTNode::fastIs<Atom>() const { return isAtom(); }
 // -----------------------------------------
 
 template<>
-struct ruc::format::Formatter<blaze::ASTNodePtr> : public Formatter<std::string> {
-	void format(Builder& builder, blaze::ASTNodePtr value) const;
+struct ruc::format::Formatter<blaze::ValuePtr> : public Formatter<std::string> {
+	void format(Builder& builder, blaze::ValuePtr value) const;
 };

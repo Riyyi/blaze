@@ -16,7 +16,7 @@
 
 namespace blaze {
 
-void Collection::add(ASTNodePtr node)
+void Collection::add(ValuePtr node)
 {
 	if (node == nullptr) {
 		return;
@@ -27,7 +27,7 @@ void Collection::add(ASTNodePtr node)
 
 // -----------------------------------------
 
-void HashMap::add(const std::string& key, ASTNodePtr value)
+void HashMap::add(const std::string& key, ValuePtr value)
 {
 	if (value == nullptr) {
 		return;
@@ -66,7 +66,7 @@ Symbol::Symbol(const std::string& symbol)
 
 // -----------------------------------------
 
-Value::Value(State state)
+Constant::Constant(State state)
 	: m_state(state)
 {
 }
@@ -81,7 +81,7 @@ Function::Function(const std::string& name, FunctionType function)
 
 // -----------------------------------------
 
-Lambda::Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPtr env)
+Lambda::Lambda(std::vector<std::string> bindings, ValuePtr body, EnvironmentPtr env)
 	: m_bindings(bindings)
 	, m_body(body)
 	, m_env(env)
@@ -90,7 +90,7 @@ Lambda::Lambda(std::vector<std::string> bindings, ASTNodePtr body, EnvironmentPt
 
 // -----------------------------------------
 
-Atom::Atom(ASTNodePtr pointer)
+Atom::Atom(ValuePtr pointer)
 	: m_value(pointer)
 {
 }
@@ -99,7 +99,7 @@ Atom::Atom(ASTNodePtr pointer)
 
 // -----------------------------------------
 
-void Formatter<blaze::ASTNodePtr>::format(Builder& builder, blaze::ASTNodePtr value) const
+void Formatter<blaze::ValuePtr>::format(Builder& builder, blaze::ValuePtr value) const
 {
 	blaze::Printer printer;
 	return Formatter<std::string>::format(builder, printer.printNoErrorCheck(value));

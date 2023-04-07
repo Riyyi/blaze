@@ -34,7 +34,7 @@ static auto cleanup(int signal) -> void
 	std::exit(signal);
 }
 
-auto read(std::string_view input) -> ASTNodePtr
+auto read(std::string_view input) -> ValuePtr
 {
 	Lexer lexer(input);
 	lexer.tokenize();
@@ -51,7 +51,7 @@ auto read(std::string_view input) -> ASTNodePtr
 	return reader.node();
 }
 
-auto eval(ASTNodePtr ast, EnvironmentPtr env) -> ASTNodePtr
+auto eval(ValuePtr ast, EnvironmentPtr env) -> ValuePtr
 {
 	if (env == nullptr) {
 		env = s_outer_env;
@@ -63,7 +63,7 @@ auto eval(ASTNodePtr ast, EnvironmentPtr env) -> ASTNodePtr
 	return eval.ast();
 }
 
-static auto print(ASTNodePtr exp) -> std::string
+static auto print(ValuePtr exp) -> std::string
 {
 	Printer printer;
 
