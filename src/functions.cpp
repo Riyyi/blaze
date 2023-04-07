@@ -410,7 +410,6 @@ ADD_FUNCTION(
 		return makePtr<String>(file.data());
 	});
 
-
 ADD_FUNCTION(
 	"eval",
 	{
@@ -420,6 +419,119 @@ ADD_FUNCTION(
 		}
 
 		return eval(nodes.front(), nullptr);
+	});
+
+// (atom 1)
+ADD_FUNCTION(
+	"atom",
+	{
+		if (nodes.size() != 1) {
+			Error::the().add(format("wrong number of arguments: atom, {}", nodes.size()));
+			return nullptr;
+		}
+
+		return makePtr<Atom>(nodes.front());
+	});
+
+// (atom? myatom 2 "foo")
+ADD_FUNCTION(
+	"atom?",
+	{
+		bool result = true;
+
+		if (nodes.size() == 0) {
+			result = false;
+		}
+
+		for (auto node : nodes) {
+			if (!is<Atom>(node.get())) {
+				result = false;
+				break;
+			}
+		}
+
+		return makePtr<Value>((result) ? Value::True : Value::False);
+	});
+
+// (deref myatom)
+ADD_FUNCTION(
+	"deref",
+	{
+		if (nodes.size() != 1) {
+			Error::the().add(format("wrong number of arguments: deref, {}", nodes.size()));
+			return nullptr;
+		}
+
+		if (!is<Atom>(nodes.front().get())) {
+			Error::the().add(format("wrong argument type: atom, '{}'", nodes.front()));
+			return nullptr;
+		}
+
+		return std::static_pointer_cast<Atom>(nodes.front())->deref();
+	});
+
+// (reset! myatom 2)
+ADD_FUNCTION(
+	"reset!",
+	{
+		if (nodes.size() != 2) {
+			Error::the().add(format("wrong number of arguments: reset!, {}", nodes.size()));
+			return nullptr;
+		}
+
+		if (!is<Atom>(nodes.front().get())) {
+			Error::the().add(format("wrong argument type: atom, '{}'", nodes.front()));
+			return nullptr;
+		}
+
+		auto atom = std::static_pointer_cast<Atom>(*nodes.begin());
+		auto value = *std::next(nodes.begin());
+
+		atom->reset(value);
+
+		return value;
+	});
+
+// (swap! myatom (fn* [x] (+ 1 x)))
+ADD_FUNCTION(
+	"swap!",
+	{
+		if (nodes.size() < 2) {
+			Error::the().add(format("wrong number of arguments: reset!, {}", nodes.size()));
+			return nullptr;
+		}
+
+		auto first_argument = *nodes.begin();
+		auto second_argument = *std::next(nodes.begin());
+
+		if (!is<Atom>(first_argument.get())) {
+			Error::the().add(format("wrong argument type: atom, '{}'", first_argument));
+			return nullptr;
+		}
+
+		if (!is<Callable>(second_argument.get())) {
+			Error::the().add(format("wrong argument type: function, '{}'", second_argument));
+			return nullptr;
+		}
+
+		auto atom = std::static_pointer_cast<Atom>(first_argument);
+
+		// Remove atom and function from the argument list, add atom value
+		nodes.pop_front();
+		nodes.pop_front();
+		nodes.push_front(atom->deref());
+
+		ASTNodePtr value = nullptr;
+		if (is<Function>(second_argument.get())) {
+			auto function = std::static_pointer_cast<Function>(second_argument)->function();
+			value = function(nodes);
+		}
+		else {
+			auto lambda = std::static_pointer_cast<Lambda>(second_argument);
+			value = eval(lambda->body(), Environment::create(lambda, nodes));
+		}
+
+		return atom->reset(value);
 	});
 
 // -----------------------------------------
