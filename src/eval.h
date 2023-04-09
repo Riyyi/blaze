@@ -30,6 +30,9 @@ private:
 	ValuePtr evalAst(ValuePtr ast, EnvironmentPtr env);
 	ValuePtr evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	void evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	ValuePtr evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env);

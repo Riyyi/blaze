@@ -16,6 +16,11 @@
 
 namespace blaze {
 
+Collection::Collection(const std::list<ValuePtr>& nodes)
+	: m_nodes(nodes)
+{
+}
+
 void Collection::add(ValuePtr node)
 {
 	if (node == nullptr) {
@@ -23,6 +28,20 @@ void Collection::add(ValuePtr node)
 	}
 
 	m_nodes.push_back(node);
+}
+
+// -----------------------------------------
+
+List::List(const std::list<ValuePtr>& nodes)
+	: Collection(nodes)
+{
+}
+
+// -----------------------------------------
+
+Vector::Vector(const std::list<ValuePtr>& nodes)
+	: Collection(nodes)
+{
 }
 
 // -----------------------------------------
@@ -81,7 +100,7 @@ Function::Function(const std::string& name, FunctionType function)
 
 // -----------------------------------------
 
-Lambda::Lambda(std::vector<std::string> bindings, ValuePtr body, EnvironmentPtr env)
+Lambda::Lambda(const std::vector<std::string>& bindings, ValuePtr body, EnvironmentPtr env)
 	: m_bindings(bindings)
 	, m_body(body)
 	, m_env(env)

@@ -64,6 +64,7 @@ public:
 
 protected:
 	Collection() = default;
+	Collection(const std::list<ValuePtr>& nodes);
 
 private:
 	virtual bool isCollection() const override { return true; }
@@ -77,6 +78,7 @@ private:
 class List final : public Collection {
 public:
 	List() = default;
+	List(const std::list<ValuePtr>& nodes);
 	virtual ~List() = default;
 
 private:
@@ -89,6 +91,7 @@ private:
 class Vector final : public Collection {
 public:
 	Vector() = default;
+	Vector(const std::list<ValuePtr>& nodes);
 	virtual ~Vector() = default;
 
 private:
@@ -236,10 +239,10 @@ private:
 
 class Lambda final : public Callable {
 public:
-	Lambda(std::vector<std::string> bindings, ValuePtr body, EnvironmentPtr env);
+	Lambda(const std::vector<std::string>& bindings, ValuePtr body, EnvironmentPtr env);
 	virtual ~Lambda() = default;
 
-	std::vector<std::string> bindings() const { return m_bindings; }
+	const std::vector<std::string>& bindings() const { return m_bindings; }
 	ValuePtr body() const { return m_body; }
 	EnvironmentPtr env() const { return m_env; }
 

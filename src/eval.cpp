@@ -79,6 +79,16 @@ ValuePtr Eval::evalImpl()
 				evalLet(nodes, env);
 				continue; // TCO
 			}
+			if (symbol == "quote") {
+				return evalQuote(nodes, env);
+			}
+			if (symbol == "quasiquote") {
+				evalQuasiQuote(nodes, env);
+				continue; // TCO
+			}
+			if (symbol == "quasiquoteexpand") {
+				return evalQuasiQuoteExpand(nodes, env);
+			}
 			if (symbol == "do") {
 				evalDo(nodes, env);
 				continue; // TCO
@@ -195,6 +205,136 @@ ValuePtr Eval::evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 	return env->set(symbol, value);
 }
 
+ValuePtr Eval::evalQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+{
+	if (nodes.size() != 1) {
+		Error::the().add(format("wrong number of arguments: quote, {}", nodes.size()));
+		return nullptr;
+	}
+
+	return nodes.front();
+}
+
+static bool isSymbol(ValuePtr value, const std::string& symbol)
+{
+	if (!is<Symbol>(value.get())) {
+		return false;
+	}
+
+	auto valueSymbol = std::static_pointer_cast<Symbol>(value)->symbol();
+
+	if (valueSymbol != symbol) {
+		return false;
+	}
+
+	return true;
+}
+
+static ValuePtr startsWith(ValuePtr ast, const std::string& symbol)
+{
+	if (!is<List>(ast.get())) {
+		return nullptr;
+	}
+
+	auto nodes = std::static_pointer_cast<List>(ast)->nodes();
+
+	if (nodes.empty() || !isSymbol(nodes.front(), symbol)) {
+		return nullptr;
+	}
+
+	if (nodes.size() != 2) {
+		Error::the().add(format("wrong number of arguments: {}, {}", symbol, nodes.size() - 1));
+		return nullptr;
+	}
+
+	return *std::next(nodes.begin());
+}
+
+static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
+{
+	if (is<HashMap>(ast.get()) || is<Symbol>(ast.get())) {
+		auto quoted_list = makePtr<List>();
+		quoted_list->add(makePtr<Symbol>("quote"));
+		quoted_list->add(ast);
+		return quoted_list;
+	}
+
+	if (!is<Collection>(ast.get())) {
+		return ast;
+	}
+
+	// `~2 or `(unquote 2)
+	const auto unquote = startsWith(ast, "unquote"); // x
+	if (unquote) {
+		return unquote;
+	}
+
+	// `~@(list 2 2 2) or `(splice-unquote (list 2 2 2))
+	const auto splice_unquote = startsWith(ast, "splice-unquote"); // (list 2 2 2)
+	if (splice_unquote) {
+		return splice_unquote;
+	}
+
+	ValuePtr result = makePtr<List>();
+
+	auto nodes = std::static_pointer_cast<Collection>(ast)->nodes();
+
+	// `() or `(1 ~2 3) or `(1 ~@(list 2 2 2) 3)
+	for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
+		const auto elt = *it;
+
+		auto list = makePtr<List>();
+
+		const auto splice_unquote = startsWith(elt, "splice-unquote"); // (list 2 2 2)
+		if (splice_unquote) {
+			list->add(makePtr<Symbol>("concat"));
+			list->add(splice_unquote);
+			list->add(result);
+			result = list; // (cons 1 (concat (list 2 2 2) (cons 3 ())))
+			continue;
+		}
+
+		list->add(makePtr<Symbol>("cons"));
+		list->add(evalQuasiQuoteImpl(elt));
+		list->add(result);
+		result = list; // (cons 1 (cons 2 (cons 3 ())))
+	}
+
+	if (is<List>(ast.get())) {
+		return result;
+	}
+
+	// Wrap Vector in (vec)
+	auto vector = makePtr<List>();
+	vector->add(makePtr<Symbol>("vec"));
+	vector->add(result);
+	return vector;
+}
+
+void Eval::evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+{
+	if (nodes.size() != 1) {
+		Error::the().add(format("wrong number of arguments: quasiquote, {}", nodes.size()));
+		return;
+	}
+
+	auto result = evalQuasiQuoteImpl(nodes.front());
+
+	m_ast_stack.push(result);
+	m_env_stack.push(env);
+	return; // TCO
+}
+
+ValuePtr Eval::evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+{
+	if (nodes.size() != 1) {
+		Error::the().add(format("wrong number of arguments: quasiquoteexpand, {}", nodes.size()));
+		return nullptr;
+	}
+
+	return evalQuasiQuoteImpl(nodes.front());
+}
+
 void Eval::evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
 	if (nodes.size() != 2) {
@@ -207,7 +347,7 @@ void Eval::evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 
 	// First argument needs to be a List or Vector
 	if (!is<Collection>(first_argument.get())) {
-		Error::the().add(format("wrong argument type: collection, '{}'", first_argument));
+		Error::the().add(format("wrong argument type: list, '{}'", first_argument));
 		return;
 	}
 

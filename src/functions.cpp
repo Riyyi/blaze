@@ -497,7 +497,7 @@ ADD_FUNCTION(
 	"swap!",
 	{
 		if (nodes.size() < 2) {
-			Error::the().add(format("wrong number of arguments: reset!, {}", nodes.size()));
+			Error::the().add(format("wrong number of arguments: swap!, {}", nodes.size()));
 			return nullptr;
 		}
 
@@ -532,6 +532,67 @@ ADD_FUNCTION(
 		}
 
 		return atom->reset(value);
+	});
+
+// (cons 1 (list 2 3))
+ADD_FUNCTION(
+	"cons",
+	{
+		if (nodes.size() != 2) {
+			Error::the().add(format("wrong number of arguments: cons, {}", nodes.size()));
+			return nullptr;
+		}
+
+		auto first_argument = *nodes.begin();
+		auto second_argument = *std::next(nodes.begin());
+
+		if (!is<Collection>(second_argument.get())) {
+			Error::the().add(format("wrong argument type: list, '{}'", second_argument));
+			return nullptr;
+		}
+
+		auto result_nodes = std::static_pointer_cast<Collection>(second_argument)->nodes();
+		result_nodes.push_front(first_argument);
+
+		return makePtr<List>(result_nodes);
+	});
+
+// (concat (list 1) (list 2 3))
+ADD_FUNCTION(
+	"concat",
+	{
+		std::list<ValuePtr> result_nodes;
+
+		for (auto node : nodes) {
+			if (!is<Collection>(node.get())) {
+				Error::the().add(format("wrong argument type: list, '{}'", node));
+				return nullptr;
+			}
+
+			auto argument_nodes = std::static_pointer_cast<Collection>(node)->nodes();
+			result_nodes.splice(result_nodes.end(), argument_nodes);
+		}
+
+		return makePtr<List>(result_nodes);
+	});
+
+// (vec (list 1 2 3))
+ADD_FUNCTION(
+	"vec",
+	{
+		if (nodes.size() != 1) {
+			Error::the().add(format("wrong number of arguments: vec, {}", nodes.size()));
+			return nullptr;
+		}
+
+		if (!is<Collection>(nodes.front().get())) {
+			Error::the().add(format("wrong argument type: list, '{}'", nodes.front()));
+			return nullptr;
+		}
+
+		auto result_nodes = std::static_pointer_cast<Collection>(nodes.front())->nodes();
+
+		return makePtr<Vector>(result_nodes);
 	});
 
 // -----------------------------------------
