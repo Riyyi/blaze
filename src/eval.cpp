@@ -253,10 +253,7 @@ static ValuePtr startsWith(ValuePtr ast, const std::string& symbol)
 static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
 {
 	if (is<HashMap>(ast.get()) || is<Symbol>(ast.get())) {
-		auto quoted_list = makePtr<List>();
-		quoted_list->add(makePtr<Symbol>("quote"));
-		quoted_list->add(ast);
-		return quoted_list;
+		return makePtr<List>(makePtr<Symbol>("quote"), ast);
 	}
 
 	if (!is<Collection>(ast.get())) {
@@ -283,32 +280,23 @@ static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
 	for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
 		const auto elt = *it;
 
-		auto list = makePtr<List>();
-
 		const auto splice_unquote = startsWith(elt, "splice-unquote"); // (list 2 2 2)
 		if (splice_unquote) {
-			list->add(makePtr<Symbol>("concat"));
-			list->add(splice_unquote);
-			list->add(result);
-			result = list; // (cons 1 (concat (list 2 2 2) (cons 3 ())))
+			// (cons 1 (concat (list 2 2 2) (cons 3 ())))
+			result = makePtr<List>(makePtr<Symbol>("concat"), splice_unquote, result);
 			continue;
 		}
 
-		list->add(makePtr<Symbol>("cons"));
-		list->add(evalQuasiQuoteImpl(elt));
-		list->add(result);
-		result = list; // (cons 1 (cons 2 (cons 3 ())))
+		// (cons 1 (cons 2 (cons 3 ())))
+		result = makePtr<List>(makePtr<Symbol>("cons"), evalQuasiQuoteImpl(elt), result);
 	}
 
 	if (is<List>(ast.get())) {
 		return result;
 	}
 
-	// Wrap Vector in (vec)
-	auto vector = makePtr<List>();
-	vector->add(makePtr<Symbol>("vec"));
-	vector->add(result);
-	return vector;
+	// Wrap result in (vec) for Vector types
+	return makePtr<List>(makePtr<Symbol>("vec"), result);
 }
 
 void Eval::evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)

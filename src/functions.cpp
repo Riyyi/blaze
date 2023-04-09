@@ -172,13 +172,7 @@ ADD_FUNCTION(">=", NUMBER_COMPARE(>=));
 ADD_FUNCTION(
 	"list",
 	{
-		auto list = makePtr<List>();
-
-		for (auto node : nodes) {
-			list->add(node);
-		}
-
-		return list;
+		return makePtr<List>(nodes);
 	});
 
 ADD_FUNCTION(

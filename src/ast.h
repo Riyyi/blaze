@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <concepts>   // std::derived_from, std::same_as
 #include <cstdint>    // int64_t, uint8_t
 #include <functional> // std::function
 #include <list>
@@ -52,19 +53,29 @@ protected:
 
 // -----------------------------------------
 
+template<typename T>
+concept IsValue = std::same_as<Value, T> || std::derived_from<T, Value>;
+
 class Collection : public Value {
 public:
 	virtual ~Collection() = default;
 
 	void add(ValuePtr node);
 
-	const std::list<ValuePtr>& nodes() const { return m_nodes; }
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }
+
+	const std::list<ValuePtr>& nodes() const { return m_nodes; }
 
 protected:
 	Collection() = default;
 	Collection(const std::list<ValuePtr>& nodes);
+
+	template<IsValue... Ts>
+	Collection(std::shared_ptr<Ts>... nodes)
+	{
+		m_nodes = { nodes... };
+	}
 
 private:
 	virtual bool isCollection() const override { return true; }
@@ -79,6 +90,13 @@ class List final : public Collection {
 public:
 	List() = default;
 	List(const std::list<ValuePtr>& nodes);
+
+	template<IsValue... Ts>
+	List(std::shared_ptr<Ts>... nodes)
+		: Collection(nodes...)
+	{
+	}
+
 	virtual ~List() = default;
 
 private:
@@ -92,6 +110,13 @@ class Vector final : public Collection {
 public:
 	Vector() = default;
 	Vector(const std::list<ValuePtr>& nodes);
+
+	template<IsValue... Ts>
+	Vector(std::shared_ptr<Ts>... nodes)
+		: Collection(nodes...)
+	{
+	}
+
 	virtual ~Vector() = default;
 
 private:
