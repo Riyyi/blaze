@@ -24,7 +24,7 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 0
+#if 1
 namespace blaze {
 
 static EnvironmentPtr s_outer_env = Environment::create();
@@ -82,7 +82,14 @@ static auto rep(std::string_view input, EnvironmentPtr env) -> std::string
 static std::string_view lambdaTable[] = {
 	"(def! not (fn* (cond) (if cond false true)))",
 	"(def! load-file (fn* (filename) \
-	    (eval (read-string (str \"(do \" (slurp filename) \"\nnil)\")))))",
+	   (eval (read-string (str \"(do \" (slurp filename) \"\nnil)\")))))",
+	"(defmacro! cond (fn* (& xs) \
+	    (if (> (count xs) 0) \
+	        (list 'if (first xs) \
+	            (if (> (count xs) 1) \
+	                (nth xs 1) \
+	              (throw \"odd number of forms to cond\")) \
+	          (cons 'cond (rest (rest xs)))))))",
 };
 
 static auto installLambdas(EnvironmentPtr env) -> void

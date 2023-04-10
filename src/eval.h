@@ -29,14 +29,19 @@ private:
 	ValuePtr evalImpl();
 	ValuePtr evalAst(ValuePtr ast, EnvironmentPtr env);
 
+	bool isMacroCall(ValuePtr ast, EnvironmentPtr env);
+	ValuePtr macroExpand(ValuePtr ast, EnvironmentPtr env);
+
 	ValuePtr evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
-	void evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalDefMacro(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalMacroExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes);
 	ValuePtr evalQuote(const std::list<ValuePtr>& nodes);
-	void evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
-	ValuePtr evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
-	ValuePtr evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	void evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	void evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 
 	ValuePtr apply(std::shared_ptr<List> evaluated_list);
 

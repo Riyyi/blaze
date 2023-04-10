@@ -265,11 +265,13 @@ private:
 class Lambda final : public Callable {
 public:
 	Lambda(const std::vector<std::string>& bindings, ValuePtr body, EnvironmentPtr env);
+	Lambda(std::shared_ptr<Lambda> that, bool is_macro);
 	virtual ~Lambda() = default;
 
 	const std::vector<std::string>& bindings() const { return m_bindings; }
 	ValuePtr body() const { return m_body; }
 	EnvironmentPtr env() const { return m_env; }
+	bool isMacro() const { return m_is_macro; }
 
 private:
 	virtual bool isLambda() const override { return true; }
@@ -277,6 +279,7 @@ private:
 	const std::vector<std::string> m_bindings;
 	const ValuePtr m_body;
 	const EnvironmentPtr m_env;
+	const bool m_is_macro { false };
 };
 
 // -----------------------------------------

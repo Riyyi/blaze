@@ -10,6 +10,9 @@
 #include <string>
 #include <string_view>
 
+#include "error.h"
+#include "types.h"
+
 // -----------------------------------------
 
 // TODO: Move these ruc/test/macro.h -> ruc/src/meta/macro.h

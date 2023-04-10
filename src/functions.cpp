@@ -197,7 +197,7 @@ ADD_FUNCTION(
 			result = std::static_pointer_cast<Collection>(first_argument)->size();
 		}
 		else {
-			Error::the().add(format("wrong argument type: collection, '{}'", first_argument));
+			Error::the().add(format("wrong argument type: Collection, '{}'", first_argument));
 			return nullptr;
 		}
 
@@ -481,6 +481,67 @@ ADD_FUNCTION(
 		VALUE_CAST(collection, Collection, nodes.front());
 
 		return makePtr<Vector>(collection->nodes());
+	});
+
+// (nth (list 1 2 3) 0)
+ADD_FUNCTION(
+	"nth",
+	{
+		CHECK_ARG_COUNT_IS("nth", nodes.size(), 2);
+
+		VALUE_CAST(collection, Collection, nodes.front());
+		VALUE_CAST(number_node, Number, (*std::next(nodes.begin())));
+		auto collection_nodes = collection->nodes();
+		auto index = (size_t)number_node->number();
+
+		if (number_node->number() < 0 || index >= collection_nodes.size()) {
+			Error::the().add("index is out of range");
+			return nullptr;
+		}
+
+		auto result = collection_nodes.begin();
+		for (size_t i = 0; i < index; ++i) {
+			result++;
+		}
+
+		return *result;
+	});
+
+// (first (list 1 2 3))
+ADD_FUNCTION(
+	"first",
+	{
+		CHECK_ARG_COUNT_IS("first", nodes.size(), 1);
+
+		if (is<Constant>(nodes.front().get())
+	        && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
+			return makePtr<Constant>(Constant::Nil);
+		}
+
+		VALUE_CAST(collection, Collection, nodes.front());
+		auto collection_nodes = collection->nodes();
+
+		return (collection_nodes.empty()) ? makePtr<Constant>(Constant::Nil) : collection_nodes.front();
+	});
+
+// (rest (list 1 2 3))
+ADD_FUNCTION(
+	"rest",
+	{
+		CHECK_ARG_COUNT_IS("rest", nodes.size(), 1);
+
+		if (is<Constant>(nodes.front().get())
+	        && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
+			return makePtr<List>();
+		}
+
+		VALUE_CAST(collection, Collection, nodes.front());
+		auto collection_nodes = collection->nodes();
+		if (collection_nodes.size() > 0) {
+			collection_nodes.pop_front();
+		}
+
+		return makePtr<List>(collection_nodes);
 	});
 
 // -----------------------------------------
