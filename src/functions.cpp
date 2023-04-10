@@ -24,17 +24,17 @@
 
 #define FUNCTION_STRUCT_NAME(unique) __functionStruct##unique
 
-#define ADD_FUNCTION_IMPL(unique, symbol, lambda)     \
-	struct FUNCTION_STRUCT_NAME(unique) {             \
-		FUNCTION_STRUCT_NAME(unique)                  \
-		(std::string __symbol, FunctionType __lambda) \
-		{                                             \
-			s_functions.emplace(__symbol, __lambda);  \
-		}                                             \
-	};                                                \
-	static struct FUNCTION_STRUCT_NAME(unique)        \
-		FUNCTION_STRUCT_NAME(unique)(                 \
-			symbol,                                   \
+#define ADD_FUNCTION_IMPL(unique, symbol, lambda)            \
+	struct FUNCTION_STRUCT_NAME(unique) {                    \
+		FUNCTION_STRUCT_NAME(unique)                         \
+		(const std::string& __symbol, FunctionType __lambda) \
+		{                                                    \
+			s_functions.emplace(__symbol, __lambda);         \
+		}                                                    \
+	};                                                       \
+	static struct FUNCTION_STRUCT_NAME(unique)               \
+		FUNCTION_STRUCT_NAME(unique)(                        \
+			symbol,                                          \
 			[](std::list<ValuePtr> nodes) -> ValuePtr lambda);
 
 #define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__LINE__, symbol, lambda);
@@ -49,12 +49,8 @@ ADD_FUNCTION(
 		int64_t result = 0;
 
 		for (auto node : nodes) {
-			if (!is<Number>(node.get())) {
-				Error::the().add(format("wrong argument type: number, '{}'", node));
-				return nullptr;
-			}
-
-			result += std::static_pointer_cast<Number>(node)->number();
+			VALUE_CAST(number, Number, node);
+			result += number->number();
 		}
 
 		return makePtr<Number>(result);
@@ -67,19 +63,14 @@ ADD_FUNCTION(
 			return makePtr<Number>(0);
 		}
 
-		for (auto node : nodes) {
-			if (!is<Number>(node.get())) {
-				Error::the().add(format("wrong argument type: number, '{}'", node));
-				return nullptr;
-			}
-		}
-
 		// Start with the first number
-		int64_t result = std::static_pointer_cast<Number>(nodes.front())->number();
+		VALUE_CAST(number, Number, nodes.front());
+		int64_t result = number->number();
 
 		// Skip the first node
 		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
-			result -= std::static_pointer_cast<Number>(*it)->number();
+			VALUE_CAST(number, Number, (*it));
+			result -= number->number();
 		}
 
 		return makePtr<Number>(result);
@@ -91,12 +82,8 @@ ADD_FUNCTION(
 		int64_t result = 1;
 
 		for (auto node : nodes) {
-			if (!is<Number>(node.get())) {
-				Error::the().add(format("wrong argument type: number, '{}'", node));
-				return nullptr;
-			}
-
-			result *= std::static_pointer_cast<Number>(node)->number();
+			VALUE_CAST(number, Number, node);
+			result *= number->number();
 		}
 
 		return makePtr<Number>(result);
@@ -105,24 +92,16 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"/",
 	{
-		if (nodes.size() == 0) {
-			Error::the().add(format("wrong number of arguments: /, 0"));
-			return nullptr;
-		}
-
-		for (auto node : nodes) {
-			if (!is<Number>(node.get())) {
-				Error::the().add(format("wrong argument type: number, '{}'", node));
-				return nullptr;
-			}
-		}
+		CHECK_ARG_COUNT_AT_LEAST("/", nodes.size(), 1);
 
 		// Start with the first number
-		double result = std::static_pointer_cast<Number>(nodes.front())->number();
+		VALUE_CAST(number, Number, nodes.front());
+		double result = number->number();
 
 		// Skip the first node
 		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
-			result /= std::static_pointer_cast<Number>(*it)->number();
+			VALUE_CAST(number, Number, (*it));
+			result /= number->number();
 		}
 
 		return makePtr<Number>((int64_t)result);
@@ -130,36 +109,28 @@ ADD_FUNCTION(
 
 // // -----------------------------------------
 
-#define NUMBER_COMPARE(operator)                                                                    \
-	{                                                                                               \
-		bool result = true;                                                                         \
-                                                                                                    \
-		if (nodes.size() < 2) {                                                                     \
-			Error::the().add(format("wrong number of arguments: {}, {}", #operator, nodes.size())); \
-			return nullptr;                                                                         \
-		}                                                                                           \
-                                                                                                    \
-		for (auto node : nodes) {                                                                   \
-			if (!is<Number>(node.get())) {                                                          \
-				Error::the().add(format("wrong argument type: number, '{}'", node));                \
-				return nullptr;                                                                     \
-			}                                                                                       \
-		}                                                                                           \
-                                                                                                    \
-		/* Start with the first number */                                                           \
-		int64_t number = std::static_pointer_cast<Number>(nodes.front())->number();                 \
-                                                                                                    \
-		/* Skip the first node */                                                                   \
-		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {                         \
-			int64_t current_number = std::static_pointer_cast<Number>(*it)->number();               \
-			if (!(number operator current_number)) {                                                \
-				result = false;                                                                     \
-				break;                                                                              \
-			}                                                                                       \
-			number = current_number;                                                                \
-		}                                                                                           \
-                                                                                                    \
-		return makePtr<Constant>((result) ? Constant::True : Constant::False);                      \
+#define NUMBER_COMPARE(operator)                                               \
+	{                                                                          \
+		bool result = true;                                                    \
+                                                                               \
+		CHECK_ARG_COUNT_AT_LEAST(#operator, nodes.size(), 2);                  \
+                                                                               \
+		/* Start with the first number */                                      \
+		VALUE_CAST(number_node, Number, nodes.front());                        \
+		int64_t number = number_node->number();                                \
+                                                                               \
+		/* Skip the first node */                                              \
+		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {    \
+			VALUE_CAST(current_number_node, Number, (*it));                    \
+			int64_t current_number = current_number_node->number();            \
+			if (!(number operator current_number)) {                           \
+				result = false;                                                \
+				break;                                                         \
+			}                                                                  \
+			number = current_number;                                           \
+		}                                                                      \
+                                                                               \
+		return makePtr<Constant>((result) ? Constant::True : Constant::False); \
 	}
 
 ADD_FUNCTION("<", NUMBER_COMPARE(<));
@@ -200,12 +171,8 @@ ADD_FUNCTION(
 		bool result = true;
 
 		for (auto node : nodes) {
-			if (!is<Collection>(node.get())) {
-				Error::the().add(format("wrong argument type: collection, '{}'", node));
-				return nullptr;
-			}
-
-			if (!std::static_pointer_cast<Collection>(node)->empty()) {
+			VALUE_CAST(collection, Collection, node);
+			if (!collection->empty()) {
 				result = false;
 				break;
 			}
@@ -214,13 +181,11 @@ ADD_FUNCTION(
 		return makePtr<Constant>((result) ? Constant::True : Constant::False);
 	});
 
+// FIXME: (count {1}) infinite loop
 ADD_FUNCTION(
 	"count",
 	{
-		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: count, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("count", nodes.size(), 1);
 
 		auto first_argument = nodes.front();
 
@@ -284,10 +249,7 @@ ADD_FUNCTION("println", PRINTER_PRINT(false));
 ADD_FUNCTION(
 	"=",
 	{
-		if (nodes.size() < 2) {
-			Error::the().add(format("wrong number of arguments: =, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_AT_LEAST("=", nodes.size(), 2);
 
 		std::function<bool(ValuePtr, ValuePtr)> equal =
 			[&equal](ValuePtr lhs, ValuePtr rhs) -> bool {
@@ -369,17 +331,10 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"read-string",
 	{
-		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: read-string, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("read-string", nodes.size(), 1);
 
-		if (!is<String>(nodes.front().get())) {
-			Error::the().add(format("wrong argument type: string, '{}'", nodes.front()));
-			return nullptr;
-		}
-
-		std::string input = std::static_pointer_cast<String>(nodes.front())->data();
+		VALUE_CAST(node, String, nodes.front());
+		std::string input = node->data();
 
 		return read(input);
 	});
@@ -387,17 +342,10 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"slurp",
 	{
-		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: slurp, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("slurp", nodes.size(), 1);
 
-		if (!is<String>(nodes.front().get())) {
-			Error::the().add(format("wrong argument type: string, '{}'", nodes.front()));
-			return nullptr;
-		}
-
-		std::string path = std::static_pointer_cast<String>(nodes.front())->data();
+		VALUE_CAST(node, String, nodes.front());
+		std::string path = node->data();
 
 		auto file = ruc::File(path);
 
@@ -407,10 +355,7 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"eval",
 	{
-		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: eval, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("eval", nodes.size(), 1);
 
 		return eval(nodes.front(), nullptr);
 	});
@@ -419,10 +364,7 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"atom",
 	{
-		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: atom, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("atom", nodes.size(), 1);
 
 		return makePtr<Atom>(nodes.front());
 	});
@@ -451,34 +393,20 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"deref",
 	{
-		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: deref, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("deref", nodes.size(), 1);
 
-		if (!is<Atom>(nodes.front().get())) {
-			Error::the().add(format("wrong argument type: atom, '{}'", nodes.front()));
-			return nullptr;
-		}
+		VALUE_CAST(atom, Atom, nodes.front());
 
-		return std::static_pointer_cast<Atom>(nodes.front())->deref();
+		return atom->deref();
 	});
 
 // (reset! myatom 2)
 ADD_FUNCTION(
 	"reset!",
 	{
-		if (nodes.size() != 2) {
-			Error::the().add(format("wrong number of arguments: reset!, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("reset!", nodes.size(), 2);
 
-		if (!is<Atom>(nodes.front().get())) {
-			Error::the().add(format("wrong argument type: atom, '{}'", nodes.front()));
-			return nullptr;
-		}
-
-		auto atom = std::static_pointer_cast<Atom>(*nodes.begin());
+		VALUE_CAST(atom, Atom, nodes.front());
 		auto value = *std::next(nodes.begin());
 
 		atom->reset(value);
@@ -490,25 +418,12 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"swap!",
 	{
-		if (nodes.size() < 2) {
-			Error::the().add(format("wrong number of arguments: swap!, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_AT_LEAST("swap!", nodes.size(), 2);
 
-		auto first_argument = *nodes.begin();
+		VALUE_CAST(atom, Atom, nodes.front());
+
 		auto second_argument = *std::next(nodes.begin());
-
-		if (!is<Atom>(first_argument.get())) {
-			Error::the().add(format("wrong argument type: atom, '{}'", first_argument));
-			return nullptr;
-		}
-
-		if (!is<Callable>(second_argument.get())) {
-			Error::the().add(format("wrong argument type: function, '{}'", second_argument));
-			return nullptr;
-		}
-
-		auto atom = std::static_pointer_cast<Atom>(first_argument);
+		IS_VALUE(Callable, second_argument);
 
 		// Remove atom and function from the argument list, add atom value
 		nodes.pop_front();
@@ -532,21 +447,12 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"cons",
 	{
-		if (nodes.size() != 2) {
-			Error::the().add(format("wrong number of arguments: cons, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("cons", nodes.size(), 2);
 
-		auto first_argument = *nodes.begin();
-		auto second_argument = *std::next(nodes.begin());
+		VALUE_CAST(collection, Collection, (*std::next(nodes.begin())));
 
-		if (!is<Collection>(second_argument.get())) {
-			Error::the().add(format("wrong argument type: list, '{}'", second_argument));
-			return nullptr;
-		}
-
-		auto result_nodes = std::static_pointer_cast<Collection>(second_argument)->nodes();
-		result_nodes.push_front(first_argument);
+		auto result_nodes = collection->nodes();
+		result_nodes.push_front(nodes.front());
 
 		return makePtr<List>(result_nodes);
 	});
@@ -558,12 +464,8 @@ ADD_FUNCTION(
 		std::list<ValuePtr> result_nodes;
 
 		for (auto node : nodes) {
-			if (!is<Collection>(node.get())) {
-				Error::the().add(format("wrong argument type: list, '{}'", node));
-				return nullptr;
-			}
-
-			auto argument_nodes = std::static_pointer_cast<Collection>(node)->nodes();
+			VALUE_CAST(collection, Collection, node);
+			auto argument_nodes = collection->nodes();
 			result_nodes.splice(result_nodes.end(), argument_nodes);
 		}
 
@@ -574,19 +476,11 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"vec",
 	{
-		if (nodes.size() != 1) {
-			Error::the().add(format("wrong number of arguments: vec, {}", nodes.size()));
-			return nullptr;
-		}
+		CHECK_ARG_COUNT_IS("vec", nodes.size(), 1);
 
-		if (!is<Collection>(nodes.front().get())) {
-			Error::the().add(format("wrong argument type: list, '{}'", nodes.front()));
-			return nullptr;
-		}
+		VALUE_CAST(collection, Collection, nodes.front());
 
-		auto result_nodes = std::static_pointer_cast<Collection>(nodes.front())->nodes();
-
-		return makePtr<Vector>(result_nodes);
+		return makePtr<Vector>(collection->nodes());
 	});
 
 // -----------------------------------------

@@ -28,14 +28,16 @@ public:
 private:
 	ValuePtr evalImpl();
 	ValuePtr evalAst(ValuePtr ast, EnvironmentPtr env);
+
 	ValuePtr evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
-	ValuePtr evalQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	ValuePtr evalQuote(const std::list<ValuePtr>& nodes);
 	void evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	ValuePtr evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	ValuePtr evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+
 	ValuePtr apply(std::shared_ptr<List> evaluated_list);
 
 	ValuePtr m_ast;

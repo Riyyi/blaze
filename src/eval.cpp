@@ -16,6 +16,7 @@
 #include "eval.h"
 #include "forward.h"
 #include "types.h"
+#include "util.h"
 
 namespace blaze {
 
@@ -80,7 +81,7 @@ ValuePtr Eval::evalImpl()
 				continue; // TCO
 			}
 			if (symbol == "quote") {
-				return evalQuote(nodes, env);
+				return evalQuote(nodes);
 			}
 			if (symbol == "quasiquote") {
 				evalQuasiQuote(nodes, env);
@@ -175,24 +176,17 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 	return ast;
 }
 
+// -----------------------------------------
+
 ValuePtr Eval::evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() != 2) {
-		Error::the().add(format("wrong number of arguments: def!, {}", nodes.size()));
-		return nullptr;
-	}
+	CHECK_ARG_COUNT_IS("def!", nodes.size(), 2);
 
-	auto first_argument = *nodes.begin();
-	auto second_argument = *std::next(nodes.begin());
+	// First argument needs to be a Symbol
+	VALUE_CAST(symbol, Symbol, nodes.front());
 
-	// First element needs to be a Symbol
-	if (!is<Symbol>(first_argument.get())) {
-		Error::the().add(format("wrong argument type: symbol, {}", first_argument));
-		return nullptr;
-	}
-
-	std::string symbol = std::static_pointer_cast<Symbol>(first_argument)->symbol();
-	m_ast_stack.push(second_argument);
+	// Eval second argument
+	m_ast_stack.push(*std::next(nodes.begin()));
 	m_env_stack.push(env);
 	ValuePtr value = evalImpl();
 
@@ -202,15 +196,12 @@ ValuePtr Eval::evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 	}
 
 	// Modify existing environment
-	return env->set(symbol, value);
+	return env->set(symbol->symbol(), value);
 }
 
-ValuePtr Eval::evalQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalQuote(const std::list<ValuePtr>& nodes)
 {
-	if (nodes.size() != 1) {
-		Error::the().add(format("wrong number of arguments: quote, {}", nodes.size()));
-		return nullptr;
-	}
+	CHECK_ARG_COUNT_IS("quote", nodes.size(), 1);
 
 	return nodes.front();
 }
@@ -242,10 +233,8 @@ static ValuePtr startsWith(ValuePtr ast, const std::string& symbol)
 		return nullptr;
 	}
 
-	if (nodes.size() != 2) {
-		Error::the().add(format("wrong number of arguments: {}, {}", symbol, nodes.size() - 1));
-		return nullptr;
-	}
+	// Dont count the Symbol as part of the arguments
+	CHECK_ARG_COUNT_IS(symbol, nodes.size() - 1, 1);
 
 	return *std::next(nodes.begin());
 }
@@ -301,10 +290,7 @@ static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
 
 void Eval::evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() != 1) {
-		Error::the().add(format("wrong number of arguments: quasiquote, {}", nodes.size()));
-		return;
-	}
+	CHECK_ARG_COUNT_IS("quasiquote", nodes.size(), 1, void());
 
 	auto result = evalQuasiQuoteImpl(nodes.front());
 
@@ -315,53 +301,31 @@ void Eval::evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 
 ValuePtr Eval::evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() != 1) {
-		Error::the().add(format("wrong number of arguments: quasiquoteexpand, {}", nodes.size()));
-		return nullptr;
-	}
+	CHECK_ARG_COUNT_IS("quasiquoteexpand", nodes.size(), 1);
 
 	return evalQuasiQuoteImpl(nodes.front());
 }
 
+// (let* (x 1) x)
 void Eval::evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() != 2) {
-		Error::the().add(format("wrong number of arguments: let*, {}", nodes.size()));
-		return;
-	}
-
-	auto first_argument = *nodes.begin();
-	auto second_argument = *std::next(nodes.begin());
+	CHECK_ARG_COUNT_IS("let*", nodes.size(), 2, void());
 
 	// First argument needs to be a List or Vector
-	if (!is<Collection>(first_argument.get())) {
-		Error::the().add(format("wrong argument type: list, '{}'", first_argument));
-		return;
-	}
-
-	// Get the nodes out of the List or Vector
-	std::list<ValuePtr> binding_nodes;
-	auto bindings = std::static_pointer_cast<Collection>(first_argument);
-	binding_nodes = bindings->nodes();
+	VALUE_CAST(bindings, Collection, nodes.front(), void());
+	auto binding_nodes = bindings->nodes();
 
 	// List or Vector needs to have an even number of elements
-	size_t count = binding_nodes.size();
-	if (count % 2 != 0) {
-		Error::the().add(format("wrong number of arguments: {}, {}", "let* bindings", count));
-		return;
-	}
+	CHECK_ARG_COUNT_EVEN("bindings", binding_nodes.size(), void());
 
 	// Create new environment
 	auto let_env = Environment::create(env);
 
 	for (auto it = binding_nodes.begin(); it != binding_nodes.end(); std::advance(it, 2)) {
 		// First element needs to be a Symbol
-		if (!is<Symbol>(*it->get())) {
-			Error::the().add(format("wrong argument type: symbol, '{}'", *it));
-			return;
-		}
+		VALUE_CAST(elt, Symbol, (*it), void());
 
-		std::string key = std::static_pointer_cast<Symbol>(*it)->symbol();
+		std::string key = elt->symbol();
 		m_ast_stack.push(*std::next(it));
 		m_env_stack.push(let_env);
 		ValuePtr value = evalImpl();
@@ -369,18 +333,15 @@ void Eval::evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 	}
 
 	// TODO: Remove limitation of 3 arguments
-	// Eval all values in this new env, return last sexp of the result
-	m_ast_stack.push(second_argument);
+	// Eval all arguments in this new env, return last sexp of the result
+	m_ast_stack.push(*std::next(nodes.begin()));
 	m_env_stack.push(let_env);
 	return; // TCO
 }
 
 void Eval::evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() == 0) {
-		Error::the().add(format("wrong number of arguments: do, {}", nodes.size()));
-		return;
-	}
+	CHECK_ARG_COUNT_AT_LEAST("do", nodes.size(), 1, void());
 
 	// Evaluate all nodes except the last
 	for (auto it = nodes.begin(); it != std::prev(nodes.end(), 1); ++it) {
@@ -397,10 +358,7 @@ void Eval::evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 
 void Eval::evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
-	if (nodes.size() != 2 && nodes.size() != 3) {
-		Error::the().add(format("wrong number of arguments: if, {}", nodes.size()));
-		return;
-	}
+	CHECK_ARG_COUNT_BETWEEN("if", nodes.size(), 2, 3, void());
 
 	auto first_argument = *nodes.begin();
 	auto second_argument = *std::next(nodes.begin());
@@ -421,41 +379,27 @@ void Eval::evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 	return; // TCO
 }
 
-#define ARG_COUNT_CHECK(name, comparison, size)                                    \
-	if (comparison) {                                                              \
-		Error::the().add(format("wrong number of arguments: {}, {}", name, size)); \
-		return nullptr;                                                            \
-	}
-
-#define AST_CHECK(type, value)                                                 \
-	if (!is<type>(value.get())) {                                              \
-		Error::the().add(format("wrong argument type: {}, {}", #type, value)); \
-		return nullptr;                                                        \
-	}
-
-#define AST_CAST(type, value, variable) \
-	AST_CHECK(type, value)              \
-	auto variable = std::static_pointer_cast<type>(value);
-
+// (fn* (x) x)
 ValuePtr Eval::evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 {
-	ARG_COUNT_CHECK("fn*", nodes.size() != 2, nodes.size());
-
-	auto first_argument = *nodes.begin();
-	auto second_argument = *std::next(nodes.begin());
+	CHECK_ARG_COUNT_IS("fn*", nodes.size(), 2);
 
 	// First element needs to be a List or Vector
-	AST_CAST(Collection, first_argument, collection);
+	VALUE_CAST(collection, Collection, nodes.front());
 
 	std::vector<std::string> bindings;
 	for (auto node : collection->nodes()) {
 		// All nodes need to be a Symbol
-		AST_CAST(Symbol, node, symbol);
+		VALUE_CAST(symbol, Symbol, node);
 		bindings.push_back(symbol->symbol());
 	}
 
-	return makePtr<Lambda>(bindings, second_argument, env);
+	// TODO: Remove limitation of 3 arguments
+	// Wrap all other nodes in list and add that as lambda body
+	return makePtr<Lambda>(bindings, *std::next(nodes.begin()), env);
 }
+
+//-----------------------------------------
 
 ValuePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 {
