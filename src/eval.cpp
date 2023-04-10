@@ -62,20 +62,17 @@ ValuePtr Eval::evalImpl()
 			return evalAst(ast, env);
 		}
 
-		auto list = std::static_pointer_cast<List>(ast);
-
-		if (list->empty()) {
-			return ast;
-		}
-
 		ast = macroExpand(ast, env);
 
 		if (!is<List>(ast.get())) {
 			return evalAst(ast, env);
 		}
 
-		// Macro-expand modifies `ast', so get the new list
-		list = std::static_pointer_cast<List>(ast);
+		auto list = std::static_pointer_cast<List>(ast);
+
+		if (list->empty()) {
+			return ast;
+		}
 
 		// Special forms
 		auto nodes = list->nodes();
