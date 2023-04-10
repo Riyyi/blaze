@@ -180,13 +180,12 @@ ValuePtr Reader::readHashMap()
 	auto hash_map = makePtr<HashMap>();
 	while (!isEOF() && peek().type != Token::Type::BraceClose) {
 		auto key = readImpl();
-		auto value = readImpl();
 
-		if (key == nullptr && value == nullptr) {
+		if (key == nullptr || isEOF()) {
 			break;
 		}
 
-		if (key == nullptr || value == nullptr) {
+		if (peek().type == Token::Type::BraceClose) {
 			Error::the().add("hash-map requires an even-sized list");
 			return nullptr;
 		}
@@ -196,12 +195,15 @@ ValuePtr Reader::readHashMap()
 			return nullptr;
 		}
 
+		auto value = readImpl();
+
 		std::string keyString = is<String>(key.get()) ? std::static_pointer_cast<String>(key)->data() : std::static_pointer_cast<Keyword>(key)->keyword();
 		hash_map->add(keyString, value);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }
 		Error::the().add("expected '}', got EOF");
+		return nullptr;
 	}
 
 	return hash_map;
