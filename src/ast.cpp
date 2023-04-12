@@ -65,7 +65,7 @@ String::String(const std::string& data)
 // -----------------------------------------
 
 Keyword::Keyword(const std::string& data)
-	: m_data(data)
+	: m_data(std::string(1, 0x7f) + data) // 127
 {
 }
 

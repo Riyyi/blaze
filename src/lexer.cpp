@@ -170,7 +170,6 @@ bool Lexer::consumeKeyword()
 {
 	size_t column = m_column;
 	std::string keyword;
-	keyword += 0x7f; // 127
 
 	ignore(); // :
 
