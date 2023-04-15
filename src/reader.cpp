@@ -196,9 +196,7 @@ ValuePtr Reader::readHashMap()
 		}
 
 		auto value = readImpl();
-
-		std::string keyString = is<String>(key.get()) ? std::static_pointer_cast<String>(key)->data() : std::static_pointer_cast<Keyword>(key)->keyword();
-		hash_map->add(keyString, value);
+		hash_map->add(key, value);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }

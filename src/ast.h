@@ -10,12 +10,12 @@
 #include <cstdint>    // int64_t, uint8_t
 #include <functional> // std::function
 #include <list>
+#include <map>
 #include <memory> // std::shared_ptr
 #include <span>
 #include <string>
 #include <string_view>
 #include <typeinfo> // typeid
-#include <unordered_map>
 #include <vector>
 
 #include "ruc/format/formatter.h"
@@ -128,19 +128,31 @@ private:
 // {}
 class HashMap final : public Value {
 public:
+	using Elements = std::map<std::string, ValuePtr>;
+
 	HashMap() = default;
+	HashMap(const Elements& elements);
 	virtual ~HashMap() = default;
 
 	void add(const std::string& key, ValuePtr value);
+	void add(ValuePtr key, ValuePtr value);
+	void remove(const std::string& key);
+	void remove(ValuePtr key);
 
-	const std::unordered_map<std::string, ValuePtr>& elements() const { return m_elements; }
+	bool exists(const std::string& key);
+	bool exists(ValuePtr key);
+	ValuePtr get(const std::string& key);
+	ValuePtr get(ValuePtr key);
+	const Elements& elements() const { return m_elements; }
 	size_t size() const { return m_elements.size(); }
 	bool empty() const { return m_elements.size() == 0; }
 
 private:
 	virtual bool isHashMap() const override { return true; }
 
-	std::unordered_map<std::string, ValuePtr> m_elements;
+	std::string getKeyString(ValuePtr key);
+
+	Elements m_elements;
 };
 
 // -----------------------------------------

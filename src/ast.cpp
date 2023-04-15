@@ -10,6 +10,7 @@
 
 #include "ast.h"
 #include "environment.h"
+#include "error.h"
 #include "forward.h"
 #include "printer.h"
 #include "types.h"
@@ -46,6 +47,11 @@ Vector::Vector(const std::list<ValuePtr>& nodes)
 
 // -----------------------------------------
 
+HashMap::HashMap(const Elements& elements)
+	: m_elements(elements)
+{
+}
+
 void HashMap::add(const std::string& key, ValuePtr value)
 {
 	if (value == nullptr) {
@@ -53,6 +59,65 @@ void HashMap::add(const std::string& key, ValuePtr value)
 	}
 
 	m_elements.emplace(key, value);
+}
+
+void HashMap::add(ValuePtr key, ValuePtr value)
+{
+	if (key == nullptr || value == nullptr) {
+		return;
+	}
+
+	m_elements.emplace(getKeyString(key), value);
+}
+
+void HashMap::remove(const std::string& key)
+{
+	m_elements.erase(key);
+}
+
+void HashMap::remove(ValuePtr key)
+{
+	if (key == nullptr) {
+		return;
+	}
+
+	m_elements.erase(getKeyString(key));
+}
+
+bool HashMap::exists(const std::string& key)
+{
+	return m_elements.find(key) != m_elements.end();
+}
+
+bool HashMap::exists(ValuePtr key)
+{
+	return exists(getKeyString(key));
+}
+
+ValuePtr HashMap::get(const std::string& key)
+{
+	if (!exists(key)) {
+		return nullptr;
+	}
+
+	return m_elements[key];
+}
+
+ValuePtr HashMap::get(ValuePtr key)
+{
+	return get(getKeyString(key));
+}
+
+std::string HashMap::getKeyString(ValuePtr key)
+{
+	if (!is<String>(key.get()) && !is<Keyword>(key.get())) {
+		Error::the().add(format("wrong argument type: string or keyword, {}", key));
+		return {};
+	}
+
+	return is<String>(key.get())
+	           ? std::static_pointer_cast<String>(key)->data()
+	           : std::static_pointer_cast<Keyword>(key)->keyword();
 }
 
 // -----------------------------------------
@@ -78,15 +143,20 @@ Number::Number(int64_t number)
 
 // -----------------------------------------
 
-Symbol::Symbol(const std::string& symbol)
-	: m_symbol(symbol)
+Constant::Constant(State state)
+	: m_state(state)
+{
+}
+
+Constant::Constant(bool state)
+	: m_state(state ? Constant::True : Constant::False)
 {
 }
 
 // -----------------------------------------
 
-Constant::Constant(State state)
-	: m_state(state)
+Symbol::Symbol(const std::string& symbol)
+	: m_symbol(symbol)
 {
 }
 

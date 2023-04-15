@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <memory> // std::static_pointer_cast
+#include <iterator> // std::advance
+#include <memory>   // std::static_pointer_cast
 #include <string>
 
 #include "ruc/file.h"
@@ -144,25 +145,6 @@ ADD_FUNCTION(
 	"list",
 	{
 		return makePtr<List>(nodes);
-	});
-
-ADD_FUNCTION(
-	"list?",
-	{
-		bool result = true;
-
-		if (nodes.size() == 0) {
-			result = false;
-		}
-
-		for (auto node : nodes) {
-			if (!is<List>(node.get())) {
-				result = false;
-				break;
-			}
-		}
-
-		return makePtr<Constant>((result) ? Constant::True : Constant::False);
 	});
 
 ADD_FUNCTION(
@@ -369,26 +351,6 @@ ADD_FUNCTION(
 		return makePtr<Atom>(nodes.front());
 	});
 
-// (atom? myatom 2 "foo")
-ADD_FUNCTION(
-	"atom?",
-	{
-		bool result = true;
-
-		if (nodes.size() == 0) {
-			result = false;
-		}
-
-		for (auto node : nodes) {
-			if (!is<Atom>(node.get())) {
-				result = false;
-				break;
-			}
-		}
-
-		return makePtr<Constant>((result) ? Constant::True : Constant::False);
-	});
-
 // (deref myatom)
 ADD_FUNCTION(
 	"deref",
@@ -414,7 +376,7 @@ ADD_FUNCTION(
 		return value;
 	});
 
-// (swap! myatom (fn* [x] (+ 1 x)))
+// (swap! myatom (fn* [x y] (+ 1 x y)) 2) -> (deref (def! myatom (atom ((fn* [x y] (+ 1 x y)) (deref myatom) 2))))
 ADD_FUNCTION(
 	"swap!",
 	{
@@ -422,8 +384,8 @@ ADD_FUNCTION(
 
 		VALUE_CAST(atom, Atom, nodes.front());
 
-		auto second_argument = *std::next(nodes.begin());
-		IS_VALUE(Callable, second_argument);
+		auto callable = *std::next(nodes.begin());
+		IS_VALUE(Callable, callable);
 
 		// Remove atom and function from the argument list, add atom value
 		nodes.pop_front();
@@ -431,12 +393,12 @@ ADD_FUNCTION(
 		nodes.push_front(atom->deref());
 
 		ValuePtr value = nullptr;
-		if (is<Function>(second_argument.get())) {
-			auto function = std::static_pointer_cast<Function>(second_argument)->function();
+		if (is<Function>(callable.get())) {
+			auto function = std::static_pointer_cast<Function>(callable)->function();
 			value = function(nodes);
 		}
 		else {
-			auto lambda = std::static_pointer_cast<Lambda>(second_argument);
+			auto lambda = std::static_pointer_cast<Lambda>(callable);
 			value = eval(lambda->body(), Environment::create(lambda, nodes));
 		}
 
@@ -546,6 +508,264 @@ ADD_FUNCTION(
 		}
 
 		return makePtr<List>(collection_nodes);
+	});
+
+// (apply + 1 2 (list 3 4)) -> (+ 1 2 3 4)
+ADD_FUNCTION(
+	"apply",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("apply", nodes.size(), 2);
+
+		auto callable = nodes.front();
+		IS_VALUE(Callable, callable);
+
+		VALUE_CAST(collection, Collection, nodes.back());
+
+		// Remove function and list from the arguments
+		nodes.pop_front();
+		nodes.pop_back();
+
+		// Append list nodes to the argument leftovers
+		auto collection_nodes = collection->nodes();
+		nodes.splice(nodes.end(), collection_nodes);
+
+		ValuePtr value = nullptr;
+		if (is<Function>(callable.get())) {
+			auto function = std::static_pointer_cast<Function>(callable)->function();
+			value = function(nodes);
+		}
+		else {
+			auto lambda = std::static_pointer_cast<Lambda>(callable);
+			value = eval(lambda->body(), Environment::create(lambda, nodes));
+		}
+
+		return value;
+	});
+
+// (map (fn* (x) (* x 2)) (list 1 2 3))
+ADD_FUNCTION(
+	"map",
+	{
+		CHECK_ARG_COUNT_IS("map", nodes.size(), 2);
+
+		VALUE_CAST(callable, Callable, nodes.front());
+		VALUE_CAST(collection, Collection, nodes.back());
+		auto collection_nodes = collection->nodes();
+
+		auto result = makePtr<List>();
+
+		if (is<Function>(callable.get())) {
+			auto function = std::static_pointer_cast<Function>(callable)->function();
+			for (auto node : collection_nodes) {
+				result->add(function({ node }));
+			}
+		}
+		else {
+			auto lambda = std::static_pointer_cast<Lambda>(callable);
+			for (auto node : collection_nodes) {
+				result->add(eval(lambda->body(), Environment::create(lambda, { node })));
+			}
+		}
+
+		return result;
+	});
+
+// -----------------------------------------
+
+#define IS_CONSTANT(name, constant)                                                     \
+	{                                                                                   \
+		CHECK_ARG_COUNT_IS(name, nodes.size(), 1);                                      \
+                                                                                        \
+		return makePtr<Constant>(                                                       \
+			is<Constant>(nodes.front().get())                                           \
+			&& std::static_pointer_cast<Constant>(nodes.front())->state() == constant); \
+	}
+
+// (nil? nil)
+ADD_FUNCTION("nil?", IS_CONSTANT("nil?", Constant::Nil));
+ADD_FUNCTION("true?", IS_CONSTANT("true?", Constant::True));
+ADD_FUNCTION("false?", IS_CONSTANT("false?", Constant::False));
+
+// -----------------------------------------
+
+#define IS_TYPE(type)                     \
+	{                                     \
+		bool result = true;               \
+                                          \
+		if (nodes.size() == 0) {          \
+			result = false;               \
+		}                                 \
+                                          \
+		for (auto node : nodes) {         \
+			if (!is<type>(node.get())) {  \
+				result = false;           \
+				break;                    \
+			}                             \
+		}                                 \
+                                          \
+		return makePtr<Constant>(result); \
+	}
+
+// (symbol? 'foo)
+ADD_FUNCTION("atom?", IS_TYPE(Atom));
+ADD_FUNCTION("keyword?", IS_TYPE(Keyword));
+ADD_FUNCTION("list?", IS_TYPE(List));
+ADD_FUNCTION("map?", IS_TYPE(HashMap));
+ADD_FUNCTION("sequential?", IS_TYPE(Collection));
+ADD_FUNCTION("symbol?", IS_TYPE(Symbol));
+ADD_FUNCTION("vector?", IS_TYPE(Vector));
+
+// -----------------------------------------
+
+#define STRING_TO_TYPE(name, type)                      \
+	{                                                   \
+		CHECK_ARG_COUNT_IS(name, nodes.size(), 1);      \
+                                                        \
+		if (is<type>(nodes.front().get())) {            \
+			return nodes.front();                       \
+		}                                               \
+                                                        \
+		VALUE_CAST(stringValue, String, nodes.front()); \
+                                                        \
+		return makePtr<type>(stringValue->data());      \
+	}
+
+// (symbol "foo")
+ADD_FUNCTION("symbol", STRING_TO_TYPE("symbol", Symbol));
+ADD_FUNCTION("keyword", STRING_TO_TYPE("keyword", Keyword));
+
+// -----------------------------------------
+
+ADD_FUNCTION(
+	"vector",
+	{
+		auto result = makePtr<Vector>();
+
+		for (auto node : nodes) {
+			result->add(node);
+		}
+
+		return result;
+	});
+
+ADD_FUNCTION(
+	"hash-map",
+	{
+		CHECK_ARG_COUNT_EVEN("hash-map", nodes.size());
+
+		auto result = makePtr<HashMap>();
+
+		for (auto it = nodes.begin(); it != nodes.end(); std::advance(it, 2)) {
+			result->add(*it, *(std::next(it)));
+		}
+
+		return result;
+	});
+
+ADD_FUNCTION(
+	"assoc",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("assoc", nodes.size(), 1);
+
+		VALUE_CAST(hash_map, HashMap, nodes.front());
+		nodes.pop_front();
+
+		CHECK_ARG_COUNT_EVEN("assoc", nodes.size());
+
+		auto result = makePtr<HashMap>(hash_map->elements());
+
+		for (auto it = nodes.begin(); it != nodes.end(); std::advance(it, 2)) {
+			result->add(*it, *(std::next(it)));
+		}
+
+		return result;
+	});
+
+ADD_FUNCTION(
+	"dissoc",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("dissoc", nodes.size(), 1);
+
+		VALUE_CAST(hash_map, HashMap, nodes.front());
+		nodes.pop_front();
+
+		auto result = makePtr<HashMap>(hash_map->elements());
+
+		for (auto node : nodes) {
+			result->remove(node);
+		}
+
+		return result;
+	});
+
+ADD_FUNCTION(
+	"get",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("get", nodes.size(), 1);
+
+		VALUE_CAST(hash_map, HashMap, nodes.front());
+		nodes.pop_front();
+
+		if (nodes.size() == 0) {
+			return makePtr<Constant>();
+		}
+
+		auto result = hash_map->get(nodes.front());
+		return (result) ? result : makePtr<Constant>();
+	});
+
+ADD_FUNCTION(
+	"contains?",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("contains?", nodes.size(), 1);
+
+		VALUE_CAST(hash_map, HashMap, nodes.front());
+		nodes.pop_front();
+
+		if (nodes.size() == 0) {
+			return makePtr<Constant>(false);
+		}
+
+		return makePtr<Constant>(hash_map->exists(nodes.front()));
+	});
+
+ADD_FUNCTION(
+	"keys",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("keys", nodes.size(), 1);
+
+		VALUE_CAST(hash_map, HashMap, nodes.front());
+
+		auto result = makePtr<List>();
+
+		auto elements = hash_map->elements();
+		for (auto pair : elements) {
+			if (pair.first.front() == 0x7f) { // 127
+				result->add(makePtr<Keyword>(pair.first.substr(1)));
+			}
+			else {
+				result->add(makePtr<String>(pair.first));
+			}
+		}
+
+		return result;
+	});
+
+ADD_FUNCTION(
+	"vals",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("vals", nodes.size(), 1);
+
+		VALUE_CAST(hash_map, HashMap, nodes.front());
+
+		auto result = makePtr<List>();
+
+		auto elements = hash_map->elements();
+		for (auto pair : elements) {
+			result->add(pair.second);
+		}
+
+		return result;
 	});
 
 // -----------------------------------------
