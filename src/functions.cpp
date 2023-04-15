@@ -238,7 +238,7 @@ ADD_FUNCTION("pr-str", PRINTER_STRING(true, " "));
 		}                                                                \
 		print("\n");                                                     \
                                                                          \
-		return makePtr<Constant>(Constant::Nil);                         \
+		return makePtr<Constant>();                                      \
 	}
 
 ADD_FUNCTION("prn", PRINTER_PRINT(true));
@@ -478,6 +478,10 @@ ADD_FUNCTION(
 	{
 		CHECK_ARG_COUNT_IS("vec", nodes.size(), 1);
 
+		if (is<Vector>(nodes.front().get())) {
+			return nodes.front();
+		}
+
 		VALUE_CAST(collection, Collection, nodes.front());
 
 		return makePtr<Vector>(collection->nodes());
@@ -515,13 +519,13 @@ ADD_FUNCTION(
 
 		if (is<Constant>(nodes.front().get())
 	        && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
-			return makePtr<Constant>(Constant::Nil);
+			return makePtr<Constant>();
 		}
 
 		VALUE_CAST(collection, Collection, nodes.front());
 		auto collection_nodes = collection->nodes();
 
-		return (collection_nodes.empty()) ? makePtr<Constant>(Constant::Nil) : collection_nodes.front();
+		return (collection_nodes.empty()) ? makePtr<Constant>() : collection_nodes.front();
 	});
 
 // (rest (list 1 2 3))

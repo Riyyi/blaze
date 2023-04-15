@@ -201,7 +201,9 @@ public:
 		False,
 	};
 
+	Constant() = default;
 	Constant(State state);
+	Constant(bool state);
 	virtual ~Constant() = default;
 
 	State state() const { return m_state; }
@@ -209,7 +211,7 @@ public:
 private:
 	virtual bool isConstant() const override { return true; }
 
-	const State m_state;
+	const State m_state { State::Nil };
 };
 
 // -----------------------------------------
