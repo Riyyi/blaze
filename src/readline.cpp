@@ -13,6 +13,7 @@
 #include <string_view>
 
 #include "ruc/format/color.h"
+#include "ruc/format/print.h"
 
 #include "readline.h"
 
@@ -22,13 +23,7 @@ Readline::Readline(bool pretty_print, std::string_view history_path)
 	: m_pretty_print(pretty_print)
 	, m_history_path(tilde_expand(history_path.data()))
 {
-	if (!pretty_print) {
-		m_prompt = "user> ";
-	}
-	else {
-		m_prompt = format(fg(ruc::format::TerminalColor::Blue), "user>");
-		m_prompt += format(" \033[1m");
-	}
+	m_prompt = createPrompt("user> ");
 
 	read_history(m_history_path);
 }
@@ -40,9 +35,24 @@ Readline::~Readline()
 
 // -----------------------------------------
 
-bool Readline::get(std::string& output)
+std::string Readline::createPrompt(const std::string& prompt)
 {
-	char* line = readline(m_prompt.c_str());
+	if (!m_pretty_print) {
+		return prompt;
+	}
+
+	return format(fg(ruc::format::TerminalColor::Blue), "{}", prompt)
+	       + format("\033[1m");
+}
+
+bool Readline::get(std::string& output, const std::string& prompt)
+{
+	char* line = readline(prompt.c_str());
+
+	if (m_pretty_print) {
+		print("\033[0m");
+	}
+
 	if (line == nullptr) {
 		return false;
 	}
@@ -55,6 +65,11 @@ bool Readline::get(std::string& output)
 	std::free(line);
 
 	return true;
+}
+
+bool Readline::get(std::string& output)
+{
+	return get(output, m_prompt);
 }
 
 } // namespace blaze

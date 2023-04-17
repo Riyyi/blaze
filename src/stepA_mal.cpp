@@ -24,15 +24,26 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 0
+#if 1
 namespace blaze {
 
+static blaze::Readline s_readline;
 static EnvironmentPtr s_outer_env = Environment::create();
 
 static auto cleanup(int signal) -> void
 {
 	print("\033[0m\n");
 	std::exit(signal);
+}
+
+auto readline(const std::string& prompt) -> ValuePtr
+{
+	std::string input;
+	if (s_readline.get(input, s_readline.createPrompt(prompt))) {
+		return makePtr<String>(input);
+	}
+
+	return makePtr<Constant>();
 }
 
 auto read(std::string_view input) -> ValuePtr
@@ -90,6 +101,7 @@ static std::string_view lambdaTable[] = {
 	                (nth xs 1) \
 	              (throw \"odd number of forms to cond\")) \
 	          (cons 'cond (rest (rest xs)))))))",
+	"(def! *host-language* \"C++\")",
 };
 
 static auto installLambdas(EnvironmentPtr env) -> void
@@ -126,6 +138,7 @@ auto main(int argc, char* argv[]) -> int
 	arg_parser.addOption(dump_reader, 'r', "dump-reader", nullptr, nullptr);
 	arg_parser.addOption(pretty_print, 'c', "color", nullptr, nullptr);
 	arg_parser.addOption(history_path, 'h', "history-path", nullptr, nullptr, nullptr, ruc::ArgParser::Required::Yes);
+	// TODO: Add overload for addArgument(std::vector<std::string_view>)
 	arg_parser.addArgument(arguments, "arguments", nullptr, nullptr, ruc::ArgParser::Required::No);
 	arg_parser.parse(argc, argv);
 
@@ -147,13 +160,12 @@ auto main(int argc, char* argv[]) -> int
 		return 0;
 	}
 
-	blaze::Readline readline(pretty_print, history_path);
+	rep("(println (str \"Mal [\" *host-language* \"]\"))", blaze::s_outer_env);
+
+	blaze::s_readline = blaze::Readline(pretty_print, history_path);
 
 	std::string input;
-	while (readline.get(input)) {
-		if (pretty_print) {
-			print("\033[0m");
-		}
+	while (blaze::s_readline.get(input)) {
 		std::string output = rep(input, blaze::s_outer_env);
 		if (output.length() > 0) {
 			print("{}\n", output);

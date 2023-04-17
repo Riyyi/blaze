@@ -786,6 +786,16 @@ ADD_FUNCTION(
 		return result;
 	});
 
+ADD_FUNCTION(
+	"readline",
+	{
+		CHECK_ARG_COUNT_IS("readline", nodes.size(), 1);
+
+		VALUE_CAST(prompt, String, nodes.front());
+
+		return readline(prompt->data());
+	});
+
 // -----------------------------------------
 
 void installFunctions(EnvironmentPtr env)

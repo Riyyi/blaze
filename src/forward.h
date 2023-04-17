@@ -22,8 +22,9 @@ typedef std::shared_ptr<Environment> EnvironmentPtr;
 // -----------------------------------------
 // Functions
 
+extern ValuePtr readline(const std::string& prompt);
 extern ValuePtr read(std::string_view input);
-ValuePtr eval(ValuePtr ast, EnvironmentPtr env);
+extern ValuePtr eval(ValuePtr ast, EnvironmentPtr env);
 
 extern void installFunctions(EnvironmentPtr env);
 
