@@ -1,0 +1,8 @@
+#+TITLE: mal - Make a Lisp
+#+AUTHOR: Riyyi
+#+LANGUAGE: en
+#+OPTIONS: toc:nil
+
+* mal - Make a Lisp
+
+This is my implementation of the [[https://github.com/kanaka/mal][Make A Lisp]] project, done in C++.
