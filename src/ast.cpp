@@ -58,7 +58,7 @@ void HashMap::add(const std::string& key, ValuePtr value)
 		return;
 	}
 
-	m_elements.emplace(key, value);
+	m_elements.insert_or_assign(key, value);
 }
 
 void HashMap::add(ValuePtr key, ValuePtr value)
@@ -67,7 +67,7 @@ void HashMap::add(ValuePtr key, ValuePtr value)
 		return;
 	}
 
-	m_elements.emplace(getKeyString(key), value);
+	m_elements.insert_or_assign(getKeyString(key), value);
 }
 
 void HashMap::remove(const std::string& key)
