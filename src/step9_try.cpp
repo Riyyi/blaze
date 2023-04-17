@@ -155,7 +155,10 @@ auto main(int argc, char* argv[]) -> int
 		if (pretty_print) {
 			print("\033[0m");
 		}
-		print("{}\n", rep(input, blaze::s_outer_env));
+		std::string output = rep(input, blaze::s_outer_env);
+		if (output.length() > 0) {
+			print("{}\n", output);
+		}
 	}
 
 	if (pretty_print) {
