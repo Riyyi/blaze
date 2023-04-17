@@ -8,7 +8,9 @@
 
 #include "ast.h"
 #include "environment.h"
+#include "error.h"
 #include "eval.h"
+#include "forward.h"
 #include "lexer.h"
 #include "printer.h"
 #include "reader.h"
@@ -16,33 +18,38 @@
 #include "settings.h"
 
 #if 0
-auto read(std::string_view input) -> blaze::ASTNodePtr
+static blaze::EnvironmentPtr s_outer_env = blaze::Environment::create();
+
+namespace blaze {
+
+auto read(std::string_view input) -> ValuePtr
 {
-	blaze::Lexer lexer(input);
+	Lexer lexer(input);
 	lexer.tokenize();
-	if (blaze::Settings::the().get("dump-lexer") == "1") {
+	if (Settings::the().get("dump-lexer") == "1") {
 		lexer.dump();
 	}
 
-	blaze::Reader reader(std::move(lexer.tokens()));
+	Reader reader(std::move(lexer.tokens()));
 	reader.read();
-	if (blaze::Settings::the().get("dump-reader") == "1") {
+	if (Settings::the().get("dump-reader") == "1") {
 		reader.dump();
 	}
 
 	return reader.node();
 }
 
-auto eval(blaze::ASTNodePtr ast) -> blaze::ASTNodePtr
+auto eval(ValuePtr ast, EnvironmentPtr env) -> ValuePtr
 {
-	blaze::GlobalEnvironment env;
-	blaze::Eval eval(ast, &env);
+	Eval eval(ast, env);
 	eval.eval();
 
 	return eval.ast();
 }
 
-auto print(blaze::ASTNodePtr exp) -> std::string
+} // namespace blaze
+
+auto print(blaze::ValuePtr exp) -> std::string
 {
 	blaze::Printer printer;
 
@@ -54,7 +61,7 @@ auto rep(std::string_view input) -> std::string
 	blaze::Error::the().clearErrors();
 	blaze::Error::the().setInput(input);
 
-	return print(eval(read(input)));
+	return print(blaze::eval(blaze::read(input), s_outer_env));
 }
 
 static auto cleanup(int signal) -> void
@@ -86,6 +93,8 @@ auto main(int argc, char* argv[]) -> int
 	// Signal callbacks
 	std::signal(SIGINT, cleanup);
 	std::signal(SIGTERM, cleanup);
+
+	installFunctions(s_outer_env);
 
 	blaze::Readline readline(pretty_print, history_path);
 

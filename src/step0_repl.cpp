@@ -3,6 +3,8 @@
 #include <string>   // std::getline
 #include <string_view>
 
+#include "forward.h"
+
 #if 0
 auto read(std::string_view data) -> std::string_view
 {
@@ -41,4 +43,19 @@ auto main() -> int
 
 	return 0;
 }
+
+// Below is needed for compilation
+namespace blaze {
+
+auto read(std::string_view) -> ValuePtr
+{
+	return {};
+}
+
+auto eval(ValuePtr, EnvironmentPtr) -> ValuePtr
+{
+	return {};
+}
+
+} // namespace blaze
 #endif

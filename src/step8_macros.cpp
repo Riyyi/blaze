@@ -126,7 +126,6 @@ auto main(int argc, char* argv[]) -> int
 	arg_parser.addOption(dump_reader, 'r', "dump-reader", nullptr, nullptr);
 	arg_parser.addOption(pretty_print, 'c', "color", nullptr, nullptr);
 	arg_parser.addOption(history_path, 'h', "history-path", nullptr, nullptr, nullptr, ruc::ArgParser::Required::Yes);
-	// TODO: Add overload for addArgument(std::vector<std::string_view>)
 	arg_parser.addArgument(arguments, "arguments", nullptr, nullptr, ruc::ArgParser::Required::No);
 	arg_parser.parse(argc, argv);
 
