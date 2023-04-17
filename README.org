@@ -7,20 +7,15 @@ This is my implementation of the [[https://github.com/kanaka/mal][Make A Lisp]] 
 
 ** Usage
 
+Change the ~#if 0~ macro at the top of the ~stepX.cpp~ to ~#if 1~.
+
 *** Run the REPL
 
-#+BEGIN_SRC shell-script
-$ make
-$ ./blaze
-#+END_SRC
-Or
 #+BEGIN_SRC shell-script
 $ make run
 #+END_SRC
 
 *** Run mal tests
-
-Change the ~#if 0~ macro at the top of the ~stepX.cpp~ to ~#if 1~, then run the test:
 
 #+BEGIN_SRC shell-script
 $ make test0 | less
