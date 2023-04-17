@@ -42,6 +42,7 @@ private:
 	void evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 	void evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
+	void evalTry(const std::list<ValuePtr>& nodes, EnvironmentPtr env);
 
 	ValuePtr apply(std::shared_ptr<List> evaluated_list);
 

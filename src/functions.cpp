@@ -570,6 +570,17 @@ ADD_FUNCTION(
 		return result;
 	});
 
+// (throw x)
+ADD_FUNCTION(
+	"throw",
+	{
+		CHECK_ARG_COUNT_IS("throw", nodes.size(), 1);
+
+		Error::the().add(nodes.front());
+
+		return nullptr;
+	})
+
 // -----------------------------------------
 
 #define IS_CONSTANT(name, constant)                                                     \

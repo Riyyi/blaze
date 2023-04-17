@@ -161,6 +161,10 @@ void Printer::printError()
 		std::string error = Error::the().otherError();
 		m_print += format("{}", error);
 	}
+	else if (Error::the().hasException()) {
+		ValuePtr error = Error::the().exception();
+		m_print += format("{}", error);
+	}
 }
 
 } // namespace blaze

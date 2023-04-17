@@ -44,6 +44,10 @@ ValuePtr Eval::evalImpl()
 	EnvironmentPtr env = nullptr;
 
 	while (true) {
+		if (Error::the().hasAnyError()) {
+			return nullptr;
+		}
+
 		if (m_ast_stack.size() == 0) {
 			return nullptr;
 		}
@@ -112,6 +116,10 @@ ValuePtr Eval::evalImpl()
 			}
 			if (symbol == "quasiquote") {
 				evalQuasiQuote(nodes, env);
+				continue; // TCO
+			}
+			if (symbol == "try*") {
+				evalTry(nodes, env);
 				continue; // TCO
 			}
 		}
