@@ -662,6 +662,7 @@ ADD_FUNCTION(
 		return result;
 	});
 
+// (assoc {:a 1 :b 2} :a 3 :c 1)
 ADD_FUNCTION(
 	"assoc",
 	{
@@ -698,10 +699,16 @@ ADD_FUNCTION(
 		return result;
 	});
 
+// (get {:kw "value"} :kw)
 ADD_FUNCTION(
 	"get",
 	{
 		CHECK_ARG_COUNT_AT_LEAST("get", nodes.size(), 1);
+
+		if (is<Constant>(nodes.front().get())
+	        && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
+			return makePtr<Constant>();
+		}
 
 		VALUE_CAST(hash_map, HashMap, nodes.front());
 		nodes.pop_front();
