@@ -3,6 +3,54 @@
 #+LANGUAGE: en
 #+OPTIONS: toc:nil
 
-* mal - Make a Lisp
+This is my implementation of the [[https://github.com/kanaka/mal][Make A Lisp]] project, done in C++20.
 
-This is my implementation of the [[https://github.com/kanaka/mal][Make A Lisp]] project, done in C++.
+** Usage
+
+*** Run the REPL
+
+#+BEGIN_SRC shell-script
+$ make
+$ ./blaze
+#+END_SRC
+Or
+#+BEGIN_SRC shell-script
+$ make run
+#+END_SRC
+
+*** Run mal tests
+
+Change the ~#if 0~ macro at the top of the ~stepX.cpp~ to ~#if 1~, then run the test:
+
+#+BEGIN_SRC shell-script
+$ make test0 | less
+#+END_SRC
+
+** Download
+
+*** Clone
+
+#+BEGIN_SRC shell-script
+$ git clone https://github.com/riyyi/blaze
+$ cd blaze
+$ git submodule update --init --recursive
+#+END_SRC
+Or
+#+BEGIN_SRC shell-script
+$ git clone --recursive https://github.com/riyyi/blaze
+#+END_SRC
+
+*** Update
+
+#+BEGIN_SRC shell-script
+$ git pull
+$ git submodule update --recursive
+#+END_SRC
+
+** Build instructions
+
+#+BEGIN_SRC shell-script
+$ mkdir build
+$ cd build
+$ cmake .. && make
+#+END_SRC

@@ -24,7 +24,7 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 1
+#if 0
 namespace blaze {
 
 static EnvironmentPtr s_outer_env = Environment::create();
