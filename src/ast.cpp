@@ -31,6 +31,15 @@ void Collection::add(ValuePtr node)
 	m_nodes.push_back(node);
 }
 
+void Collection::addFront(ValuePtr node)
+{
+	if (node == nullptr) {
+		return;
+	}
+
+	m_nodes.push_front(node);
+}
+
 // -----------------------------------------
 
 List::List(const std::list<ValuePtr>& nodes)

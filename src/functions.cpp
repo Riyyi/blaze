@@ -237,15 +237,15 @@ ADD_FUNCTION(
 			[&equal](ValuePtr lhs, ValuePtr rhs) -> bool {
 			if ((is<List>(lhs.get()) || is<Vector>(lhs.get()))
 		        && (is<List>(rhs.get()) || is<Vector>(rhs.get()))) {
-				auto lhs_nodes = std::static_pointer_cast<Collection>(lhs)->nodes();
-				auto rhs_nodes = std::static_pointer_cast<Collection>(rhs)->nodes();
+				const auto& lhs_nodes = std::static_pointer_cast<Collection>(lhs)->nodes();
+				const auto& rhs_nodes = std::static_pointer_cast<Collection>(rhs)->nodes();
 
 				if (lhs_nodes.size() != rhs_nodes.size()) {
 					return false;
 				}
 
-				auto lhs_it = lhs_nodes.begin();
-				auto rhs_it = rhs_nodes.begin();
+				auto lhs_it = lhs_nodes.cbegin();
+				auto rhs_it = rhs_nodes.cbegin();
 				for (; lhs_it != lhs_nodes.end(); ++lhs_it, ++rhs_it) {
 					if (!equal(*lhs_it, *rhs_it)) {
 						return false;
@@ -256,8 +256,8 @@ ADD_FUNCTION(
 			}
 
 			if (is<HashMap>(lhs.get()) && is<HashMap>(rhs.get())) {
-				auto lhs_nodes = std::static_pointer_cast<HashMap>(lhs)->elements();
-				auto rhs_nodes = std::static_pointer_cast<HashMap>(rhs)->elements();
+				const auto& lhs_nodes = std::static_pointer_cast<HashMap>(lhs)->elements();
+				const auto& rhs_nodes = std::static_pointer_cast<HashMap>(rhs)->elements();
 
 				if (lhs_nodes.size() != rhs_nodes.size()) {
 					return false;
@@ -265,7 +265,7 @@ ADD_FUNCTION(
 
 				for (const auto& [key, value] : lhs_nodes) {
 					auto it = rhs_nodes.find(key);
-					if (it == rhs_nodes.end() || !equal(value, it->second)) {
+					if (it == rhs_nodes.cend() || !equal(value, it->second)) {
 						return false;
 					}
 				}
@@ -384,8 +384,7 @@ ADD_FUNCTION(
 
 		VALUE_CAST(atom, Atom, nodes.front());
 
-		auto callable = *std::next(nodes.begin());
-		IS_VALUE(Callable, callable);
+		VALUE_CAST(callable, Callable, (*std::next(nodes.begin())));
 
 		// Remove atom and function from the argument list, add atom value
 		nodes.pop_front();
@@ -405,7 +404,7 @@ ADD_FUNCTION(
 		return atom->reset(value);
 	});
 
-// (cons 1 (list 2 3))
+// (cons 1 (list 2 3)) -> (1 2 3)
 ADD_FUNCTION(
 	"cons",
 	{
@@ -413,13 +412,13 @@ ADD_FUNCTION(
 
 		VALUE_CAST(collection, Collection, (*std::next(nodes.begin())));
 
-		auto result_nodes = collection->nodes();
-		result_nodes.push_front(nodes.front());
+		auto result = makePtr<List>(collection->nodes());
+		result->addFront(nodes.front());
 
-		return makePtr<List>(result_nodes);
+		return result;
 	});
 
-// (concat (list 1) (list 2 3))
+// (concat (list 1) (list 2 3)) -> (1 2 3)
 ADD_FUNCTION(
 	"concat",
 	{
@@ -434,7 +433,7 @@ ADD_FUNCTION(
 		return makePtr<List>(result_nodes);
 	});
 
-// (vec (list 1 2 3))
+// (vec (list 1 2 3)) -> [1 2 3]
 ADD_FUNCTION(
 	"vec",
 	{
@@ -449,7 +448,7 @@ ADD_FUNCTION(
 		return makePtr<Vector>(collection->nodes());
 	});
 
-// (nth (list 1 2 3) 0)
+// (nth (list 1 2 3) 0) -> 1
 ADD_FUNCTION(
 	"nth",
 	{
@@ -457,7 +456,7 @@ ADD_FUNCTION(
 
 		VALUE_CAST(collection, Collection, nodes.front());
 		VALUE_CAST(number_node, Number, (*std::next(nodes.begin())));
-		auto collection_nodes = collection->nodes();
+		const auto& collection_nodes = collection->nodes();
 		auto index = (size_t)number_node->number();
 
 		if (number_node->number() < 0 || index >= collection_nodes.size()) {
@@ -465,7 +464,7 @@ ADD_FUNCTION(
 			return nullptr;
 		}
 
-		auto result = collection_nodes.begin();
+		auto result = collection_nodes.cbegin();
 		for (size_t i = 0; i < index; ++i) {
 			result++;
 		}
@@ -473,7 +472,7 @@ ADD_FUNCTION(
 		return *result;
 	});
 
-// (first (list 1 2 3))
+// (first (list 1 2 3)) -> 1
 ADD_FUNCTION(
 	"first",
 	{
@@ -485,12 +484,11 @@ ADD_FUNCTION(
 		}
 
 		VALUE_CAST(collection, Collection, nodes.front());
-		auto collection_nodes = collection->nodes();
 
-		return (collection_nodes.empty()) ? makePtr<Constant>() : collection_nodes.front();
+		return (collection->empty()) ? makePtr<Constant>() : collection->front();
 	});
 
-// (rest (list 1 2 3))
+// (rest (list 1 2 3)) -> (2 3)
 ADD_FUNCTION(
 	"rest",
 	{
@@ -550,19 +548,19 @@ ADD_FUNCTION(
 
 		VALUE_CAST(callable, Callable, nodes.front());
 		VALUE_CAST(collection, Collection, nodes.back());
-		auto collection_nodes = collection->nodes();
+		const auto& collection_nodes = collection->nodes();
 
 		auto result = makePtr<List>();
 
 		if (is<Function>(callable.get())) {
 			auto function = std::static_pointer_cast<Function>(callable)->function();
-			for (auto node : collection_nodes) {
+			for (const auto& node : collection_nodes) {
 				result->add(function({ node }));
 			}
 		}
 		else {
 			auto lambda = std::static_pointer_cast<Lambda>(callable);
-			for (auto node : collection_nodes) {
+			for (const auto& node : collection_nodes) {
 				result->add(eval(lambda->body(), Environment::create(lambda, { node })));
 			}
 		}

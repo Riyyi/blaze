@@ -243,11 +243,11 @@ static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
 
 	ValuePtr result = makePtr<List>();
 
-	auto nodes = std::static_pointer_cast<Collection>(ast)->nodes();
+	const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodes();
 
 	// `() or `(1 ~2 3) or `(1 ~@(list 2 2 2) 3)
-	for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
-		const auto elt = *it;
+	for (auto it = nodes.crbegin(); it != nodes.crend(); ++it) {
+		const auto& elt = *it;
 
 		const auto splice_unquote = startsWith(elt, "splice-unquote"); // (list 2 2 2)
 		if (splice_unquote) {

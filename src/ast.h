@@ -61,6 +61,7 @@ public:
 	virtual ~Collection() = default;
 
 	void add(ValuePtr node);
+	void addFront(ValuePtr node);
 
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }

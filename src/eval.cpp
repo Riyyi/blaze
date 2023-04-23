@@ -167,8 +167,8 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 	else if (is<Collection>(ast_raw_ptr)) {
 		std::shared_ptr<Collection> result = nullptr;
 		(is<List>(ast_raw_ptr)) ? result = makePtr<List>() : result = makePtr<Vector>();
-		auto nodes = std::static_pointer_cast<Collection>(ast)->nodes();
-		for (auto node : nodes) {
+		const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodes();
+		for (const auto& node : nodes) {
 			m_ast_stack.push(node);
 			m_env_stack.push(env);
 			ValuePtr eval_node = evalImpl();
@@ -181,8 +181,8 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 	}
 	else if (is<HashMap>(ast_raw_ptr)) {
 		auto result = makePtr<HashMap>();
-		auto elements = std::static_pointer_cast<HashMap>(ast)->elements();
-		for (auto& element : elements) {
+		const auto& elements = std::static_pointer_cast<HashMap>(ast)->elements();
+		for (const auto& element : elements) {
 			m_ast_stack.push(element.second);
 			m_env_stack.push(env);
 			ValuePtr element_node = evalImpl();
