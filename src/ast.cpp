@@ -22,6 +22,11 @@ Collection::Collection(const std::list<ValuePtr>& nodes)
 {
 }
 
+Collection::Collection(ValueListConstIt begin, ValueListConstIt end)
+	: m_nodes(ValueList(begin, end))
+{
+}
+
 void Collection::add(ValuePtr node)
 {
 	if (node == nullptr) {
@@ -40,6 +45,12 @@ void Collection::addFront(ValuePtr node)
 	m_nodes.push_front(node);
 }
 
+ValueList Collection::rest() const
+{
+	auto start = (m_nodes.size() > 0) ? std::next(m_nodes.begin()) : m_nodes.end();
+	return ValueList(start, m_nodes.end());
+}
+
 // -----------------------------------------
 
 List::List(const std::list<ValuePtr>& nodes)
@@ -47,10 +58,20 @@ List::List(const std::list<ValuePtr>& nodes)
 {
 }
 
+List::List(ValueListConstIt begin, ValueListConstIt end)
+	: Collection(begin, end)
+{
+}
+
 // -----------------------------------------
 
 Vector::Vector(const std::list<ValuePtr>& nodes)
 	: Collection(nodes)
+{
+}
+
+Vector::Vector(ValueListConstIt begin, ValueListConstIt end)
+	: Collection(begin, end)
 {
 }
 

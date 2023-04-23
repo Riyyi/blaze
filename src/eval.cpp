@@ -79,10 +79,9 @@ ValuePtr Eval::evalImpl()
 		}
 
 		// Special forms
-		auto nodes = list->nodes();
-		if (is<Symbol>(nodes.front().get())) {
-			auto symbol = std::static_pointer_cast<Symbol>(nodes.front())->symbol();
-			nodes.pop_front();
+		if (is<Symbol>(list->front().get())) {
+			auto symbol = std::static_pointer_cast<Symbol>(list->front())->symbol();
+			const auto& nodes = list->rest();
 			if (symbol == "def!") {
 				return evalDef(nodes, env);
 			}
@@ -131,16 +130,11 @@ ValuePtr Eval::evalImpl()
 		}
 
 		// Regular list
-		if (is<Lambda>(evaluated_list->nodes().front().get())) {
-			auto evaluated_nodes = evaluated_list->nodes();
-
-			// car
-			auto lambda = std::static_pointer_cast<Lambda>(evaluated_nodes.front());
-			// cdr
-			evaluated_nodes.pop_front();
+		if (is<Lambda>(evaluated_list->front().get())) {
+			auto lambda = std::static_pointer_cast<Lambda>(evaluated_list->front());
 
 			m_ast_stack.push(lambda->body());
-			m_env_stack.push(Environment::create(lambda, evaluated_nodes));
+			m_env_stack.push(Environment::create(lambda, evaluated_list->rest()));
 			continue; // TCO
 		}
 
@@ -229,13 +223,12 @@ bool Eval::isMacroCall(ValuePtr ast, EnvironmentPtr env)
 ValuePtr Eval::macroExpand(ValuePtr ast, EnvironmentPtr env)
 {
 	while (isMacroCall(ast, env)) {
-		auto nodes = std::static_pointer_cast<List>(ast)->nodes();
-		auto value = env->get(std::static_pointer_cast<Symbol>(nodes.front())->symbol());
+		auto list = std::static_pointer_cast<List>(ast);
+		auto value = env->get(std::static_pointer_cast<Symbol>(list->front())->symbol());
 		auto lambda = std::static_pointer_cast<Lambda>(value);
-		nodes.pop_front();
 
 		m_ast_stack.push(lambda->body());
-		m_env_stack.push(Environment::create(lambda, nodes));
+		m_env_stack.push(Environment::create(lambda, list->rest()));
 		ast = evalImpl();
 	}
 

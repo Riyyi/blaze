@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <list>
 #include <memory> // std::shared_ptr
 
 namespace blaze {
@@ -15,6 +16,9 @@ namespace blaze {
 
 class Value;
 typedef std::shared_ptr<Value> ValuePtr;
+typedef std::list<ValuePtr> ValueList;
+typedef ValueList::iterator ValueListIt;
+typedef ValueList::const_iterator ValueListConstIt;
 
 class Environment;
 typedef std::shared_ptr<Environment> EnvironmentPtr;

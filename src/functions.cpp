@@ -500,12 +500,8 @@ ADD_FUNCTION(
 		}
 
 		VALUE_CAST(collection, Collection, nodes.front());
-		auto collection_nodes = collection->nodes();
-		if (collection_nodes.size() > 0) {
-			collection_nodes.pop_front();
-		}
 
-		return makePtr<List>(collection_nodes);
+		return makePtr<List>(collection->rest());
 	});
 
 // (apply + 1 2 (list 3 4)) -> (+ 1 2 3 4)

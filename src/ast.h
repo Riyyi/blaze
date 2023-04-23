@@ -67,11 +67,14 @@ public:
 	bool empty() const { return m_nodes.size() == 0; }
 
 	ValuePtr front() const { return m_nodes.front(); }
-	const std::list<ValuePtr>& nodes() const { return m_nodes; }
+	ValueList rest() const;
+
+	const ValueList& nodes() const { return m_nodes; }
 
 protected:
 	Collection() = default;
-	Collection(const std::list<ValuePtr>& nodes);
+	Collection(const ValueList& nodes);
+	Collection(ValueListConstIt begin, ValueListConstIt end);
 
 	template<IsValue... Ts>
 	Collection(std::shared_ptr<Ts>... nodes)
@@ -82,7 +85,7 @@ protected:
 private:
 	virtual bool isCollection() const override { return true; }
 
-	std::list<ValuePtr> m_nodes;
+	ValueList m_nodes;
 };
 
 // -----------------------------------------
@@ -92,6 +95,7 @@ class List final : public Collection {
 public:
 	List() = default;
 	List(const std::list<ValuePtr>& nodes);
+	List(ValueListConstIt begin, ValueListConstIt end);
 
 	template<IsValue... Ts>
 	List(std::shared_ptr<Ts>... nodes)
@@ -112,6 +116,7 @@ class Vector final : public Collection {
 public:
 	Vector() = default;
 	Vector(const std::list<ValuePtr>& nodes);
+	Vector(ValueListConstIt begin, ValueListConstIt end);
 
 	template<IsValue... Ts>
 	Vector(std::shared_ptr<Ts>... nodes)
