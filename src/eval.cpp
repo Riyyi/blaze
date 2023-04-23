@@ -202,19 +202,23 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 // (x y z)
 bool Eval::isMacroCall(ValuePtr ast, EnvironmentPtr env)
 {
-	if (!is<List>(ast.get())) {
+	auto list = dynamic_cast<List*>(ast.get());
+
+	if (list == nullptr || list->empty()) {
 		return false;
 	}
 
-	auto nodes = std::static_pointer_cast<List>(ast)->nodes();
+	auto front = list->front().get();
 
-	if (nodes.size() == 0 || !is<Symbol>(nodes.front().get())) {
+	if (!is<Symbol>(front)) {
 		return false;
 	}
 
-	auto value = env->get(std::static_pointer_cast<Symbol>(nodes.front())->symbol());
+	auto symbol = dynamic_cast<Symbol*>(front)->symbol();
+	auto value = env->get(symbol).get();
+	auto lambda = dynamic_cast<Lambda*>(value);
 
-	if (!is<Lambda>(value.get()) || !std::static_pointer_cast<Lambda>(value)->isMacro()) {
+	if (lambda == nullptr || !lambda->isMacro()) {
 		return false;
 	}
 

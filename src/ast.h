@@ -65,6 +65,7 @@ public:
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }
 
+	ValuePtr front() const { return m_nodes.front(); }
 	const std::list<ValuePtr>& nodes() const { return m_nodes; }
 
 protected:
