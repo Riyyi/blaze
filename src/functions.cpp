@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <chrono>   // std::chrono::sytem_clock
+#include <cstdint>  // int64_t
 #include <iterator> // std::advance
 #include <memory>   // std::static_pointer_cast
 #include <string>
@@ -616,9 +618,61 @@ ADD_FUNCTION("atom?", IS_TYPE(Atom));
 ADD_FUNCTION("keyword?", IS_TYPE(Keyword));
 ADD_FUNCTION("list?", IS_TYPE(List));
 ADD_FUNCTION("map?", IS_TYPE(HashMap));
+ADD_FUNCTION("number?", IS_TYPE(Number));
 ADD_FUNCTION("sequential?", IS_TYPE(Collection));
+ADD_FUNCTION("string?", IS_TYPE(String));
 ADD_FUNCTION("symbol?", IS_TYPE(Symbol));
 ADD_FUNCTION("vector?", IS_TYPE(Vector));
+
+ADD_FUNCTION(
+	"fn?",
+	{
+		bool result = true;
+
+		if (nodes.size() == 0) {
+			result = false;
+		}
+
+		for (auto node : nodes) {
+			if (!is<Callable>(node.get())) {
+				result = false;
+				break;
+			}
+			if (is<Lambda>(node.get())) {
+				auto lambda = std::static_pointer_cast<Lambda>(node);
+				if (lambda->isMacro()) {
+					result = false;
+					break;
+				}
+			}
+		}
+
+		return makePtr<Constant>(result);
+	});
+
+ADD_FUNCTION(
+	"macro?",
+	{
+		bool result = true;
+
+		if (nodes.size() == 0) {
+			result = false;
+		}
+
+		for (auto node : nodes) {
+			if (!is<Lambda>(node.get())) {
+				result = false;
+				break;
+			}
+			auto lambda = std::static_pointer_cast<Lambda>(node);
+			if (!lambda->isMacro()) {
+				result = false;
+				break;
+			}
+		}
+
+		return makePtr<Constant>(result);
+	});
 
 // -----------------------------------------
 
@@ -788,6 +842,129 @@ ADD_FUNCTION(
 		VALUE_CAST(prompt, String, nodes.front());
 
 		return readline(prompt->data());
+	});
+
+ADD_FUNCTION("time-ms", {
+	CHECK_ARG_COUNT_IS("time-ms", nodes.size(), 0);
+
+	int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+						  std::chrono::system_clock::now().time_since_epoch())
+	                      .count();
+
+	return makePtr<Number>(elapsed);
+});
+
+// (meta [1 2 3])
+ADD_FUNCTION(
+	"meta",
+	{
+		CHECK_ARG_COUNT_IS("meta", nodes.size(), 1);
+
+		auto front = nodes.front();
+		Value* front_raw_ptr = nodes.front().get();
+
+		if (!is<Collection>(front_raw_ptr) && // List / Vector
+	        !is<HashMap>(front_raw_ptr) &&    // HashMap
+	        !is<Callable>(front_raw_ptr)) {   // Function / Lambda
+			Error::the().add(format("wrong argument type: Collection, HashMap or Callable, {}", front));
+			return nullptr;
+		}
+
+		return front->meta();
+	});
+
+// (with-meta [1 2 3] "some metadata")
+ADD_FUNCTION(
+	"with-meta",
+	{
+		CHECK_ARG_COUNT_IS("with-meta", nodes.size(), 2);
+
+		auto front = nodes.front();
+		Value* front_raw_ptr = nodes.front().get();
+
+		if (!is<Collection>(front_raw_ptr) && // List / Vector
+	        !is<HashMap>(front_raw_ptr) &&    // HashMap
+	        !is<Callable>(front_raw_ptr)) {   // Function / Lambda
+			Error::the().add(format("wrong argument type: Collection, HashMap or Callable, {}", front));
+			return nullptr;
+		}
+
+		return front->withMeta(nodes.back());
+	});
+
+// (conj '(1 2 3) 4 5 6) -> (6 5 4 1 2 3)
+// (conj [1 2 3] 4 5 6)  -> [1 2 3 4 5 6]
+ADD_FUNCTION(
+	"conj",
+	{
+		CHECK_ARG_COUNT_AT_LEAST("conj", nodes.size(), 1);
+
+		VALUE_CAST(collection, Collection, nodes.front());
+		nodes.pop_front();
+
+		auto collection_nodes = collection->nodes();
+
+		if (is<List>(collection.get())) {
+			nodes.reverse();
+			nodes.splice(nodes.end(), collection_nodes);
+			auto result = makePtr<List>(nodes);
+
+			return result;
+		}
+
+		nodes.splice(nodes.begin(), collection_nodes);
+		auto result = makePtr<Vector>(nodes);
+
+		return result;
+	});
+
+// (seq '(1 2 3)) -> (1 2 3)
+// (seq [1 2 3])  -> (1 2 3)
+// (seq "foo")    -> ("f" "o" "o")
+ADD_FUNCTION(
+	"seq",
+	{
+		CHECK_ARG_COUNT_IS("seq", nodes.size(), 1);
+
+		auto front = nodes.front();
+		Value* front_raw_ptr = front.get();
+
+		if (is<Constant>(front_raw_ptr) && std::static_pointer_cast<Constant>(front)->state() == Constant::Nil) {
+			return makePtr<Constant>();
+		}
+		if (is<Collection>(front_raw_ptr)) {
+			auto collection = std::static_pointer_cast<Collection>(front);
+
+			if (collection->empty()) {
+				return makePtr<Constant>();
+			}
+
+			if (is<List>(front_raw_ptr)) {
+				return front;
+			}
+
+			return makePtr<List>(collection->nodes());
+		}
+		if (is<String>(front_raw_ptr)) {
+			auto string = std::static_pointer_cast<String>(front);
+
+			if (string->empty()) {
+				return makePtr<Constant>();
+			}
+
+			auto result = makePtr<List>();
+
+			const auto& data = string->data();
+			for (const auto& character : data) {
+				result->add(makePtr<String>(character));
+			}
+
+			return result;
+		}
+
+		Error::the().add(format("wrong argument type: Collection or String, {}", front));
+
+		return nullptr;
 	});
 
 // -----------------------------------------

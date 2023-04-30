@@ -24,9 +24,22 @@
 
 namespace blaze {
 
+template<typename T, typename... Args>
+std::shared_ptr<T> makePtr(Args&&... args)
+{
+	return std::make_shared<T>(std::forward<Args>(args)...);
+}
+
+// -----------------------------------------
+
 class Value {
 public:
 	virtual ~Value() = default;
+
+	virtual ValuePtr withMetaImpl(ValuePtr meta) const = 0;
+
+	ValuePtr withMeta(ValuePtr meta) const;
+	ValuePtr meta() const;
 
 	std::string className() const { return typeid(*this).name(); }
 
@@ -49,7 +62,27 @@ public:
 
 protected:
 	Value() {}
+
+	Value(ValuePtr meta)
+		: m_meta(meta)
+	{
+	}
+
+	ValuePtr m_meta;
 };
+
+#define WITH_META(Type)                                         \
+	virtual ValuePtr withMetaImpl(ValuePtr meta) const override \
+	{                                                           \
+		return makePtr<Type>(*this, meta);                      \
+	}
+
+#define WITH_NO_META()                                          \
+	virtual ValuePtr withMetaImpl(ValuePtr meta) const override \
+	{                                                           \
+		(void)meta;                                             \
+		return nullptr;                                         \
+	}
 
 // -----------------------------------------
 
@@ -63,6 +96,7 @@ public:
 	void add(ValuePtr node);
 	void addFront(ValuePtr node);
 
+	// TODO: rename size -> count
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }
 
@@ -75,6 +109,7 @@ protected:
 	Collection() = default;
 	Collection(const ValueList& nodes);
 	Collection(ValueListConstIt begin, ValueListConstIt end);
+	Collection(const Collection& that, ValuePtr meta);
 
 	template<IsValue... Ts>
 	Collection(std::shared_ptr<Ts>... nodes)
@@ -96,6 +131,7 @@ public:
 	List() = default;
 	List(const std::list<ValuePtr>& nodes);
 	List(ValueListConstIt begin, ValueListConstIt end);
+	List(const List& that, ValuePtr meta);
 
 	template<IsValue... Ts>
 	List(std::shared_ptr<Ts>... nodes)
@@ -104,6 +140,8 @@ public:
 	}
 
 	virtual ~List() = default;
+
+	WITH_META(List);
 
 private:
 	virtual bool isList() const override { return true; }
@@ -117,6 +155,7 @@ public:
 	Vector() = default;
 	Vector(const std::list<ValuePtr>& nodes);
 	Vector(ValueListConstIt begin, ValueListConstIt end);
+	Vector(const Vector& that, ValuePtr meta);
 
 	template<IsValue... Ts>
 	Vector(std::shared_ptr<Ts>... nodes)
@@ -125,6 +164,8 @@ public:
 	}
 
 	virtual ~Vector() = default;
+
+	WITH_META(Vector);
 
 private:
 	virtual bool isVector() const override { return true; }
@@ -139,6 +180,7 @@ public:
 
 	HashMap() = default;
 	HashMap(const Elements& elements);
+	HashMap(const HashMap& that, ValuePtr meta);
 	virtual ~HashMap() = default;
 
 	void add(const std::string& key, ValuePtr value);
@@ -154,6 +196,8 @@ public:
 	size_t size() const { return m_elements.size(); }
 	bool empty() const { return m_elements.size() == 0; }
 
+	WITH_META(HashMap);
+
 private:
 	virtual bool isHashMap() const override { return true; }
 
@@ -168,9 +212,13 @@ private:
 class String final : public Value {
 public:
 	String(const std::string& data);
+	String(char character);
 	virtual ~String() = default;
 
 	const std::string& data() const { return m_data; }
+	bool empty() const { return m_data.empty(); }
+
+	WITH_NO_META();
 
 private:
 	virtual bool isString() const override { return true; }
@@ -190,6 +238,8 @@ public:
 
 	const std::string& keyword() const { return m_data; }
 
+	WITH_NO_META();
+
 private:
 	const std::string m_data;
 };
@@ -202,6 +252,8 @@ public:
 	virtual ~Number() = default;
 
 	int64_t number() const { return m_number; }
+
+	WITH_NO_META();
 
 private:
 	virtual bool isNumber() const override { return true; }
@@ -227,6 +279,8 @@ public:
 
 	State state() const { return m_state; }
 
+	WITH_NO_META();
+
 private:
 	virtual bool isConstant() const override { return true; }
 
@@ -243,6 +297,8 @@ public:
 
 	const std::string& symbol() const { return m_symbol; }
 
+	WITH_NO_META();
+
 private:
 	virtual bool isSymbol() const override { return true; }
 
@@ -257,6 +313,7 @@ public:
 
 protected:
 	Callable() = default;
+	Callable(ValuePtr meta);
 
 private:
 	virtual bool isCallable() const override { return true; }
@@ -269,10 +326,13 @@ using FunctionType = std::function<ValuePtr(std::list<ValuePtr>)>;
 class Function final : public Callable {
 public:
 	Function(const std::string& name, FunctionType function);
+	Function(const Function& that, ValuePtr meta);
 	virtual ~Function() = default;
 
 	const std::string& name() const { return m_name; }
 	FunctionType function() const { return m_function; }
+
+	WITH_META(Function);
 
 private:
 	virtual bool isFunction() const override { return true; }
@@ -287,12 +347,15 @@ class Lambda final : public Callable {
 public:
 	Lambda(const std::vector<std::string>& bindings, ValuePtr body, EnvironmentPtr env);
 	Lambda(std::shared_ptr<Lambda> that, bool is_macro);
+	Lambda(const Lambda& that, ValuePtr meta);
 	virtual ~Lambda() = default;
 
 	const std::vector<std::string>& bindings() const { return m_bindings; }
 	ValuePtr body() const { return m_body; }
 	EnvironmentPtr env() const { return m_env; }
 	bool isMacro() const { return m_is_macro; }
+
+	WITH_META(Lambda);
 
 private:
 	virtual bool isLambda() const override { return true; }
@@ -314,19 +377,13 @@ public:
 	ValuePtr reset(ValuePtr value) { return m_value = value; }
 	ValuePtr deref() const { return m_value; }
 
+	WITH_NO_META();
+
 private:
 	virtual bool isAtom() const override { return true; }
 
 	ValuePtr m_value;
 };
-
-// -----------------------------------------
-
-template<typename T, typename... Args>
-std::shared_ptr<T> makePtr(Args&&... args)
-{
-	return std::make_shared<T>(std::forward<Args>(args)...);
-}
 
 // -----------------------------------------
 

@@ -17,6 +17,18 @@
 
 namespace blaze {
 
+ValuePtr Value::withMeta(ValuePtr meta) const
+{
+	return withMetaImpl(meta);
+}
+
+ValuePtr Value::meta() const
+{
+	return (m_meta == nullptr) ? makePtr<Constant>() : m_meta;
+}
+
+// -----------------------------------------
+
 Collection::Collection(const std::list<ValuePtr>& nodes)
 	: m_nodes(nodes)
 {
@@ -24,6 +36,12 @@ Collection::Collection(const std::list<ValuePtr>& nodes)
 
 Collection::Collection(ValueListConstIt begin, ValueListConstIt end)
 	: m_nodes(ValueList(begin, end))
+{
+}
+
+Collection::Collection(const Collection& that, ValuePtr meta)
+	: Value(meta)
+	, m_nodes(that.m_nodes)
 {
 }
 
@@ -53,6 +71,11 @@ ValueList Collection::rest() const
 
 // -----------------------------------------
 
+List::List(const List& that, ValuePtr meta)
+	: Collection(that, meta)
+{
+}
+
 List::List(const std::list<ValuePtr>& nodes)
 	: Collection(nodes)
 {
@@ -75,10 +98,21 @@ Vector::Vector(ValueListConstIt begin, ValueListConstIt end)
 {
 }
 
+Vector::Vector(const Vector& that, ValuePtr meta)
+	: Collection(that, meta)
+{
+}
+
 // -----------------------------------------
 
 HashMap::HashMap(const Elements& elements)
 	: m_elements(elements)
+{
+}
+
+HashMap::HashMap(const HashMap& that, ValuePtr meta)
+	: Value(meta)
+	, m_elements(that.m_elements)
 {
 }
 
@@ -157,6 +191,11 @@ String::String(const std::string& data)
 {
 }
 
+String::String(char character)
+	: m_data(std::string(1, character))
+{
+}
+
 // -----------------------------------------
 
 Keyword::Keyword(const std::string& data)
@@ -192,9 +231,23 @@ Symbol::Symbol(const std::string& symbol)
 
 // -----------------------------------------
 
+Callable::Callable(ValuePtr meta)
+	: Value(meta)
+{
+}
+
+// -----------------------------------------
+
 Function::Function(const std::string& name, FunctionType function)
 	: m_name(name)
 	, m_function(function)
+{
+}
+
+Function::Function(const Function& that, ValuePtr meta)
+	: Callable(meta)
+	, m_name(that.m_name)
+	, m_function(that.m_function)
 {
 }
 
@@ -212,6 +265,15 @@ Lambda::Lambda(std::shared_ptr<Lambda> that, bool is_macro)
 	, m_body(that->m_body)
 	, m_env(that->m_env)
 	, m_is_macro(is_macro)
+{
+}
+
+Lambda::Lambda(const Lambda& that, ValuePtr meta)
+	: Callable(meta)
+	, m_bindings(that.m_bindings)
+	, m_body(that.m_body)
+	, m_env(that.m_env)
+	, m_is_macro(that.m_is_macro)
 {
 }
 
