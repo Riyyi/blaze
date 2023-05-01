@@ -58,6 +58,7 @@ public:
 	virtual bool isCallable() const { return false; }
 	virtual bool isFunction() const { return false; }
 	virtual bool isLambda() const { return false; }
+	virtual bool isMacro() const { return false; }
 	virtual bool isAtom() const { return false; }
 
 protected:
@@ -343,17 +344,16 @@ private:
 
 // -----------------------------------------
 
-class Lambda final : public Callable {
+class Lambda : public Callable {
 public:
 	Lambda(const std::vector<std::string>& bindings, ValuePtr body, EnvironmentPtr env);
-	Lambda(std::shared_ptr<Lambda> that, bool is_macro);
+	Lambda(const Lambda& that);
 	Lambda(const Lambda& that, ValuePtr meta);
 	virtual ~Lambda() = default;
 
 	const std::vector<std::string>& bindings() const { return m_bindings; }
 	ValuePtr body() const { return m_body; }
 	EnvironmentPtr env() const { return m_env; }
-	bool isMacro() const { return m_is_macro; }
 
 	WITH_META(Lambda);
 
@@ -363,7 +363,19 @@ private:
 	const std::vector<std::string> m_bindings;
 	const ValuePtr m_body;
 	const EnvironmentPtr m_env;
-	const bool m_is_macro { false };
+};
+
+// -----------------------------------------
+
+class Macro final : public Lambda {
+public:
+	Macro(const Lambda& that);
+
+	WITH_NO_META();
+
+private:
+	virtual bool isLambda() const override { return false; }
+	virtual bool isMacro() const override { return true; }
 };
 
 // -----------------------------------------
@@ -423,6 +435,9 @@ inline bool Value::fastIs<Function>() const { return isFunction(); }
 
 template<>
 inline bool Value::fastIs<Lambda>() const { return isLambda(); }
+
+template<>
+inline bool Value::fastIs<Macro>() const { return isMacro(); }
 
 template<>
 inline bool Value::fastIs<Atom>() const { return isAtom(); }

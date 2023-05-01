@@ -63,7 +63,7 @@ ValuePtr Eval::evalDefMacro(const std::list<ValuePtr>& nodes, EnvironmentPtr env
 	}
 
 	// Modify existing environment
-	return env->set(symbol->symbol(), makePtr<Lambda>(lambda, true));
+	return env->set(symbol->symbol(), makePtr<Macro>(*lambda));
 }
 
 // (fn* (x) x)

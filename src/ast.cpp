@@ -260,11 +260,10 @@ Lambda::Lambda(const std::vector<std::string>& bindings, ValuePtr body, Environm
 {
 }
 
-Lambda::Lambda(std::shared_ptr<Lambda> that, bool is_macro)
-	: m_bindings(that->m_bindings)
-	, m_body(that->m_body)
-	, m_env(that->m_env)
-	, m_is_macro(is_macro)
+Lambda::Lambda(const Lambda& that)
+	: m_bindings(that.m_bindings)
+	, m_body(that.m_body)
+	, m_env(that.m_env)
 {
 }
 
@@ -273,7 +272,13 @@ Lambda::Lambda(const Lambda& that, ValuePtr meta)
 	, m_bindings(that.m_bindings)
 	, m_body(that.m_body)
 	, m_env(that.m_env)
-	, m_is_macro(that.m_is_macro)
+{
+}
+
+// -----------------------------------------
+
+Macro::Macro(const Lambda& that)
+	: Lambda(that)
 {
 }
 

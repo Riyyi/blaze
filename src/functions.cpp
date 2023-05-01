@@ -638,12 +638,9 @@ ADD_FUNCTION(
 				result = false;
 				break;
 			}
-			if (is<Lambda>(node.get())) {
-				auto lambda = std::static_pointer_cast<Lambda>(node);
-				if (lambda->isMacro()) {
-					result = false;
-					break;
-				}
+			if (is<Macro>(node.get())) {
+				result = false;
+				break;
 			}
 		}
 
@@ -660,12 +657,7 @@ ADD_FUNCTION(
 		}
 
 		for (auto node : nodes) {
-			if (!is<Lambda>(node.get())) {
-				result = false;
-				break;
-			}
-			auto lambda = std::static_pointer_cast<Lambda>(node);
-			if (!lambda->isMacro()) {
+			if (!is<Macro>(node.get())) {
 				result = false;
 				break;
 			}

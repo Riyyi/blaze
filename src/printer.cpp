@@ -139,8 +139,11 @@ void Printer::printImpl(ValuePtr node, bool print_readably)
 	}
 	else if (is<Lambda>(node_raw_ptr)) {
 		printSpacing();
-		auto lambda = std::static_pointer_cast<Lambda>(node);
-		m_print += format("#<user-{}>({:p})", (lambda->isMacro()) ? "macro" : "function", node_raw_ptr);
+		m_print += format("#<user-function>({:p})", node_raw_ptr);
+	}
+	else if (is<Macro>(node_raw_ptr)) {
+		printSpacing();
+		m_print += format("#<user-macro>({:p})", node_raw_ptr);
 	}
 	else if (is<Atom>(node_raw_ptr)) {
 		printSpacing();

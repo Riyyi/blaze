@@ -210,9 +210,8 @@ bool Eval::isMacroCall(ValuePtr ast, EnvironmentPtr env)
 
 	auto symbol = dynamic_cast<Symbol*>(front)->symbol();
 	auto value = env->get(symbol).get();
-	auto lambda = dynamic_cast<Lambda*>(value);
 
-	if (lambda == nullptr || !lambda->isMacro()) {
+	if (!is<Macro>(value)) {
 		return false;
 	}
 
