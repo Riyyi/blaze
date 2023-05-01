@@ -29,7 +29,7 @@ EnvironmentPtr Environment::create(EnvironmentPtr outer)
 	return env;
 }
 
-EnvironmentPtr Environment::create(const ValuePtr lambda, const ValueList& arguments)
+EnvironmentPtr Environment::create(const ValuePtr lambda, const ValueVector& arguments)
 {
 	auto lambda_casted = std::static_pointer_cast<Lambda>(lambda);
 	auto env = create(lambda_casted->env());

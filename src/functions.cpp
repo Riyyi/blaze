@@ -39,7 +39,7 @@
 	static struct FUNCTION_STRUCT_NAME(unique)               \
 		FUNCTION_STRUCT_NAME(unique)(                        \
 			symbol,                                          \
-			[](ValueListIt begin, ValueListIt end) -> ValuePtr lambda);
+			[](ValueVectorIt begin, ValueVectorIt end) -> ValuePtr lambda);
 
 #define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__LINE__, symbol, lambda);
 
@@ -391,7 +391,7 @@ ADD_FUNCTION(
 
 		// Remove atom and function from the argument list, add atom value
 		begin += 2;
-		auto arguments = ValueList(end - begin + 1);
+		auto arguments = ValueVector(end - begin + 1);
 		arguments[0] = atom->deref();
 		std::copy(begin, end, arguments.begin() + 1);
 
@@ -420,7 +420,7 @@ ADD_FUNCTION(
 		VALUE_CAST(collection, Collection, (*begin));
 		const auto& collection_nodes = collection->nodes();
 
-		ValueList* result_nodes = new ValueList(collection_nodes.size() + 1);
+		ValueVector* result_nodes = new ValueVector(collection_nodes.size() + 1);
 		result_nodes->at(0) = first;
 		std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes->begin() + 1);
 
@@ -437,7 +437,7 @@ ADD_FUNCTION(
 			count += collection->size();
 		}
 
-		auto result_nodes = new ValueList(count);
+		auto result_nodes = new ValueVector(count);
 		size_t offset = 0;
 		for (auto it = begin; it != end; ++it) {
 			const auto& collection_nodes = std::static_pointer_cast<Collection>(*it)->nodes();
@@ -530,7 +530,7 @@ ADD_FUNCTION(
 
 		VALUE_CAST(collection, Collection, (*std::prev(end)));
 
-		ValueList arguments(begin + 1, end - 1);
+		ValueVector arguments(begin + 1, end - 1);
 		arguments.reserve(arguments.size() + collection->size());
 
 		// Append list nodes to the argument leftovers
@@ -567,7 +567,7 @@ ADD_FUNCTION(
 		if (is<Function>(callable.get())) {
 			auto function = std::static_pointer_cast<Function>(callable)->function();
 			for (const auto& node : collection_nodes) {
-				auto arguments = ValueList { node };
+				auto arguments = ValueVector { node };
 				result->add(function(arguments.begin(), arguments.end()));
 			}
 		}
@@ -910,7 +910,7 @@ ADD_FUNCTION(
 		size_t collection_count = collection_nodes.size();
 		size_t argument_count = SIZE();
 
-		ValueList* nodes = new ValueList(argument_count + collection_count);
+		ValueVector* nodes = new ValueVector(argument_count + collection_count);
 
 		if (is<List>(collection.get())) {
 			std::reverse_copy(begin, end, nodes->begin());

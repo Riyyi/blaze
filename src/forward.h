@@ -16,9 +16,9 @@ namespace blaze {
 
 class Value;
 typedef std::shared_ptr<Value> ValuePtr;
-typedef std::vector<ValuePtr> ValueList;
-typedef ValueList::iterator ValueListIt;
-typedef ValueList::const_iterator ValueListConstIt;
+typedef std::vector<ValuePtr> ValueVector;
+typedef ValueVector::iterator ValueVectorIt;
+typedef ValueVector::const_iterator ValueVectorConstIt;
 
 class Environment;
 typedef std::shared_ptr<Environment> EnvironmentPtr;

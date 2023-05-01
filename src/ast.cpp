@@ -30,18 +30,18 @@ ValuePtr Value::meta() const
 
 // -----------------------------------------
 
-Collection::Collection(const ValueList& nodes)
+Collection::Collection(const ValueVector& nodes)
 	: m_nodes(nodes)
 {
 }
 
-Collection::Collection(ValueListIt begin, ValueListIt end)
-	: m_nodes(ValueList(begin, end))
+Collection::Collection(ValueVectorIt begin, ValueVectorIt end)
+	: m_nodes(ValueVector(begin, end))
 {
 }
 
-Collection::Collection(ValueListConstIt begin, ValueListConstIt end)
-	: m_nodes(ValueList(begin, end))
+Collection::Collection(ValueVectorConstIt begin, ValueVectorConstIt end)
+	: m_nodes(ValueVector(begin, end))
 {
 }
 
@@ -60,25 +60,25 @@ void Collection::add(ValuePtr node)
 	m_nodes.push_back(node);
 }
 
-ValueList Collection::rest() const
+ValueVector Collection::rest() const
 {
 	auto start = (m_nodes.size() > 0) ? m_nodes.begin() + 1 : m_nodes.end();
-	return ValueList(start, m_nodes.end());
+	return ValueVector(start, m_nodes.end());
 }
 
 // -----------------------------------------
 
-List::List(const ValueList& nodes)
+List::List(const ValueVector& nodes)
 	: Collection(nodes)
 {
 }
 
-List::List(ValueListIt begin, ValueListIt end)
+List::List(ValueVectorIt begin, ValueVectorIt end)
 	: Collection(begin, end)
 {
 }
 
-List::List(ValueListConstIt begin, ValueListConstIt end)
+List::List(ValueVectorConstIt begin, ValueVectorConstIt end)
 	: Collection(begin, end)
 {
 }
@@ -90,17 +90,17 @@ List::List(const List& that, ValuePtr meta)
 
 // -----------------------------------------
 
-Vector::Vector(const ValueList& nodes)
+Vector::Vector(const ValueVector& nodes)
 	: Collection(nodes)
 {
 }
 
-Vector::Vector(ValueListIt begin, ValueListIt end)
+Vector::Vector(ValueVectorIt begin, ValueVectorIt end)
 	: Collection(begin, end)
 {
 }
 
-Vector::Vector(ValueListConstIt begin, ValueListConstIt end)
+Vector::Vector(ValueVectorConstIt begin, ValueVectorConstIt end)
 	: Collection(begin, end)
 {
 }

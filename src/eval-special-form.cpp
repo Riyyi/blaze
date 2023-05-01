@@ -22,7 +22,7 @@ namespace blaze {
 static ValuePtr evalQuasiQuoteImpl(ValuePtr ast);
 
 // (def! x 2)
-ValuePtr Eval::evalDef(const ValueList& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalDef(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("def!", nodes.size(), 2);
 
@@ -44,7 +44,7 @@ ValuePtr Eval::evalDef(const ValueList& nodes, EnvironmentPtr env)
 }
 
 // (defmacro! x (fn* (x) x))
-ValuePtr Eval::evalDefMacro(const ValueList& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalDefMacro(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("defmacro!", nodes.size(), 2);
 
@@ -67,7 +67,7 @@ ValuePtr Eval::evalDefMacro(const ValueList& nodes, EnvironmentPtr env)
 }
 
 // (fn* (x) x)
-ValuePtr Eval::evalFn(const ValueList& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalFn(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("fn*", nodes.size(), 2);
 
@@ -88,7 +88,7 @@ ValuePtr Eval::evalFn(const ValueList& nodes, EnvironmentPtr env)
 	return makePtr<Lambda>(bindings, *std::next(nodes.begin()), env);
 }
 
-ValuePtr Eval::evalMacroExpand(const ValueList& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalMacroExpand(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("macroexpand", nodes.size(), 1);
 
@@ -96,7 +96,7 @@ ValuePtr Eval::evalMacroExpand(const ValueList& nodes, EnvironmentPtr env)
 }
 
 // (quasiquoteexpand x)
-ValuePtr Eval::evalQuasiQuoteExpand(const ValueList& nodes)
+ValuePtr Eval::evalQuasiQuoteExpand(const ValueVector& nodes)
 {
 	CHECK_ARG_COUNT_IS("quasiquoteexpand", nodes.size(), 1);
 
@@ -104,7 +104,7 @@ ValuePtr Eval::evalQuasiQuoteExpand(const ValueList& nodes)
 }
 
 // (quote x)
-ValuePtr Eval::evalQuote(const ValueList& nodes)
+ValuePtr Eval::evalQuote(const ValueVector& nodes)
 {
 	CHECK_ARG_COUNT_IS("quote", nodes.size(), 1);
 
@@ -112,7 +112,7 @@ ValuePtr Eval::evalQuote(const ValueList& nodes)
 }
 
 // (do 1 2 3)
-void Eval::evalDo(const ValueList& nodes, EnvironmentPtr env)
+void Eval::evalDo(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_AT_LEAST("do", nodes.size(), 1, void());
 
@@ -130,7 +130,7 @@ void Eval::evalDo(const ValueList& nodes, EnvironmentPtr env)
 }
 
 // (if x true false)
-void Eval::evalIf(const ValueList& nodes, EnvironmentPtr env)
+void Eval::evalIf(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_BETWEEN("if", nodes.size(), 2, 3, void());
 
@@ -154,7 +154,7 @@ void Eval::evalIf(const ValueList& nodes, EnvironmentPtr env)
 }
 
 // (let* (x 1) x)
-void Eval::evalLet(const ValueList& nodes, EnvironmentPtr env)
+void Eval::evalLet(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("let*", nodes.size(), 2, void());
 
@@ -271,7 +271,7 @@ static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
 }
 
 // (quasiquote x)
-void Eval::evalQuasiQuote(const ValueList& nodes, EnvironmentPtr env)
+void Eval::evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("quasiquote", nodes.size(), 1, void());
 
@@ -283,7 +283,7 @@ void Eval::evalQuasiQuote(const ValueList& nodes, EnvironmentPtr env)
 }
 
 // (try* x (catch* y z))
-void Eval::evalTry(const ValueList& nodes, EnvironmentPtr env)
+void Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_AT_LEAST("try*", nodes.size(), 1, void());
 

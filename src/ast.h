@@ -101,15 +101,15 @@ public:
 	bool empty() const { return m_nodes.size() == 0; }
 
 	ValuePtr front() const { return m_nodes.front(); }
-	ValueList rest() const;
+	ValueVector rest() const;
 
-	const ValueList& nodes() const { return m_nodes; }
+	const ValueVector& nodes() const { return m_nodes; }
 
 protected:
 	Collection() = default;
-	Collection(const ValueList& nodes);
-	Collection(ValueListIt begin, ValueListIt end);
-	Collection(ValueListConstIt begin, ValueListConstIt end);
+	Collection(const ValueVector& nodes);
+	Collection(ValueVectorIt begin, ValueVectorIt end);
+	Collection(ValueVectorConstIt begin, ValueVectorConstIt end);
 	Collection(const Collection& that, ValuePtr meta);
 
 	template<IsValue... Ts>
@@ -121,7 +121,7 @@ protected:
 private:
 	virtual bool isCollection() const override { return true; }
 
-	ValueList m_nodes;
+	ValueVector m_nodes;
 };
 
 // -----------------------------------------
@@ -130,9 +130,9 @@ private:
 class List final : public Collection {
 public:
 	List() = default;
-	List(const ValueList& nodes);
-	List(ValueListIt begin, ValueListIt end);
-	List(ValueListConstIt begin, ValueListConstIt end);
+	List(const ValueVector& nodes);
+	List(ValueVectorIt begin, ValueVectorIt end);
+	List(ValueVectorConstIt begin, ValueVectorConstIt end);
 	List(const List& that, ValuePtr meta);
 
 	template<IsValue... Ts>
@@ -155,9 +155,9 @@ private:
 class Vector final : public Collection {
 public:
 	Vector() = default;
-	Vector(const ValueList& nodes);
-	Vector(ValueListIt begin, ValueListIt end);
-	Vector(ValueListConstIt begin, ValueListConstIt end);
+	Vector(const ValueVector& nodes);
+	Vector(ValueVectorIt begin, ValueVectorIt end);
+	Vector(ValueVectorConstIt begin, ValueVectorConstIt end);
 	Vector(const Vector& that, ValuePtr meta);
 
 	template<IsValue... Ts>
@@ -324,7 +324,7 @@ private:
 
 // -----------------------------------------
 
-using FunctionType = std::function<ValuePtr(ValueListIt, ValueListIt)>;
+using FunctionType = std::function<ValuePtr(ValueVectorIt, ValueVectorIt)>;
 
 class Function final : public Callable {
 public:
