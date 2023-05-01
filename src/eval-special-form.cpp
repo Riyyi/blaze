@@ -22,7 +22,7 @@ namespace blaze {
 static ValuePtr evalQuasiQuoteImpl(ValuePtr ast);
 
 // (def! x 2)
-ValuePtr Eval::evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalDef(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("def!", nodes.size(), 2);
 
@@ -44,7 +44,7 @@ ValuePtr Eval::evalDef(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 }
 
 // (defmacro! x (fn* (x) x))
-ValuePtr Eval::evalDefMacro(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalDefMacro(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("defmacro!", nodes.size(), 2);
 
@@ -67,15 +67,17 @@ ValuePtr Eval::evalDefMacro(const std::list<ValuePtr>& nodes, EnvironmentPtr env
 }
 
 // (fn* (x) x)
-ValuePtr Eval::evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalFn(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("fn*", nodes.size(), 2);
 
 	// First element needs to be a List or Vector
 	VALUE_CAST(collection, Collection, nodes.front());
+	const auto& collection_nodes = collection->nodes();
 
 	std::vector<std::string> bindings;
-	for (auto node : collection->nodes()) {
+	bindings.reserve(collection_nodes.size());
+	for (const auto& node : collection_nodes) {
 		// All nodes need to be a Symbol
 		VALUE_CAST(symbol, Symbol, node);
 		bindings.push_back(symbol->symbol());
@@ -86,7 +88,7 @@ ValuePtr Eval::evalFn(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 	return makePtr<Lambda>(bindings, *std::next(nodes.begin()), env);
 }
 
-ValuePtr Eval::evalMacroExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+ValuePtr Eval::evalMacroExpand(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("macroexpand", nodes.size(), 1);
 
@@ -94,7 +96,7 @@ ValuePtr Eval::evalMacroExpand(const std::list<ValuePtr>& nodes, EnvironmentPtr 
 }
 
 // (quasiquoteexpand x)
-ValuePtr Eval::evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes)
+ValuePtr Eval::evalQuasiQuoteExpand(const ValueList& nodes)
 {
 	CHECK_ARG_COUNT_IS("quasiquoteexpand", nodes.size(), 1);
 
@@ -102,7 +104,7 @@ ValuePtr Eval::evalQuasiQuoteExpand(const std::list<ValuePtr>& nodes)
 }
 
 // (quote x)
-ValuePtr Eval::evalQuote(const std::list<ValuePtr>& nodes)
+ValuePtr Eval::evalQuote(const ValueList& nodes)
 {
 	CHECK_ARG_COUNT_IS("quote", nodes.size(), 1);
 
@@ -110,7 +112,7 @@ ValuePtr Eval::evalQuote(const std::list<ValuePtr>& nodes)
 }
 
 // (do 1 2 3)
-void Eval::evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+void Eval::evalDo(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_AT_LEAST("do", nodes.size(), 1, void());
 
@@ -128,7 +130,7 @@ void Eval::evalDo(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 }
 
 // (if x true false)
-void Eval::evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+void Eval::evalIf(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_BETWEEN("if", nodes.size(), 2, 3, void());
 
@@ -152,13 +154,13 @@ void Eval::evalIf(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 }
 
 // (let* (x 1) x)
-void Eval::evalLet(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+void Eval::evalLet(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("let*", nodes.size(), 2, void());
 
 	// First argument needs to be a List or Vector
 	VALUE_CAST(bindings, Collection, nodes.front(), void());
-	auto binding_nodes = bindings->nodes();
+	const auto& binding_nodes = bindings->nodes();
 
 	// List or Vector needs to have an even number of elements
 	CHECK_ARG_COUNT_EVEN("bindings", binding_nodes.size(), void());
@@ -207,7 +209,7 @@ static ValuePtr startsWith(ValuePtr ast, const std::string& symbol)
 		return nullptr;
 	}
 
-	auto nodes = std::static_pointer_cast<List>(ast)->nodes();
+	const auto& nodes = std::static_pointer_cast<List>(ast)->nodes();
 
 	if (nodes.empty() || !isSymbol(nodes.front(), symbol)) {
 		return nullptr;
@@ -269,7 +271,7 @@ static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
 }
 
 // (quasiquote x)
-void Eval::evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+void Eval::evalQuasiQuote(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_IS("quasiquote", nodes.size(), 1, void());
 
@@ -281,7 +283,7 @@ void Eval::evalQuasiQuote(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 }
 
 // (try* x (catch* y z))
-void Eval::evalTry(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
+void Eval::evalTry(const ValueList& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_AT_LEAST("try*", nodes.size(), 1, void());
 
@@ -299,7 +301,7 @@ void Eval::evalTry(const std::list<ValuePtr>& nodes, EnvironmentPtr env)
 		Error::the().clearErrors();
 
 		VALUE_CAST(catch_list, List, nodes.back(), void());
-		auto catch_nodes = catch_list->nodes();
+		const auto& catch_nodes = catch_list->nodes();
 		CHECK_ARG_COUNT_IS("catch*", catch_nodes.size() - 1, 2, void());
 
 		VALUE_CAST(catch_symbol, Symbol, catch_nodes.front(), void());

@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <chrono>   // std::chrono::sytem_clock
-#include <cstdint>  // int64_t
-#include <iterator> // std::advance
-#include <memory>   // std::static_pointer_cast
+#include <algorithm> // std::copy, std::reverse_copy
+#include <chrono>    // std::chrono::sytem_clock
+#include <cstdint>   // int64_t
+#include <iterator>  // std::advance, std::distance, std::next, std::prev
+#include <memory>    // std::static_pointer_cast
 #include <string>
 
 #include "ruc/file.h"
@@ -38,9 +39,11 @@
 	static struct FUNCTION_STRUCT_NAME(unique)               \
 		FUNCTION_STRUCT_NAME(unique)(                        \
 			symbol,                                          \
-			[](std::list<ValuePtr> nodes) -> ValuePtr lambda);
+			[](ValueListIt begin, ValueListIt end) -> ValuePtr lambda);
 
 #define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__LINE__, symbol, lambda);
+
+#define SIZE() std::distance(begin, end)
 
 namespace blaze {
 
@@ -51,8 +54,8 @@ ADD_FUNCTION(
 	{
 		int64_t result = 0;
 
-		for (auto node : nodes) {
-			VALUE_CAST(number, Number, node);
+		for (auto it = begin; it != end; ++it) {
+			VALUE_CAST(number, Number, (*it));
 			result += number->number();
 		}
 
@@ -62,16 +65,16 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"-",
 	{
-		if (nodes.size() == 0) {
+		if (SIZE() == 0) {
 			return makePtr<Number>(0);
 		}
 
 		// Start with the first number
-		VALUE_CAST(number, Number, nodes.front());
+		VALUE_CAST(number, Number, (*begin));
 		int64_t result = number->number();
 
 		// Skip the first node
-		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
+		for (auto it = begin + 1; it != end; ++it) {
 			VALUE_CAST(number, Number, (*it));
 			result -= number->number();
 		}
@@ -84,8 +87,8 @@ ADD_FUNCTION(
 	{
 		int64_t result = 1;
 
-		for (auto node : nodes) {
-			VALUE_CAST(number, Number, node);
+		for (auto it = begin; it != end; ++it) {
+			VALUE_CAST(number, Number, (*it));
 			result *= number->number();
 		}
 
@@ -95,14 +98,14 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"/",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("/", nodes.size(), 1);
+		CHECK_ARG_COUNT_AT_LEAST("/", SIZE(), 1);
 
 		// Start with the first number
-		VALUE_CAST(number, Number, nodes.front());
+		VALUE_CAST(number, Number, (*begin));
 		double result = number->number();
 
 		// Skip the first node
-		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {
+		for (auto it = begin + 1; it != end; ++it) {
 			VALUE_CAST(number, Number, (*it));
 			result /= number->number();
 		}
@@ -116,14 +119,14 @@ ADD_FUNCTION(
 	{                                                                          \
 		bool result = true;                                                    \
                                                                                \
-		CHECK_ARG_COUNT_AT_LEAST(#operator, nodes.size(), 2);                  \
+		CHECK_ARG_COUNT_AT_LEAST(#operator, SIZE(), 2);                        \
                                                                                \
 		/* Start with the first number */                                      \
-		VALUE_CAST(number_node, Number, nodes.front());                        \
+		VALUE_CAST(number_node, Number, (*begin));                             \
 		int64_t number = number_node->number();                                \
                                                                                \
 		/* Skip the first node */                                              \
-		for (auto it = std::next(nodes.begin()); it != nodes.end(); ++it) {    \
+		for (auto it = begin + 1; it != end; ++it) {                           \
 			VALUE_CAST(current_number_node, Number, (*it));                    \
 			int64_t current_number = current_number_node->number();            \
 			if (!(number operator current_number)) {                           \
@@ -146,7 +149,7 @@ ADD_FUNCTION(">=", NUMBER_COMPARE(>=));
 ADD_FUNCTION(
 	"list",
 	{
-		return makePtr<List>(nodes);
+		return makePtr<List>(begin, end);
 	});
 
 ADD_FUNCTION(
@@ -154,8 +157,8 @@ ADD_FUNCTION(
 	{
 		bool result = true;
 
-		for (auto node : nodes) {
-			VALUE_CAST(collection, Collection, node);
+		for (auto it = begin; it != end; ++it) {
+			VALUE_CAST(collection, Collection, (*it));
 			if (!collection->empty()) {
 				result = false;
 				break;
@@ -169,19 +172,17 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"count",
 	{
-		CHECK_ARG_COUNT_IS("count", nodes.size(), 1);
-
-		auto first_argument = nodes.front();
+		CHECK_ARG_COUNT_IS("count", SIZE(), 1);
 
 		size_t result = 0;
-		if (is<Constant>(first_argument.get()) && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
+		if (is<Constant>(begin->get()) && std::static_pointer_cast<Constant>(*begin)->state() == Constant::Nil) {
 			// result = 0
 		}
-		else if (is<Collection>(first_argument.get())) {
-			result = std::static_pointer_cast<Collection>(first_argument)->size();
+		else if (is<Collection>(begin->get())) {
+			result = std::static_pointer_cast<Collection>(*begin)->size();
 		}
 		else {
-			Error::the().add(format("wrong argument type: Collection, '{}'", first_argument));
+			Error::the().add(format("wrong argument type: Collection, '{}'", *begin));
 			return nullptr;
 		}
 
@@ -196,10 +197,10 @@ ADD_FUNCTION(
 		std::string result;                                                         \
                                                                                     \
 		Printer printer;                                                            \
-		for (auto it = nodes.begin(); it != nodes.end(); ++it) {                    \
+		for (auto it = begin; it != end; ++it) {                                    \
 			result += format("{}", printer.printNoErrorCheck(*it, print_readably)); \
                                                                                     \
-			if (!isLast(it, nodes)) {                                               \
+			if (it != end && std::next(it) != end) {                                \
 				result += concatenation;                                            \
 			}                                                                       \
 		}                                                                           \
@@ -213,10 +214,10 @@ ADD_FUNCTION("pr-str", PRINTER_STRING(true, " "));
 #define PRINTER_PRINT(print_readably)                                    \
 	{                                                                    \
 		Printer printer;                                                 \
-		for (auto it = nodes.begin(); it != nodes.end(); ++it) {         \
+		for (auto it = begin; it != end; ++it) {                         \
 			print("{}", printer.printNoErrorCheck(*it, print_readably)); \
                                                                          \
-			if (!isLast(it, nodes)) {                                    \
+			if (it != end && std::next(it) != end) {                     \
 				print(" ");                                              \
 			}                                                            \
 		}                                                                \
@@ -233,7 +234,7 @@ ADD_FUNCTION("println", PRINTER_PRINT(false));
 ADD_FUNCTION(
 	"=",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("=", nodes.size(), 2);
+		CHECK_ARG_COUNT_AT_LEAST("=", SIZE(), 2);
 
 		std::function<bool(ValuePtr, ValuePtr)> equal =
 			[&equal](ValuePtr lhs, ValuePtr rhs) -> bool {
@@ -300,9 +301,9 @@ ADD_FUNCTION(
 		};
 
 		bool result = true;
-		auto it = nodes.begin();
-		auto it_next = std::next(nodes.begin());
-		for (; it_next != nodes.end(); ++it, ++it_next) {
+		auto it = begin;
+		auto it_next = begin + 1;
+		for (; it_next != end; ++it, ++it_next) {
 			if (!equal(*it, *it_next)) {
 				result = false;
 				break;
@@ -315,9 +316,9 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"read-string",
 	{
-		CHECK_ARG_COUNT_IS("read-string", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("read-string", SIZE(), 1);
 
-		VALUE_CAST(node, String, nodes.front());
+		VALUE_CAST(node, String, (*begin));
 		std::string input = node->data();
 
 		return read(input);
@@ -326,9 +327,9 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"slurp",
 	{
-		CHECK_ARG_COUNT_IS("slurp", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("slurp", SIZE(), 1);
 
-		VALUE_CAST(node, String, nodes.front());
+		VALUE_CAST(node, String, (*begin));
 		std::string path = node->data();
 
 		auto file = ruc::File(path);
@@ -339,27 +340,27 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"eval",
 	{
-		CHECK_ARG_COUNT_IS("eval", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("eval", SIZE(), 1);
 
-		return eval(nodes.front(), nullptr);
+		return eval(*begin, nullptr);
 	});
 
 // (atom 1)
 ADD_FUNCTION(
 	"atom",
 	{
-		CHECK_ARG_COUNT_IS("atom", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("atom", SIZE(), 1);
 
-		return makePtr<Atom>(nodes.front());
+		return makePtr<Atom>(*begin);
 	});
 
 // (deref myatom)
 ADD_FUNCTION(
 	"deref",
 	{
-		CHECK_ARG_COUNT_IS("deref", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("deref", SIZE(), 1);
 
-		VALUE_CAST(atom, Atom, nodes.front());
+		VALUE_CAST(atom, Atom, (*begin));
 
 		return atom->deref();
 	});
@@ -368,10 +369,10 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"reset!",
 	{
-		CHECK_ARG_COUNT_IS("reset!", nodes.size(), 2);
+		CHECK_ARG_COUNT_IS("reset!", SIZE(), 2);
 
-		VALUE_CAST(atom, Atom, nodes.front());
-		auto value = *std::next(nodes.begin());
+		VALUE_CAST(atom, Atom, (*begin));
+		auto value = *(begin + 1);
 
 		atom->reset(value);
 
@@ -382,83 +383,95 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"swap!",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("swap!", nodes.size(), 2);
+		CHECK_ARG_COUNT_AT_LEAST("swap!", SIZE(), 2);
 
-		VALUE_CAST(atom, Atom, nodes.front());
+		VALUE_CAST(atom, Atom, (*begin));
 
-		VALUE_CAST(callable, Callable, (*std::next(nodes.begin())));
+		VALUE_CAST(callable, Callable, (*(begin + 1)));
 
 		// Remove atom and function from the argument list, add atom value
-		nodes.pop_front();
-		nodes.pop_front();
-		nodes.push_front(atom->deref());
+		begin += 2;
+		auto arguments = ValueList(end - begin + 1);
+		arguments[0] = atom->deref();
+		std::copy(begin, end, arguments.begin() + 1);
 
 		ValuePtr value = nullptr;
 		if (is<Function>(callable.get())) {
 			auto function = std::static_pointer_cast<Function>(callable)->function();
-			value = function(nodes);
+			value = function(arguments.begin(), arguments.end());
 		}
 		else {
 			auto lambda = std::static_pointer_cast<Lambda>(callable);
-			value = eval(lambda->body(), Environment::create(lambda, nodes));
+			value = eval(lambda->body(), Environment::create(lambda, arguments));
 		}
 
 		return atom->reset(value);
 	});
 
-// (cons 1 (list 2 3)) -> (1 2 3)
+// (cons 1 (list 2 3))
 ADD_FUNCTION(
 	"cons",
 	{
-		CHECK_ARG_COUNT_IS("cons", nodes.size(), 2);
+		CHECK_ARG_COUNT_IS("cons", SIZE(), 2);
 
-		VALUE_CAST(collection, Collection, (*std::next(nodes.begin())));
+		ValuePtr first = *begin;
+		begin++;
 
-		auto result = makePtr<List>(collection->nodes());
-		result->addFront(nodes.front());
+		VALUE_CAST(collection, Collection, (*begin));
+		const auto& collection_nodes = collection->nodes();
 
-		return result;
+		ValueList* result_nodes = new ValueList(collection_nodes.size() + 1);
+		result_nodes->at(0) = first;
+		std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes->begin() + 1);
+
+		return makePtr<List>(*result_nodes);
 	});
 
 // (concat (list 1) (list 2 3)) -> (1 2 3)
 ADD_FUNCTION(
 	"concat",
 	{
-		std::list<ValuePtr> result_nodes;
-
-		for (auto node : nodes) {
-			VALUE_CAST(collection, Collection, node);
-			auto argument_nodes = collection->nodes();
-			result_nodes.splice(result_nodes.end(), argument_nodes);
+		size_t count = 0;
+		for (auto it = begin; it != end; ++it) {
+			VALUE_CAST(collection, Collection, (*it));
+			count += collection->size();
 		}
 
-		return makePtr<List>(result_nodes);
+		auto result_nodes = new ValueList(count);
+		size_t offset = 0;
+		for (auto it = begin; it != end; ++it) {
+			const auto& collection_nodes = std::static_pointer_cast<Collection>(*it)->nodes();
+			std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes->begin() + offset);
+			offset += collection_nodes.size();
+		}
+
+		return makePtr<List>(*result_nodes);
 	});
 
-// (vec (list 1 2 3)) -> [1 2 3]
+// (vec (list 1 2 3))
 ADD_FUNCTION(
 	"vec",
 	{
-		CHECK_ARG_COUNT_IS("vec", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("vec", SIZE(), 1);
 
-		if (is<Vector>(nodes.front().get())) {
-			return nodes.front();
+		if (is<Vector>(begin->get())) {
+			return *begin;
 		}
 
-		VALUE_CAST(collection, Collection, nodes.front());
+		VALUE_CAST(collection, Collection, (*begin));
 
 		return makePtr<Vector>(collection->nodes());
 	});
 
-// (nth (list 1 2 3) 0) -> 1
+// (nth (list 1 2 3) 0)
 ADD_FUNCTION(
 	"nth",
 	{
-		CHECK_ARG_COUNT_IS("nth", nodes.size(), 2);
+		CHECK_ARG_COUNT_IS("nth", SIZE(), 2);
 
-		VALUE_CAST(collection, Collection, nodes.front());
-		VALUE_CAST(number_node, Number, (*std::next(nodes.begin())));
-		const auto& collection_nodes = collection->nodes();
+		VALUE_CAST(collection, Collection, (*begin));
+		VALUE_CAST(number_node, Number, (*(begin + 1)));
+		auto collection_nodes = collection->nodes();
 		auto index = (size_t)number_node->number();
 
 		if (number_node->number() < 0 || index >= collection_nodes.size()) {
@@ -466,7 +479,7 @@ ADD_FUNCTION(
 			return nullptr;
 		}
 
-		auto result = collection_nodes.cbegin();
+		auto result = collection_nodes.begin();
 		for (size_t i = 0; i < index; ++i) {
 			result++;
 		}
@@ -478,30 +491,30 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"first",
 	{
-		CHECK_ARG_COUNT_IS("first", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("first", SIZE(), 1);
 
-		if (is<Constant>(nodes.front().get())
-	        && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
+		if (is<Constant>(begin->get())
+	        && std::static_pointer_cast<Constant>(*begin)->state() == Constant::Nil) {
 			return makePtr<Constant>();
 		}
 
-		VALUE_CAST(collection, Collection, nodes.front());
+		VALUE_CAST(collection, Collection, (*begin));
 
 		return (collection->empty()) ? makePtr<Constant>() : collection->front();
 	});
 
-// (rest (list 1 2 3)) -> (2 3)
+// (rest (list 1 2 3))
 ADD_FUNCTION(
 	"rest",
 	{
-		CHECK_ARG_COUNT_IS("rest", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("rest", SIZE(), 1);
 
-		if (is<Constant>(nodes.front().get())
-	        && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
+		if (is<Constant>(begin->get())
+	        && std::static_pointer_cast<Constant>(*begin)->state() == Constant::Nil) {
 			return makePtr<List>();
 		}
 
-		VALUE_CAST(collection, Collection, nodes.front());
+		VALUE_CAST(collection, Collection, (*begin));
 
 		return makePtr<List>(collection->rest());
 	});
@@ -510,29 +523,30 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"apply",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("apply", nodes.size(), 2);
+		CHECK_ARG_COUNT_AT_LEAST("apply", SIZE(), 2);
 
-		auto callable = nodes.front();
+		auto callable = *begin;
 		IS_VALUE(Callable, callable);
 
-		VALUE_CAST(collection, Collection, nodes.back());
+		VALUE_CAST(collection, Collection, (*std::prev(end)));
 
-		// Remove function and list from the arguments
-		nodes.pop_front();
-		nodes.pop_back();
+		ValueList arguments(begin + 1, end - 1);
+		arguments.reserve(arguments.size() + collection->size());
 
 		// Append list nodes to the argument leftovers
-		auto collection_nodes = collection->nodes();
-		nodes.splice(nodes.end(), collection_nodes);
+		auto nodes = collection->nodes();
+		for (const auto& node : nodes) {
+			arguments.push_back(node);
+		}
 
 		ValuePtr value = nullptr;
 		if (is<Function>(callable.get())) {
 			auto function = std::static_pointer_cast<Function>(callable)->function();
-			value = function(nodes);
+			value = function(arguments.begin(), arguments.end());
 		}
 		else {
 			auto lambda = std::static_pointer_cast<Lambda>(callable);
-			value = eval(lambda->body(), Environment::create(lambda, nodes));
+			value = eval(lambda->body(), Environment::create(lambda, arguments));
 		}
 
 		return value;
@@ -542,10 +556,10 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"map",
 	{
-		CHECK_ARG_COUNT_IS("map", nodes.size(), 2);
+		CHECK_ARG_COUNT_IS("map", SIZE(), 2);
 
-		VALUE_CAST(callable, Callable, nodes.front());
-		VALUE_CAST(collection, Collection, nodes.back());
+		VALUE_CAST(callable, Callable, (*begin));
+		VALUE_CAST(collection, Collection, (*(begin + 1)));
 		const auto& collection_nodes = collection->nodes();
 
 		auto result = makePtr<List>();
@@ -553,7 +567,8 @@ ADD_FUNCTION(
 		if (is<Function>(callable.get())) {
 			auto function = std::static_pointer_cast<Function>(callable)->function();
 			for (const auto& node : collection_nodes) {
-				result->add(function({ node }));
+				auto arguments = ValueList { node };
+				result->add(function(arguments.begin(), arguments.end()));
 			}
 		}
 		else {
@@ -570,22 +585,22 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"throw",
 	{
-		CHECK_ARG_COUNT_IS("throw", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("throw", SIZE(), 1);
 
-		Error::the().add(nodes.front());
+		Error::the().add(*begin);
 
 		return nullptr;
 	})
 
 // -----------------------------------------
 
-#define IS_CONSTANT(name, constant)                                                     \
-	{                                                                                   \
-		CHECK_ARG_COUNT_IS(name, nodes.size(), 1);                                      \
-                                                                                        \
-		return makePtr<Constant>(                                                       \
-			is<Constant>(nodes.front().get())                                           \
-			&& std::static_pointer_cast<Constant>(nodes.front())->state() == constant); \
+#define IS_CONSTANT(name, constant)                                              \
+	{                                                                            \
+		CHECK_ARG_COUNT_IS(name, SIZE(), 1);                                     \
+                                                                                 \
+		return makePtr<Constant>(                                                \
+			is<Constant>(begin->get())                                           \
+			&& std::static_pointer_cast<Constant>(*begin)->state() == constant); \
 	}
 
 // (nil? nil)
@@ -595,22 +610,22 @@ ADD_FUNCTION("false?", IS_CONSTANT("false?", Constant::False));
 
 // -----------------------------------------
 
-#define IS_TYPE(type)                     \
-	{                                     \
-		bool result = true;               \
-                                          \
-		if (nodes.size() == 0) {          \
-			result = false;               \
-		}                                 \
-                                          \
-		for (auto node : nodes) {         \
-			if (!is<type>(node.get())) {  \
-				result = false;           \
-				break;                    \
-			}                             \
-		}                                 \
-                                          \
-		return makePtr<Constant>(result); \
+#define IS_TYPE(type)                            \
+	{                                            \
+		bool result = true;                      \
+                                                 \
+		if (SIZE() == 0) {                       \
+			result = false;                      \
+		}                                        \
+                                                 \
+		for (auto it = begin; it != end; ++it) { \
+			if (!is<type>(it->get())) {          \
+				result = false;                  \
+				break;                           \
+			}                                    \
+		}                                        \
+                                                 \
+		return makePtr<Constant>(result);        \
 	}
 
 // (symbol? 'foo)
@@ -629,16 +644,12 @@ ADD_FUNCTION(
 	{
 		bool result = true;
 
-		if (nodes.size() == 0) {
+		if (SIZE() == 0) {
 			result = false;
 		}
 
-		for (auto node : nodes) {
-			if (!is<Callable>(node.get())) {
-				result = false;
-				break;
-			}
-			if (is<Macro>(node.get())) {
+		for (auto it = begin; it != end; ++it) {
+			if (!is<Callable>(it->get()) || is<Macro>(it->get())) {
 				result = false;
 				break;
 			}
@@ -652,12 +663,12 @@ ADD_FUNCTION(
 	{
 		bool result = true;
 
-		if (nodes.size() == 0) {
+		if (SIZE() == 0) {
 			result = false;
 		}
 
-		for (auto node : nodes) {
-			if (!is<Macro>(node.get())) {
+		for (auto it = begin; it != end; ++it) {
+			if (!is<Macro>(it->get())) {
 				result = false;
 				break;
 			}
@@ -668,17 +679,17 @@ ADD_FUNCTION(
 
 // -----------------------------------------
 
-#define STRING_TO_TYPE(name, type)                      \
-	{                                                   \
-		CHECK_ARG_COUNT_IS(name, nodes.size(), 1);      \
-                                                        \
-		if (is<type>(nodes.front().get())) {            \
-			return nodes.front();                       \
-		}                                               \
-                                                        \
-		VALUE_CAST(stringValue, String, nodes.front()); \
-                                                        \
-		return makePtr<type>(stringValue->data());      \
+#define STRING_TO_TYPE(name, type)                 \
+	{                                              \
+		CHECK_ARG_COUNT_IS(name, SIZE(), 1);       \
+                                                   \
+		if (is<type>(begin->get())) {              \
+			return *begin;                         \
+		}                                          \
+                                                   \
+		VALUE_CAST(stringValue, String, (*begin)); \
+                                                   \
+		return makePtr<type>(stringValue->data()); \
 	}
 
 // (symbol "foo")
@@ -692,8 +703,8 @@ ADD_FUNCTION(
 	{
 		auto result = makePtr<Vector>();
 
-		for (auto node : nodes) {
-			result->add(node);
+		for (auto it = begin; it != end; ++it) {
+			result->add(*it);
 		}
 
 		return result;
@@ -702,11 +713,11 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"hash-map",
 	{
-		CHECK_ARG_COUNT_EVEN("hash-map", nodes.size());
+		CHECK_ARG_COUNT_EVEN("hash-map", SIZE());
 
 		auto result = makePtr<HashMap>();
 
-		for (auto it = nodes.begin(); it != nodes.end(); std::advance(it, 2)) {
+		for (auto it = begin; it != end; std::advance(it, 2)) {
 			result->add(*it, *(std::next(it)));
 		}
 
@@ -717,16 +728,16 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"assoc",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("assoc", nodes.size(), 1);
+		CHECK_ARG_COUNT_AT_LEAST("assoc", SIZE(), 1);
 
-		VALUE_CAST(hash_map, HashMap, nodes.front());
-		nodes.pop_front();
+		VALUE_CAST(hash_map, HashMap, (*begin));
+		begin++;
 
-		CHECK_ARG_COUNT_EVEN("assoc", nodes.size());
+		CHECK_ARG_COUNT_EVEN("assoc", SIZE());
 
 		auto result = makePtr<HashMap>(hash_map->elements());
 
-		for (auto it = nodes.begin(); it != nodes.end(); std::advance(it, 2)) {
+		for (auto it = begin; it != end; std::advance(it, 2)) {
 			result->add(*it, *(std::next(it)));
 		}
 
@@ -736,63 +747,62 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"dissoc",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("dissoc", nodes.size(), 1);
+		CHECK_ARG_COUNT_AT_LEAST("dissoc", SIZE(), 1);
 
-		VALUE_CAST(hash_map, HashMap, nodes.front());
-		nodes.pop_front();
+		VALUE_CAST(hash_map, HashMap, (*begin));
+		begin++;
 
 		auto result = makePtr<HashMap>(hash_map->elements());
 
-		for (auto node : nodes) {
-			result->remove(node);
+		for (auto it = begin; it != end; ++it) {
+			result->remove(*it);
 		}
 
 		return result;
 	});
 
-// (get {:kw "value"} :kw)
+// (get {:kw "value"} :kw) -> "value"
 ADD_FUNCTION(
 	"get",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("get", nodes.size(), 1);
+		CHECK_ARG_COUNT_AT_LEAST("get", SIZE(), 1);
 
-		if (is<Constant>(nodes.front().get())
-	        && std::static_pointer_cast<Constant>(nodes.front())->state() == Constant::Nil) {
+		if (is<Constant>(begin->get())
+	        && std::static_pointer_cast<Constant>(*begin)->state() == Constant::Nil) {
 			return makePtr<Constant>();
 		}
 
-		VALUE_CAST(hash_map, HashMap, nodes.front());
-		nodes.pop_front();
+		VALUE_CAST(hash_map, HashMap, (*begin));
+		begin++;
 
-		if (nodes.size() == 0) {
+		if (SIZE() == 0) {
 			return makePtr<Constant>();
 		}
 
-		auto result = hash_map->get(nodes.front());
+		auto result = hash_map->get(*begin);
 		return (result) ? result : makePtr<Constant>();
 	});
 
 ADD_FUNCTION(
 	"contains?",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("contains?", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("contains?", SIZE(), 2);
 
-		VALUE_CAST(hash_map, HashMap, nodes.front());
-		nodes.pop_front();
+		VALUE_CAST(hash_map, HashMap, (*begin));
 
-		if (nodes.size() == 0) {
+		if (SIZE() == 0) {
 			return makePtr<Constant>(false);
 		}
 
-		return makePtr<Constant>(hash_map->exists(nodes.front()));
+		return makePtr<Constant>(hash_map->exists(*(begin + 1)));
 	});
 
 ADD_FUNCTION(
 	"keys",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("keys", nodes.size(), 1);
+		CHECK_ARG_COUNT_AT_LEAST("keys", SIZE(), 1);
 
-		VALUE_CAST(hash_map, HashMap, nodes.front());
+		VALUE_CAST(hash_map, HashMap, (*begin));
 
 		auto result = makePtr<List>();
 
@@ -812,9 +822,9 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"vals",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("vals", nodes.size(), 1);
+		CHECK_ARG_COUNT_AT_LEAST("vals", SIZE(), 1);
 
-		VALUE_CAST(hash_map, HashMap, nodes.front());
+		VALUE_CAST(hash_map, HashMap, (*begin));
 
 		auto result = makePtr<List>();
 
@@ -829,31 +839,33 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"readline",
 	{
-		CHECK_ARG_COUNT_IS("readline", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("readline", SIZE(), 1);
 
-		VALUE_CAST(prompt, String, nodes.front());
+		VALUE_CAST(prompt, String, (*begin));
 
 		return readline(prompt->data());
 	});
 
-ADD_FUNCTION("time-ms", {
-	CHECK_ARG_COUNT_IS("time-ms", nodes.size(), 0);
+ADD_FUNCTION(
+	"time-ms",
+	{
+		CHECK_ARG_COUNT_IS("time-ms", SIZE(), 0);
 
-	int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-						  std::chrono::system_clock::now().time_since_epoch())
-	                      .count();
+		int64_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+							  std::chrono::system_clock::now().time_since_epoch())
+	                          .count();
 
-	return makePtr<Number>(elapsed);
-});
+		return makePtr<Number>(elapsed);
+	});
 
 // (meta [1 2 3])
 ADD_FUNCTION(
 	"meta",
 	{
-		CHECK_ARG_COUNT_IS("meta", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("meta", SIZE(), 1);
 
-		auto front = nodes.front();
-		Value* front_raw_ptr = nodes.front().get();
+		auto front = *begin;
+		Value* front_raw_ptr = begin->get();
 
 		if (!is<Collection>(front_raw_ptr) && // List / Vector
 	        !is<HashMap>(front_raw_ptr) &&    // HashMap
@@ -869,10 +881,10 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"with-meta",
 	{
-		CHECK_ARG_COUNT_IS("with-meta", nodes.size(), 2);
+		CHECK_ARG_COUNT_IS("with-meta", SIZE(), 2);
 
-		auto front = nodes.front();
-		Value* front_raw_ptr = nodes.front().get();
+		auto front = *begin;
+		Value* front_raw_ptr = begin->get();
 
 		if (!is<Collection>(front_raw_ptr) && // List / Vector
 	        !is<HashMap>(front_raw_ptr) &&    // HashMap
@@ -881,7 +893,7 @@ ADD_FUNCTION(
 			return nullptr;
 		}
 
-		return front->withMeta(nodes.back());
+		return front->withMeta(*(begin + 1));
 	});
 
 // (conj '(1 2 3) 4 5 6) -> (6 5 4 1 2 3)
@@ -889,25 +901,28 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"conj",
 	{
-		CHECK_ARG_COUNT_AT_LEAST("conj", nodes.size(), 1);
+		CHECK_ARG_COUNT_AT_LEAST("conj", SIZE(), 1);
 
-		VALUE_CAST(collection, Collection, nodes.front());
-		nodes.pop_front();
+		VALUE_CAST(collection, Collection, (*begin));
+		begin++;
 
-		auto collection_nodes = collection->nodes();
+		const auto& collection_nodes = collection->nodes();
+		size_t collection_count = collection_nodes.size();
+		size_t argument_count = SIZE();
+
+		ValueList* nodes = new ValueList(argument_count + collection_count);
 
 		if (is<List>(collection.get())) {
-			nodes.reverse();
-			nodes.splice(nodes.end(), collection_nodes);
-			auto result = makePtr<List>(nodes);
+			std::reverse_copy(begin, end, nodes->begin());
+			std::copy(collection_nodes.begin(), collection_nodes.end(), nodes->begin() + argument_count);
 
-			return result;
+			return makePtr<List>(*nodes);
 		}
 
-		nodes.splice(nodes.begin(), collection_nodes);
-		auto result = makePtr<Vector>(nodes);
+		std::copy(collection_nodes.begin(), collection_nodes.end(), nodes->begin());
+		std::copy(begin, end, nodes->begin() + collection_count);
 
-		return result;
+		return makePtr<Vector>(*nodes);
 	});
 
 // (seq '(1 2 3)) -> (1 2 3)
@@ -916,9 +931,9 @@ ADD_FUNCTION(
 ADD_FUNCTION(
 	"seq",
 	{
-		CHECK_ARG_COUNT_IS("seq", nodes.size(), 1);
+		CHECK_ARG_COUNT_IS("seq", SIZE(), 1);
 
-		auto front = nodes.front();
+		auto front = *begin;
 		Value* front_raw_ptr = front.get();
 
 		if (is<Constant>(front_raw_ptr) && std::static_pointer_cast<Constant>(front)->state() == Constant::Nil) {

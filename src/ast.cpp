@@ -5,8 +5,9 @@
  */
 
 #include <cstdint> // int64_t
-#include <memory>
+#include <memory>  // std::static_pointer_cast
 #include <string>
+#include <vector>
 
 #include "ast.h"
 #include "environment.h"
@@ -29,8 +30,13 @@ ValuePtr Value::meta() const
 
 // -----------------------------------------
 
-Collection::Collection(const std::list<ValuePtr>& nodes)
+Collection::Collection(const ValueList& nodes)
 	: m_nodes(nodes)
+{
+}
+
+Collection::Collection(ValueListIt begin, ValueListIt end)
+	: m_nodes(ValueList(begin, end))
 {
 }
 
@@ -54,30 +60,21 @@ void Collection::add(ValuePtr node)
 	m_nodes.push_back(node);
 }
 
-void Collection::addFront(ValuePtr node)
-{
-	if (node == nullptr) {
-		return;
-	}
-
-	m_nodes.push_front(node);
-}
-
 ValueList Collection::rest() const
 {
-	auto start = (m_nodes.size() > 0) ? std::next(m_nodes.begin()) : m_nodes.end();
+	auto start = (m_nodes.size() > 0) ? m_nodes.begin() + 1 : m_nodes.end();
 	return ValueList(start, m_nodes.end());
 }
 
 // -----------------------------------------
 
-List::List(const List& that, ValuePtr meta)
-	: Collection(that, meta)
+List::List(const ValueList& nodes)
+	: Collection(nodes)
 {
 }
 
-List::List(const std::list<ValuePtr>& nodes)
-	: Collection(nodes)
+List::List(ValueListIt begin, ValueListIt end)
+	: Collection(begin, end)
 {
 }
 
@@ -86,10 +83,20 @@ List::List(ValueListConstIt begin, ValueListConstIt end)
 {
 }
 
+List::List(const List& that, ValuePtr meta)
+	: Collection(that, meta)
+{
+}
+
 // -----------------------------------------
 
-Vector::Vector(const std::list<ValuePtr>& nodes)
+Vector::Vector(const ValueList& nodes)
 	: Collection(nodes)
+{
+}
+
+Vector::Vector(ValueListIt begin, ValueListIt end)
+	: Collection(begin, end)
 {
 }
 

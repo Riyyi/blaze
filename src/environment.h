@@ -21,7 +21,7 @@ public:
 	// Factory functions instead of constructors because it can fail in the bindings/arguments case
 	static EnvironmentPtr create();
 	static EnvironmentPtr create(EnvironmentPtr outer);
-	static EnvironmentPtr create(const ValuePtr lambda, const std::list<ValuePtr>& arguments);
+	static EnvironmentPtr create(const ValuePtr lambda, const ValueList& arguments);
 
 	bool exists(const std::string& symbol);
 	ValuePtr set(const std::string& symbol, ValuePtr value);

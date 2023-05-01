@@ -95,7 +95,6 @@ public:
 	virtual ~Collection() = default;
 
 	void add(ValuePtr node);
-	void addFront(ValuePtr node);
 
 	// TODO: rename size -> count
 	size_t size() const { return m_nodes.size(); }
@@ -109,6 +108,7 @@ public:
 protected:
 	Collection() = default;
 	Collection(const ValueList& nodes);
+	Collection(ValueListIt begin, ValueListIt end);
 	Collection(ValueListConstIt begin, ValueListConstIt end);
 	Collection(const Collection& that, ValuePtr meta);
 
@@ -130,7 +130,8 @@ private:
 class List final : public Collection {
 public:
 	List() = default;
-	List(const std::list<ValuePtr>& nodes);
+	List(const ValueList& nodes);
+	List(ValueListIt begin, ValueListIt end);
 	List(ValueListConstIt begin, ValueListConstIt end);
 	List(const List& that, ValuePtr meta);
 
@@ -154,7 +155,8 @@ private:
 class Vector final : public Collection {
 public:
 	Vector() = default;
-	Vector(const std::list<ValuePtr>& nodes);
+	Vector(const ValueList& nodes);
+	Vector(ValueListIt begin, ValueListIt end);
 	Vector(ValueListConstIt begin, ValueListConstIt end);
 	Vector(const Vector& that, ValuePtr meta);
 
@@ -322,7 +324,7 @@ private:
 
 // -----------------------------------------
 
-using FunctionType = std::function<ValuePtr(std::list<ValuePtr>)>;
+using FunctionType = std::function<ValuePtr(ValueListIt, ValueListIt)>;
 
 class Function final : public Callable {
 public:

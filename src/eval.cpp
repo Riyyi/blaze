@@ -249,12 +249,9 @@ ValuePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 		return nullptr;
 	}
 
-	// car
 	auto function = std::static_pointer_cast<Function>(nodes.front())->function();
-	// cdr
-	nodes.pop_front();
 
-	return function(nodes);
+	return function(nodes.begin() + 1, nodes.end());
 }
 
 } // namespace blaze
