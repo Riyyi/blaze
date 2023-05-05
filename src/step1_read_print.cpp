@@ -15,7 +15,6 @@
 #include "reader.h"
 #include "settings.h"
 
-#if 0
 namespace blaze {
 
 auto read(std::string_view input) -> ValuePtr
@@ -108,4 +107,8 @@ auto main(int argc, char* argv[]) -> int
 
 	return 0;
 }
-#endif
+
+// Added to keep the linker happy at step A
+namespace blaze {
+ValuePtr readline(const std::string&) { return nullptr; }
+} // namespace blaze

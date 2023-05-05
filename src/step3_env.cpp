@@ -17,7 +17,6 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 0
 static blaze::EnvironmentPtr s_outer_env = blaze::Environment::create();
 
 namespace blaze {
@@ -112,4 +111,8 @@ auto main(int argc, char* argv[]) -> int
 
 	return 0;
 }
-#endif
+
+// Added to keep the linker happy at step A
+namespace blaze {
+ValuePtr readline(const std::string&) { return nullptr; }
+} // namespace blaze

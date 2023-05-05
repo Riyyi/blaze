@@ -5,7 +5,6 @@
 
 #include "forward.h"
 
-#if 0
 auto read(std::string_view data) -> std::string_view
 {
 	return data;
@@ -57,5 +56,7 @@ auto eval(ValuePtr, EnvironmentPtr) -> ValuePtr
 	return {};
 }
 
+// Added to keep the linker happy at step A
+ValuePtr readline(const std::string&) { return nullptr; }
+
 } // namespace blaze
-#endif

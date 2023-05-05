@@ -2,7 +2,7 @@
 # User config between these lines
 
 # Set project name
-set(PROJECT "blaze")
+set(PROJECT "stepA_mal")
 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set(BLAZE_STANDALONE TRUE)
@@ -64,11 +64,26 @@ add_subdirectory("vendor/ruc")
 
 # Define source files
 file(GLOB_RECURSE PROJECT_SOURCES "src/*.cpp")
+file(GLOB_RECURSE EXCLUDED_SOURCES "src/step*.cpp")
+list(REMOVE_ITEM PROJECT_SOURCES ${EXCLUDED_SOURCES})
 
-add_executable(${PROJECT} ${PROJECT_SOURCES})
-target_include_directories(${PROJECT} PRIVATE
-	"src")
-target_link_libraries(${PROJECT} readline ruc)
+function(add_step TARGET_NAME MAIN_PATH)
+	add_executable(${TARGET_NAME} ${PROJECT_SOURCES} ${MAIN_PATH})
+	target_include_directories(${TARGET_NAME} PRIVATE "src")
+	target_link_libraries(${TARGET_NAME} readline ruc)
+endfunction()
+
+add_step(step0_repl       "src/step0_repl.cpp")
+add_step(step1_read_print "src/step1_read_print.cpp")
+add_step(step2_eval       "src/step2_eval.cpp")
+add_step(step3_env        "src/step3_env.cpp")
+add_step(step4_if_fn_do   "src/step4_if_fn_do.cpp")
+add_step(step5_tco        "src/step5_tco.cpp")
+add_step(step6_file       "src/step6_file.cpp")
+add_step(step7_quote      "src/step7_quote.cpp")
+add_step(step8_macros     "src/step8_macros.cpp")
+add_step(step9_try        "src/step9_try.cpp")
+add_step(stepA_mal        "src/stepA_mal.cpp")
 
 # ------------------------------------------
 # Execute target
@@ -81,45 +96,51 @@ add_custom_target(run
 # Test targets
 
 add_custom_target(test0
-    COMMAND env STEP=step0_repl MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step0_repl.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step0_repl.mal -- ./${PROJECT})
 add_dependencies(test0 ${PROJECT})
 
 add_custom_target(test1
-    COMMAND env STEP=step1_read_print MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step1_read_print.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step1_read_print.mal -- ./${PROJECT})
 add_dependencies(test1 ${PROJECT})
 
 add_custom_target(test2
-    COMMAND env STEP=step_eval MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step2_eval.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step2_eval.mal -- ./${PROJECT})
 add_dependencies(test2 ${PROJECT})
 
 add_custom_target(test3
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step3_env.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step3_env.mal -- ./${PROJECT})
 add_dependencies(test3 ${PROJECT})
 
 add_custom_target(test4
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step4_if_fn_do.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step4_if_fn_do.mal -- ./${PROJECT})
 add_dependencies(test4 ${PROJECT})
 
 add_custom_target(test5
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step5_tco.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step5_tco.mal -- ./${PROJECT})
 add_dependencies(test5 ${PROJECT})
 
 add_custom_target(test6
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step6_file.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step6_file.mal -- ./${PROJECT})
 add_dependencies(test6 ${PROJECT})
 
 add_custom_target(test7
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step7_quote.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step7_quote.mal -- ./${PROJECT})
 add_dependencies(test7 ${PROJECT})
 
 add_custom_target(test8
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step8_macros.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step8_macros.mal -- ./${PROJECT})
 add_dependencies(test8 ${PROJECT})
 
 add_custom_target(test9
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/step9_try.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step9_try.mal -- ./${PROJECT})
 add_dependencies(test9 ${PROJECT})
 
 add_custom_target(testA
-    COMMAND env STEP=step_env MAL_IMPL=js ../vendor/mal/runtest.py --deferrable --optional ../vendor/mal/tests/stepA_mal.mal -- ./${PROJECT})
+    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/stepA_mal.mal -- ./${PROJECT})
 add_dependencies(testA ${PROJECT})
+
+add_custom_target(perf
+    COMMAND ./${PROJECT} ../tests/perf1.mal
+	COMMAND ./${PROJECT} ../tests/perf2.mal
+	COMMAND ./${PROJECT} ../tests/perf3.mal)
+add_dependencies(perf ${PROJECT})
