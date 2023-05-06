@@ -3,11 +3,9 @@
 #+LANGUAGE: en
 #+OPTIONS: toc:nil
 
-This is my implementation of the [[https://github.com/kanaka/mal][Make A Lisp]] project, done in C++20.
+This is an implementation of the [[https://github.com/kanaka/mal][Make A Lisp]] project, done in C++20.
 
 ** Usage
-
-Change the ~#if 0~ macro at the top of the ~stepX.cpp~ to ~#if 1~.
 
 *** Run the REPL
 

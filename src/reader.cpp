@@ -146,7 +146,11 @@ ValuePtr Reader::readList()
 
 	auto list = makePtr<List>();
 	while (!isEOF() && peek().type != Token::Type::ParenClose) {
-		list->add(readImpl());
+		auto node = readImpl();
+		if (node == nullptr) {
+			return nullptr;
+		}
+		list->add(node);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
@@ -163,7 +167,11 @@ ValuePtr Reader::readVector()
 
 	auto vector = makePtr<Vector>();
 	while (!isEOF() && peek().type != Token::Type::BracketClose) {
-		vector->add(readImpl());
+		auto node = readImpl();
+		if (node == nullptr) {
+			return nullptr;
+		}
+		vector->add(node);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BracketClose })) { // ]

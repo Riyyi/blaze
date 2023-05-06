@@ -24,7 +24,6 @@
 #include "readline.h"
 #include "settings.h"
 
-#if 1
 namespace blaze {
 
 static blaze::Readline s_readline;
@@ -178,4 +177,3 @@ auto main(int argc, char* argv[]) -> int
 
 	return 0;
 }
-#endif

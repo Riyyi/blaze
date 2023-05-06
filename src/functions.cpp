@@ -168,7 +168,6 @@ ADD_FUNCTION(
 		return makePtr<Constant>((result) ? Constant::True : Constant::False);
 	});
 
-// FIXME: (count {1}) infinite loop
 ADD_FUNCTION(
 	"count",
 	{
