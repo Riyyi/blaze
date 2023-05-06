@@ -34,7 +34,6 @@ struct Token {
 		String,       // "foobar"
 		Keyword,      // :keyword
 		Value,        // number, "nil", "true", "false", symbol
-		Comment,      // ;
 		Error,
 	};
 

@@ -45,14 +45,7 @@ void Reader::read()
 
 	// Check for multiple expressions
 	if (!isEOF()) {
-		Token::Type type = peek().type;
-		switch (type) {
-		case Token::Type::Comment:
-			break;
-		default:
-			Error::the().add("more than one sexp in input");
-			break;
-		};
+		Error::the().add("more than one sexp in input");
 	}
 }
 
@@ -107,10 +100,6 @@ ValuePtr Reader::readImpl()
 		break;
 	case Token::Type::Keyword: // :keyword
 		return readKeyword();
-		break;
-	case Token::Type::Comment: // ;
-		ignore();
-		return nullptr;
 		break;
 	case Token::Type::Value: // true, false, nil
 		return readValue();

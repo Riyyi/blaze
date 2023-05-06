@@ -256,9 +256,6 @@ bool Lexer::consumeValue()
 
 bool Lexer::consumeComment()
 {
-	size_t column = m_column;
-	std::string comment;
-
 	ignore(); // ;
 
 	static std::unordered_set<char> exit = {
@@ -275,17 +272,8 @@ bool Lexer::consumeComment()
 			break;
 		}
 
-		comment += character;
 		ignore();
 	}
-
-	// Trim comment
-	comment.erase(comment.begin(),
-	              std::find_if(comment.begin(), comment.end(), [](char c) { return !std::isspace(c); }));
-	comment.erase(std::find_if(comment.rbegin(), comment.rend(), [](char c) { return !std::isspace(c); }).base(),
-	              comment.end());
-
-	m_tokens.push_back({ Token::Type::Comment, m_line, column, comment });
 
 	return true;
 }
