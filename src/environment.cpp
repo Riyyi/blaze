@@ -39,7 +39,7 @@ EnvironmentPtr Environment::create(const ValuePtr lambda, const ValueVector& arg
 	for (size_t i = 0; i < bindings.size(); ++i, ++it) {
 		if (bindings[i] == "&") {
 			if (i + 2 != bindings.size()) {
-				Error::the().add(format("invalid function: {}", lambda));
+				Error::the().add(::format("invalid function: {}", lambda));
 				return nullptr;
 			}
 
@@ -53,7 +53,7 @@ EnvironmentPtr Environment::create(const ValuePtr lambda, const ValueVector& arg
 		}
 
 		if (it == arguments.end()) {
-			Error::the().add(format("wrong number of arguments: {}, {}", lambda, arguments.size()));
+			Error::the().add(::format("wrong number of arguments: {}, {}", lambda, arguments.size()));
 			return nullptr;
 		}
 
@@ -61,7 +61,7 @@ EnvironmentPtr Environment::create(const ValuePtr lambda, const ValueVector& arg
 	}
 
 	if (it != arguments.end()) {
-		Error::the().add(format("wrong number of arguments: {}, {}", lambda, arguments.size()));
+		Error::the().add(::format("wrong number of arguments: {}, {}", lambda, arguments.size()));
 		return nullptr;
 	}
 

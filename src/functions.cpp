@@ -181,7 +181,7 @@ ADD_FUNCTION(
 			result = std::static_pointer_cast<Collection>(*begin)->size();
 		}
 		else {
-			Error::the().add(format("wrong argument type: Collection, '{}'", *begin));
+			Error::the().add(::format("wrong argument type: Collection, '{}'", *begin));
 			return nullptr;
 		}
 
@@ -191,20 +191,20 @@ ADD_FUNCTION(
 
 // -----------------------------------------
 
-#define PRINTER_STRING(print_readably, concatenation)                               \
-	{                                                                               \
-		std::string result;                                                         \
-                                                                                    \
-		Printer printer;                                                            \
-		for (auto it = begin; it != end; ++it) {                                    \
-			result += format("{}", printer.printNoErrorCheck(*it, print_readably)); \
-                                                                                    \
-			if (it != end && std::next(it) != end) {                                \
-				result += concatenation;                                            \
-			}                                                                       \
-		}                                                                           \
-                                                                                    \
-		return makePtr<String>(result);                                             \
+#define PRINTER_STRING(print_readably, concatenation)                                 \
+	{                                                                                 \
+		std::string result;                                                           \
+                                                                                      \
+		Printer printer;                                                              \
+		for (auto it = begin; it != end; ++it) {                                      \
+			result += ::format("{}", printer.printNoErrorCheck(*it, print_readably)); \
+                                                                                      \
+			if (it != end && std::next(it) != end) {                                  \
+				result += concatenation;                                              \
+			}                                                                         \
+		}                                                                             \
+                                                                                      \
+		return makePtr<String>(result);                                               \
 	}
 
 ADD_FUNCTION("str", PRINTER_STRING(false, ""));
@@ -869,7 +869,7 @@ ADD_FUNCTION(
 		if (!is<Collection>(front_raw_ptr) && // List / Vector
 	        !is<HashMap>(front_raw_ptr) &&    // HashMap
 	        !is<Callable>(front_raw_ptr)) {   // Function / Lambda
-			Error::the().add(format("wrong argument type: Collection, HashMap or Callable, {}", front));
+			Error::the().add(::format("wrong argument type: Collection, HashMap or Callable, {}", front));
 			return nullptr;
 		}
 
@@ -888,7 +888,7 @@ ADD_FUNCTION(
 		if (!is<Collection>(front_raw_ptr) && // List / Vector
 	        !is<HashMap>(front_raw_ptr) &&    // HashMap
 	        !is<Callable>(front_raw_ptr)) {   // Function / Lambda
-			Error::the().add(format("wrong argument type: Collection, HashMap or Callable, {}", front));
+			Error::the().add(::format("wrong argument type: Collection, HashMap or Callable, {}", front));
 			return nullptr;
 		}
 
@@ -968,7 +968,7 @@ ADD_FUNCTION(
 			return result;
 		}
 
-		Error::the().add(format("wrong argument type: Collection or String, {}", front));
+		Error::the().add(::format("wrong argument type: Collection or String, {}", front));
 
 		return nullptr;
 	});

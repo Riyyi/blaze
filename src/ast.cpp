@@ -182,7 +182,7 @@ ValuePtr HashMap::get(ValuePtr key)
 std::string HashMap::getKeyString(ValuePtr key)
 {
 	if (!is<String>(key.get()) && !is<Keyword>(key.get())) {
-		Error::the().add(format("wrong argument type: string or keyword, {}", key));
+		Error::the().add(::format("wrong argument type: string or keyword, {}", key));
 		return {};
 	}
 

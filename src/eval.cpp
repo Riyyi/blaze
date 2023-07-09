@@ -153,7 +153,7 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 	if (is<Symbol>(ast_raw_ptr)) {
 		auto result = env->get(std::static_pointer_cast<Symbol>(ast)->symbol());
 		if (!result) {
-			Error::the().add(format("'{}' not found", ast));
+			Error::the().add(::format("'{}' not found", ast));
 			return nullptr;
 		}
 		return result;
@@ -245,7 +245,7 @@ ValuePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 	auto nodes = evaluated_list->nodes();
 
 	if (!is<Function>(nodes.front().get())) {
-		Error::the().add(format("invalid function: {}", nodes.front()));
+		Error::the().add(::format("invalid function: {}", nodes.front()));
 		return nullptr;
 	}
 
