@@ -122,24 +122,24 @@ ValuePtr Reader::readSpliceUnquote()
 		return nullptr;
 	}
 
-	auto list = makePtr<List>();
-	list->add(makePtr<Symbol>("splice-unquote"));
-	list->add(readImpl());
+	auto nodes = ValueVector(2);
+	nodes.at(0) = makePtr<Symbol>("splice-unquote");
+	nodes.at(1) = readImpl();
 
-	return list;
+	return makePtr<List>(nodes);
 }
 
 ValuePtr Reader::readList()
 {
 	ignore(); // (
 
-	auto list = makePtr<List>();
+	auto nodes = ValueVector();
 	while (!isEOF() && peek().type != Token::Type::ParenClose) {
 		auto node = readImpl();
 		if (node == nullptr) {
 			return nullptr;
 		}
-		list->add(node);
+		nodes.push_back(node);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
@@ -147,27 +147,27 @@ ValuePtr Reader::readList()
 		return nullptr;
 	}
 
-	return list;
+	return makePtr<List>(nodes);
 }
 
 ValuePtr Reader::readVector()
 {
 	ignore(); // [
 
-	auto vector = makePtr<Vector>();
+	auto nodes = ValueVector();
 	while (!isEOF() && peek().type != Token::Type::BracketClose) {
 		auto node = readImpl();
 		if (node == nullptr) {
 			return nullptr;
 		}
-		vector->add(node);
+		nodes.push_back(node);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BracketClose })) { // ]
 		Error::the().add("expected ']', got EOF");
 	}
 
-	return vector;
+	return makePtr<Vector>(nodes);
 }
 
 ValuePtr Reader::readHashMap()
@@ -213,11 +213,11 @@ ValuePtr Reader::readQuote()
 		return nullptr;
 	}
 
-	auto list = makePtr<List>();
-	list->add(makePtr<Symbol>("quote"));
-	list->add(readImpl());
+	auto nodes = ValueVector(2);
+	nodes.at(0) = makePtr<Symbol>("quote");
+	nodes.at(1) = readImpl();
 
-	return list;
+	return makePtr<List>(nodes);
 }
 
 ValuePtr Reader::readQuasiQuote()
@@ -229,11 +229,11 @@ ValuePtr Reader::readQuasiQuote()
 		return nullptr;
 	}
 
-	auto list = makePtr<List>();
-	list->add(makePtr<Symbol>("quasiquote"));
-	list->add(readImpl());
+	auto nodes = ValueVector(2);
+	nodes.at(0) = makePtr<Symbol>("quasiquote");
+	nodes.at(1) = readImpl();
 
-	return list;
+	return makePtr<List>(nodes);
 }
 
 ValuePtr Reader::readUnquote()
@@ -245,11 +245,11 @@ ValuePtr Reader::readUnquote()
 		return nullptr;
 	}
 
-	auto list = makePtr<List>();
-	list->add(makePtr<Symbol>("unquote"));
-	list->add(readImpl());
+	auto nodes = ValueVector(2);
+	nodes.at(0) = makePtr<Symbol>("unquote");
+	nodes.at(1) = readImpl();
 
-	return list;
+	return makePtr<List>(nodes);
 }
 
 ValuePtr Reader::readWithMeta()
@@ -263,14 +263,12 @@ ValuePtr Reader::readWithMeta()
 	}
 	retreat();
 
-	auto list = makePtr<List>();
-	list->add(makePtr<Symbol>("with-meta"));
-	ValuePtr first = readImpl();
-	ValuePtr second = readImpl();
-	list->add(second);
-	list->add(first);
+	auto nodes = ValueVector(3);
+	nodes.at(0) = makePtr<Symbol>("with-meta");
+	nodes.at(2) = readImpl(); // Note: second Value is read first
+	nodes.at(1) = readImpl();
 
-	return list;
+	return makePtr<List>(nodes);
 }
 
 ValuePtr Reader::readDeref()
@@ -282,11 +280,11 @@ ValuePtr Reader::readDeref()
 		return nullptr;
 	}
 
-	auto list = makePtr<List>();
-	list->add(makePtr<Symbol>("deref"));
-	list->add(readImpl());
+	auto nodes = ValueVector(2);
+	nodes.at(0) = makePtr<Symbol>("deref");
+	nodes.at(1) = readImpl();
 
-	return list;
+	return makePtr<List>(nodes);
 }
 
 ValuePtr Reader::readString()

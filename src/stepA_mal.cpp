@@ -112,13 +112,14 @@ static auto installLambdas(EnvironmentPtr env) -> void
 
 static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void
 {
-	auto list = makePtr<List>();
-	if (arguments.size() > 1) {
-		for (auto it = arguments.begin() + 1; it != arguments.end(); ++it) {
-			list->add(makePtr<String>(*it));
+	size_t count = arguments.size();
+	auto nodes = ValueVector(count - 1);
+	if (count > 1) {
+		for (size_t i = 1; i < count; ++i) {
+			nodes.at(i) = makePtr<String>(arguments[i]);
 		}
 	}
-	env->set("*ARGV*", list);
+	env->set("*ARGV*", makePtr<List>(nodes));
 }
 
 } // namespace blaze

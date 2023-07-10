@@ -94,8 +94,6 @@ class Collection : public Value {
 public:
 	virtual ~Collection() = default;
 
-	void add(ValuePtr node);
-
 	// TODO: rename size -> count
 	size_t size() const { return m_nodes.size(); }
 	bool empty() const { return m_nodes.size() == 0; }
@@ -219,6 +217,7 @@ public:
 	virtual ~String() = default;
 
 	const std::string& data() const { return m_data; }
+	size_t size() const { return m_data.size(); }
 	bool empty() const { return m_data.empty(); }
 
 	WITH_NO_META();
@@ -324,7 +323,7 @@ private:
 
 // -----------------------------------------
 
-using FunctionType = std::function<ValuePtr(ValueVectorIt, ValueVectorIt)>;
+using FunctionType = std::function<ValuePtr(ValueVectorConstIt, ValueVectorConstIt)>;
 
 class Function final : public Callable {
 public:

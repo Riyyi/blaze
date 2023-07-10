@@ -43,11 +43,11 @@ EnvironmentPtr Environment::create(const ValuePtr lambda, const ValueVector& arg
 				return nullptr;
 			}
 
-			auto list = makePtr<List>();
+			auto nodes = ValueVector();
 			for (; it != arguments.end(); ++it) {
-				list->add(*it);
+				nodes.push_back(*it);
 			}
-			env->set(bindings[i + 1], list);
+			env->set(bindings[i + 1], makePtr<List>(nodes));
 
 			return env;
 		}

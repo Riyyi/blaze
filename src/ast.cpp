@@ -51,15 +51,6 @@ Collection::Collection(const Collection& that, ValuePtr meta)
 {
 }
 
-void Collection::add(ValuePtr node)
-{
-	if (node == nullptr) {
-		return;
-	}
-
-	m_nodes.push_back(node);
-}
-
 ValueVector Collection::rest() const
 {
 	auto start = (m_nodes.size() > 0) ? m_nodes.begin() + 1 : m_nodes.end();

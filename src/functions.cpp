@@ -39,7 +39,7 @@
 	static struct FUNCTION_STRUCT_NAME(unique)               \
 		FUNCTION_STRUCT_NAME(unique)(                        \
 			symbol,                                          \
-			[](ValueVectorIt begin, ValueVectorIt end) -> ValuePtr lambda);
+			[](ValueVectorConstIt begin, ValueVectorConstIt end) -> ValuePtr lambda);
 
 #define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__LINE__, symbol, lambda);
 
@@ -419,11 +419,11 @@ ADD_FUNCTION(
 		VALUE_CAST(collection, Collection, (*begin));
 		const auto& collection_nodes = collection->nodes();
 
-		ValueVector* result_nodes = new ValueVector(collection_nodes.size() + 1);
-		result_nodes->at(0) = first;
-		std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes->begin() + 1);
+		auto result_nodes = ValueVector(collection_nodes.size() + 1);
+		result_nodes.at(0) = first;
+		std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes.begin() + 1);
 
-		return makePtr<List>(*result_nodes);
+		return makePtr<List>(result_nodes);
 	});
 
 // (concat (list 1) (list 2 3)) -> (1 2 3)
@@ -436,15 +436,15 @@ ADD_FUNCTION(
 			count += collection->size();
 		}
 
-		auto result_nodes = new ValueVector(count);
+		auto result_nodes = ValueVector(count);
 		size_t offset = 0;
 		for (auto it = begin; it != end; ++it) {
 			const auto& collection_nodes = std::static_pointer_cast<Collection>(*it)->nodes();
-			std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes->begin() + offset);
+			std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes.begin() + offset);
 			offset += collection_nodes.size();
 		}
 
-		return makePtr<List>(*result_nodes);
+		return makePtr<List>(result_nodes);
 	});
 
 // (vec (list 1 2 3))
@@ -529,7 +529,7 @@ ADD_FUNCTION(
 
 		VALUE_CAST(collection, Collection, (*std::prev(end)));
 
-		ValueVector arguments(begin + 1, end - 1);
+		auto arguments = ValueVector(begin + 1, end - 1);
 		arguments.reserve(arguments.size() + collection->size());
 
 		// Append list nodes to the argument leftovers
@@ -551,7 +551,7 @@ ADD_FUNCTION(
 		return value;
 	});
 
-// (map (fn* (x) (* x 2)) (list 1 2 3))
+// (map (fn* (x) (* x 2)) (list 1 2 3)) -> (2 4 6)
 ADD_FUNCTION(
 	"map",
 	{
@@ -561,23 +561,23 @@ ADD_FUNCTION(
 		VALUE_CAST(collection, Collection, (*(begin + 1)));
 		const auto& collection_nodes = collection->nodes();
 
-		auto result = makePtr<List>();
+		size_t count = collection->size();
+		auto nodes = ValueVector(count);
 
 		if (is<Function>(callable.get())) {
 			auto function = std::static_pointer_cast<Function>(callable)->function();
-			for (const auto& node : collection_nodes) {
-				auto arguments = ValueVector { node };
-				result->add(function(arguments.begin(), arguments.end()));
+			for (size_t i = 0; i < count; ++i) {
+				nodes.at(i) = function(collection_nodes.begin() + i, collection_nodes.begin() + i + 1);
 			}
 		}
 		else {
 			auto lambda = std::static_pointer_cast<Lambda>(callable);
-			for (const auto& node : collection_nodes) {
-				result->add(eval(lambda->body(), Environment::create(lambda, { node })));
+			for (size_t i = 0; i < count; ++i) {
+				nodes.at(i) = (eval(lambda->body(), Environment::create(lambda, { collection_nodes[i] })));
 			}
 		}
 
-		return result;
+		return makePtr<List>(nodes);
 	});
 
 // (throw x)
@@ -697,18 +697,16 @@ ADD_FUNCTION("keyword", STRING_TO_TYPE("keyword", Keyword));
 
 // -----------------------------------------
 
+// (vector 1 2 3) -> [1 2 3]
 ADD_FUNCTION(
 	"vector",
 	{
 		auto result = makePtr<Vector>();
 
-		for (auto it = begin; it != end; ++it) {
-			result->add(*it);
-		}
-
-		return result;
+		return makePtr<Vector>(begin, end);
 	});
 
+// (hash-map "foo" 5 :bar 10) -> {"foo" 5 :bar 10}
 ADD_FUNCTION(
 	"hash-map",
 	{
@@ -796,6 +794,7 @@ ADD_FUNCTION(
 		return makePtr<Constant>(hash_map->exists(*(begin + 1)));
 	});
 
+// (keys {"foo" 3 :bar 5}) -> ("foo" :bar)
 ADD_FUNCTION(
 	"keys",
 	{
@@ -803,21 +802,25 @@ ADD_FUNCTION(
 
 		VALUE_CAST(hash_map, HashMap, (*begin));
 
-		auto result = makePtr<List>();
+		size_t count = hash_map->size();
+		auto nodes = ValueVector(count);
 
+		size_t i = 0;
 		auto elements = hash_map->elements();
 		for (auto pair : elements) {
 			if (pair.first.front() == 0x7f) { // 127
-				result->add(makePtr<Keyword>(pair.first.substr(1)));
+				nodes.at(i) = makePtr<Keyword>(pair.first.substr(1));
 			}
 			else {
-				result->add(makePtr<String>(pair.first));
+				nodes.at(i) = makePtr<String>(pair.first);
 			}
+			i++;
 		}
 
-		return result;
+		return makePtr<List>(nodes);
 	});
 
+// (vals {"foo" 3 :bar 5}) -> (3 5)
 ADD_FUNCTION(
 	"vals",
 	{
@@ -825,14 +828,17 @@ ADD_FUNCTION(
 
 		VALUE_CAST(hash_map, HashMap, (*begin));
 
-		auto result = makePtr<List>();
+		size_t count = hash_map->size();
+		auto nodes = ValueVector(count);
 
+		size_t i = 0;
 		auto elements = hash_map->elements();
 		for (auto pair : elements) {
-			result->add(pair.second);
+			nodes.at(i) = pair.second;
+			i++;
 		}
 
-		return result;
+		return makePtr<List>(nodes);
 	});
 
 ADD_FUNCTION(
@@ -909,19 +915,19 @@ ADD_FUNCTION(
 		size_t collection_count = collection_nodes.size();
 		size_t argument_count = SIZE();
 
-		ValueVector* nodes = new ValueVector(argument_count + collection_count);
+		auto nodes = ValueVector(argument_count + collection_count);
 
 		if (is<List>(collection.get())) {
-			std::reverse_copy(begin, end, nodes->begin());
-			std::copy(collection_nodes.begin(), collection_nodes.end(), nodes->begin() + argument_count);
+			std::reverse_copy(begin, end, nodes.begin());
+			std::copy(collection_nodes.begin(), collection_nodes.end(), nodes.begin() + argument_count);
 
-			return makePtr<List>(*nodes);
+			return makePtr<List>(nodes);
 		}
 
-		std::copy(collection_nodes.begin(), collection_nodes.end(), nodes->begin());
-		std::copy(begin, end, nodes->begin() + collection_count);
+		std::copy(collection_nodes.begin(), collection_nodes.end(), nodes.begin());
+		std::copy(begin, end, nodes.begin() + collection_count);
 
-		return makePtr<Vector>(*nodes);
+		return makePtr<Vector>(nodes);
 	});
 
 // (seq '(1 2 3)) -> (1 2 3)
@@ -958,14 +964,15 @@ ADD_FUNCTION(
 				return makePtr<Constant>();
 			}
 
-			auto result = makePtr<List>();
+			size_t count = string->size();
+			auto nodes = ValueVector(count);
 
 			const auto& data = string->data();
-			for (const auto& character : data) {
-				result->add(makePtr<String>(character));
+			for (size_t i = 0; i < count; ++i) {
+				nodes.at(i) = makePtr<String>(data[i]);
 			}
 
-			return result;
+			return makePtr<List>(nodes);
 		}
 
 		Error::the().add(::format("wrong argument type: Collection or String, {}", front));

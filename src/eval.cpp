@@ -156,22 +156,29 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 			Error::the().add(::format("'{}' not found", ast));
 			return nullptr;
 		}
+
 		return result;
 	}
 	else if (is<Collection>(ast_raw_ptr)) {
-		std::shared_ptr<Collection> result = nullptr;
-		(is<List>(ast_raw_ptr)) ? result = makePtr<List>() : result = makePtr<Vector>();
 		const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodes();
-		for (const auto& node : nodes) {
-			m_ast_stack.push(node);
+		size_t count = nodes.size();
+		auto evaluated_nodes = ValueVector(count);
+
+		for (size_t i = 0; i < count; ++i) {
+			m_ast_stack.push(nodes[i]);
 			m_env_stack.push(env);
 			ValuePtr eval_node = evalImpl();
 			if (eval_node == nullptr) {
 				return nullptr;
 			}
-			result->add(eval_node);
+			evaluated_nodes.at(i) = eval_node;
 		}
-		return result;
+
+		if (is<List>(ast_raw_ptr)) {
+			return makePtr<List>(evaluated_nodes);
+		}
+
+		return makePtr<Vector>(evaluated_nodes);
 	}
 	else if (is<HashMap>(ast_raw_ptr)) {
 		auto result = makePtr<HashMap>();
@@ -185,6 +192,7 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 			}
 			result->add(element.first, element_node);
 		}
+
 		return result;
 	}
 
