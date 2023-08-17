@@ -94,11 +94,9 @@ static auto installLambdas(EnvironmentPtr env) -> void
 static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void
 {
 	size_t count = arguments.size();
-	auto nodes = ValueVector(count - 1);
-	if (count > 1) {
-		for (size_t i = 1; i < count; ++i) {
-			nodes.at(i) = makePtr<String>(arguments[i]);
-		}
+	auto nodes = ValueVector();
+	for (size_t i = 1; i < count; ++i) {
+		nodes.push_back(makePtr<String>(arguments[i]));
 	}
 	env->set("*ARGV*", makePtr<List>(nodes));
 }

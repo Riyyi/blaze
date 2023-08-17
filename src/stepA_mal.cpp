@@ -113,11 +113,9 @@ static auto installLambdas(EnvironmentPtr env) -> void
 static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void
 {
 	size_t count = arguments.size();
-	auto nodes = ValueVector(count - 1);
-	if (count > 1) {
-		for (size_t i = 1; i < count; ++i) {
-			nodes.at(i) = makePtr<String>(arguments[i]);
-		}
+	auto nodes = ValueVector();
+	for (size_t i = 1; i < count; ++i) {
+		nodes.push_back(makePtr<String>(arguments[i]));
 	}
 	env->set("*ARGV*", makePtr<List>(nodes));
 }
@@ -178,3 +176,18 @@ auto main(int argc, char* argv[]) -> int
 
 	return 0;
 }
+
+// TODO: List of things below
+// v Pass stepA tests (implement leftover functions)
+// v Make Macro into a subclass of Lambda (?) to simplify some logic
+// v Convert std::list -> std::vector, test speed before/after
+// v Better way of running mal tests
+// - Make Collections/HashMaps const, construct a new one with the added items
+// - Basic performance testing macros, enabled in debug builds
+
+// Iterations to beat:
+//   Debug:   ~5k
+//   Release: ~30k
+// New:
+//   Debug:   ~6k
+//   Release: ~37k
