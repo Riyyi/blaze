@@ -114,36 +114,16 @@ HashMap::HashMap(const HashMap& that, ValuePtr meta)
 {
 }
 
-void HashMap::add(const std::string& key, ValuePtr value)
+std::string HashMap::getKeyString(ValuePtr key)
 {
-	if (value == nullptr) {
-		return;
+	if (!is<String>(key.get()) && !is<Keyword>(key.get())) {
+		Error::the().add(::format("wrong argument type: string or keyword, {}", key));
+		return {};
 	}
 
-	m_elements.insert_or_assign(key, value);
-}
-
-void HashMap::add(ValuePtr key, ValuePtr value)
-{
-	if (key == nullptr || value == nullptr) {
-		return;
-	}
-
-	m_elements.insert_or_assign(getKeyString(key), value);
-}
-
-void HashMap::remove(const std::string& key)
-{
-	m_elements.erase(key);
-}
-
-void HashMap::remove(ValuePtr key)
-{
-	if (key == nullptr) {
-		return;
-	}
-
-	m_elements.erase(getKeyString(key));
+	return is<String>(key.get())
+	           ? std::static_pointer_cast<String>(key)->data()
+	           : std::static_pointer_cast<Keyword>(key)->keyword();
 }
 
 bool HashMap::exists(const std::string& key)
@@ -168,18 +148,6 @@ ValuePtr HashMap::get(const std::string& key)
 ValuePtr HashMap::get(ValuePtr key)
 {
 	return get(getKeyString(key));
-}
-
-std::string HashMap::getKeyString(ValuePtr key)
-{
-	if (!is<String>(key.get()) && !is<Keyword>(key.get())) {
-		Error::the().add(::format("wrong argument type: string or keyword, {}", key));
-		return {};
-	}
-
-	return is<String>(key.get())
-	           ? std::static_pointer_cast<String>(key)->data()
-	           : std::static_pointer_cast<Keyword>(key)->keyword();
 }
 
 // -----------------------------------------

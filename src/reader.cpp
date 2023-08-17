@@ -174,7 +174,7 @@ ValuePtr Reader::readHashMap()
 {
 	ignore(); // {
 
-	auto hash_map = makePtr<HashMap>();
+	Elements elements;
 	while (!isEOF() && peek().type != Token::Type::BraceClose) {
 		auto key = readImpl();
 
@@ -193,7 +193,7 @@ ValuePtr Reader::readHashMap()
 		}
 
 		auto value = readImpl();
-		hash_map->add(key, value);
+		elements.insert_or_assign(HashMap::getKeyString(key), value);
 	}
 
 	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }
@@ -201,7 +201,7 @@ ValuePtr Reader::readHashMap()
 		return nullptr;
 	}
 
-	return hash_map;
+	return makePtr<HashMap>(elements);
 }
 
 ValuePtr Reader::readQuote()

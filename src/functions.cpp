@@ -712,16 +712,16 @@ ADD_FUNCTION(
 	{
 		CHECK_ARG_COUNT_EVEN("hash-map", SIZE());
 
-		auto result = makePtr<HashMap>();
-
+		Elements elements;
 		for (auto it = begin; it != end; std::advance(it, 2)) {
-			result->add(*it, *(std::next(it)));
+			const ValuePtr& value = *(std::next(it)); // temporary instance to get around const
+			elements.insert_or_assign(HashMap::getKeyString(*it), value);
 		}
 
-		return result;
+		return makePtr<HashMap>(elements);
 	});
 
-// (assoc {:a 1 :b 2} :a 3 :c 1)
+// (assoc {:a 1 :b 2} :a 3 :c 1) -> {:a 3 :b 2 :c 1}
 ADD_FUNCTION(
 	"assoc",
 	{
@@ -732,15 +732,16 @@ ADD_FUNCTION(
 
 		CHECK_ARG_COUNT_EVEN("assoc", SIZE());
 
-		auto result = makePtr<HashMap>(hash_map->elements());
-
+		Elements elements(hash_map->elements());
 		for (auto it = begin; it != end; std::advance(it, 2)) {
-			result->add(*it, *(std::next(it)));
+			const ValuePtr& value = *(std::next(it)); // temporary instance to get around const
+			elements.insert_or_assign(HashMap::getKeyString(*it), value);
 		}
 
-		return result;
+		return makePtr<HashMap>(elements);
 	});
 
+// (dissoc {:a 1 :b 2 :c 3} :a :c :d) -> {:b 2}
 ADD_FUNCTION(
 	"dissoc",
 	{
@@ -749,13 +750,12 @@ ADD_FUNCTION(
 		VALUE_CAST(hash_map, HashMap, (*begin));
 		begin++;
 
-		auto result = makePtr<HashMap>(hash_map->elements());
-
+		Elements elements(hash_map->elements());
 		for (auto it = begin; it != end; ++it) {
-			result->remove(*it);
+			elements.erase(HashMap::getKeyString(*it));
 		}
 
-		return result;
+		return makePtr<HashMap>(elements);
 	});
 
 // (get {:kw "value"} :kw) -> "value"

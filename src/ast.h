@@ -174,20 +174,17 @@ private:
 
 // -----------------------------------------
 
+using Elements = std::map<std::string, ValuePtr>;
+
 // {}
 class HashMap final : public Value {
 public:
-	using Elements = std::map<std::string, ValuePtr>;
-
 	HashMap() = default;
 	HashMap(const Elements& elements);
 	HashMap(const HashMap& that, ValuePtr meta);
 	virtual ~HashMap() = default;
 
-	void add(const std::string& key, ValuePtr value);
-	void add(ValuePtr key, ValuePtr value);
-	void remove(const std::string& key);
-	void remove(ValuePtr key);
+	static std::string getKeyString(ValuePtr key);
 
 	bool exists(const std::string& key);
 	bool exists(ValuePtr key);
@@ -201,8 +198,6 @@ public:
 
 private:
 	virtual bool isHashMap() const override { return true; }
-
-	std::string getKeyString(ValuePtr key);
 
 	Elements m_elements;
 };

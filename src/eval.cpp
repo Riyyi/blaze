@@ -181,8 +181,8 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 		return makePtr<Vector>(evaluated_nodes);
 	}
 	else if (is<HashMap>(ast_raw_ptr)) {
-		auto result = makePtr<HashMap>();
 		const auto& elements = std::static_pointer_cast<HashMap>(ast)->elements();
+		Elements evaluated_elements;
 		for (const auto& element : elements) {
 			m_ast_stack.push(element.second);
 			m_env_stack.push(env);
@@ -190,10 +190,10 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 			if (element_node == nullptr) {
 				return nullptr;
 			}
-			result->add(element.first, element_node);
+			evaluated_elements.insert_or_assign(element.first, element_node);
 		}
 
-		return result;
+		return makePtr<HashMap>(evaluated_elements);
 	}
 
 	return ast;
