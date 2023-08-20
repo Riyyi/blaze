@@ -231,7 +231,7 @@ ValuePtr Eval::macroExpand(ValuePtr ast, EnvironmentPtr env)
 	return ast;
 }
 
-//-----------------------------------------
+// -----------------------------------------
 
 ValuePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 {

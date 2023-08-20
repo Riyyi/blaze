@@ -95,49 +95,41 @@ add_custom_target(run
 # ------------------------------------------
 # Test targets
 
-add_custom_target(test0
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step0_repl.mal -- ./${PROJECT})
-add_dependencies(test0 ${PROJECT})
+function(make_test_target target_name step_name)
+	add_custom_target(${target_name}
+		COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/${step_name}.mal -- ./${step_name})
+	add_dependencies(${target_name} ${step_name})
+endfunction()
 
-add_custom_target(test1
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step1_read_print.mal -- ./${PROJECT})
-add_dependencies(test1 ${PROJECT})
+make_test_target("test0" "step0_repl")
+make_test_target("test1" "step1_read_print")
+make_test_target("test2" "step2_eval")
+make_test_target("test3" "step3_env")
+make_test_target("test4" "step4_if_fn_do")
+make_test_target("test5" "step5_tco")
+make_test_target("test6" "step6_file")
+make_test_target("test7" "step7_quote")
+make_test_target("test8" "step8_macros")
+make_test_target("test9" "step9_try")
+make_test_target("testA" "stepA_mal")
 
-add_custom_target(test2
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step2_eval.mal -- ./${PROJECT})
-add_dependencies(test2 ${PROJECT})
+function(make_host_test_target target_name step_name)
+	add_custom_target(${target_name}
+		COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/${step_name}.mal -- ./${PROJECT} ../mal/${step_name}.mal)
+	add_dependencies(${target_name} ${PROJECT})
+endfunction()
 
-add_custom_target(test3
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step3_env.mal -- ./${PROJECT})
-add_dependencies(test3 ${PROJECT})
-
-add_custom_target(test4
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step4_if_fn_do.mal -- ./${PROJECT})
-add_dependencies(test4 ${PROJECT})
-
-add_custom_target(test5
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step5_tco.mal -- ./${PROJECT})
-add_dependencies(test5 ${PROJECT})
-
-add_custom_target(test6
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step6_file.mal -- ./${PROJECT})
-add_dependencies(test6 ${PROJECT})
-
-add_custom_target(test7
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step7_quote.mal -- ./${PROJECT})
-add_dependencies(test7 ${PROJECT})
-
-add_custom_target(test8
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step8_macros.mal -- ./${PROJECT})
-add_dependencies(test8 ${PROJECT})
-
-add_custom_target(test9
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/step9_try.mal -- ./${PROJECT})
-add_dependencies(test9 ${PROJECT})
-
-add_custom_target(testA
-    COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/stepA_mal.mal -- ./${PROJECT})
-add_dependencies(testA ${PROJECT})
+make_host_test_target("host_test0" "step0_repl")
+make_host_test_target("host_test1" "step1_read_print")
+make_host_test_target("host_test2" "step2_eval")
+make_host_test_target("host_test3" "step3_env")
+make_host_test_target("host_test4" "step4_if_fn_do")
+# make_host_test_target("host_test5" "step5_tco") # disabled
+make_host_test_target("host_test6" "step6_file")
+make_host_test_target("host_test7" "step7_quote")
+make_host_test_target("host_test8" "step8_macros")
+make_host_test_target("host_test9" "step9_try")
+make_host_test_target("host_testA" "stepA_mal")
 
 add_custom_target(perf
     COMMAND ./${PROJECT} ../tests/perf1.mal

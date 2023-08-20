@@ -176,18 +176,3 @@ auto main(int argc, char* argv[]) -> int
 
 	return 0;
 }
-
-// TODO: List of things below
-// v Pass stepA tests (implement leftover functions)
-// v Make Macro into a subclass of Lambda (?) to simplify some logic
-// v Convert std::list -> std::vector, test speed before/after
-// v Better way of running mal tests
-// - Make Collections/HashMaps const, construct a new one with the added items
-// - Basic performance testing macros, enabled in debug builds
-
-// Iterations to beat:
-//   Debug:   ~5k
-//   Release: ~30k
-// New:
-//   Debug:   ~6k
-//   Release: ~37k
