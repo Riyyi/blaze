@@ -38,11 +38,12 @@ private:
 	ValuePtr evalMacroExpand(const ValueVector& nodes, EnvironmentPtr env);
 	ValuePtr evalQuasiQuoteExpand(const ValueVector& nodes);
 	ValuePtr evalQuote(const ValueVector& nodes);
+	ValuePtr evalTry(const ValueVector& nodes, EnvironmentPtr env);
+
 	void evalDo(const ValueVector& nodes, EnvironmentPtr env);
 	void evalIf(const ValueVector& nodes, EnvironmentPtr env);
 	void evalLet(const ValueVector& nodes, EnvironmentPtr env);
 	void evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env);
-	void evalTry(const ValueVector& nodes, EnvironmentPtr env);
 
 	ValuePtr apply(std::shared_ptr<List> evaluated_list);
 

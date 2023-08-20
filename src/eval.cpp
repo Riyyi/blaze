@@ -89,6 +89,9 @@ ValuePtr Eval::evalImpl()
 			if (symbol == "quote") {
 				return evalQuote(nodes);
 			}
+			if (symbol == "try*") {
+				return evalTry(nodes, env);
+			}
 			// Tail call optimized functions
 			if (symbol == "do") {
 				evalDo(nodes, env);
@@ -104,10 +107,6 @@ ValuePtr Eval::evalImpl()
 			}
 			if (symbol == "quasiquote") {
 				evalQuasiQuote(nodes, env);
-				continue; // TCO
-			}
-			if (symbol == "try*") {
-				evalTry(nodes, env);
 				continue; // TCO
 			}
 		}

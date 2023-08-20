@@ -111,6 +111,55 @@ ValuePtr Eval::evalQuote(const ValueVector& nodes)
 	return nodes.front();
 }
 
+// (try* x (catch* y z))
+ValuePtr Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
+{
+	CHECK_ARG_COUNT_AT_LEAST("try*", nodes.size(), 1);
+
+	// Try 'x'
+	m_ast = nodes.front();
+	m_env = env;
+	auto result = evalImpl();
+
+	if (!Error::the().hasAnyError()) {
+		return result;
+	}
+	if (nodes.size() == 1) {
+		return nullptr;
+	}
+
+	// Catch
+
+	// Get the error message
+	auto error = (Error::the().hasOtherError())
+	                 ? makePtr<String>(Error::the().otherError())
+	                 : Error::the().exception();
+	Error::the().clearErrors();
+
+	VALUE_CAST(catch_list, List, nodes.back());
+	const auto& catch_nodes = catch_list->nodes();
+	CHECK_ARG_COUNT_IS("catch*", catch_nodes.size() - 1, 2);
+
+	VALUE_CAST(catch_symbol, Symbol, catch_nodes.front());
+	if (catch_symbol->symbol() != "catch*") {
+		Error::the().add("catch block must begin with catch*");
+		return nullptr;
+	}
+
+	VALUE_CAST(catch_binding, Symbol, (*std::next(catch_nodes.begin())));
+
+	// Create new Environment that binds 'y' to the value of the exception
+	auto catch_env = Environment::create(env);
+	catch_env->set(catch_binding->symbol(), error);
+
+	// Evaluate 'z' using the new Environment
+	m_ast = catch_nodes.back();
+	m_env = catch_env;
+	return evalImpl();
+}
+
+// -----------------------------------------
+
 // (do 1 2 3)
 void Eval::evalDo(const ValueVector& nodes, EnvironmentPtr env)
 {
@@ -276,51 +325,6 @@ void Eval::evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env)
 	CHECK_ARG_COUNT_IS("quasiquote", nodes.size(), 1, void());
 
 	auto result = evalQuasiQuoteImpl(nodes.front());
-
-	m_ast = result;
-	m_env = env;
-	return; // TCO
-}
-
-// (try* x (catch* y z))
-void Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
-{
-	CHECK_ARG_COUNT_AT_LEAST("try*", nodes.size(), 1, void());
-
-	// Try 'x'
-	m_ast = nodes.front();
-	m_env = env;
-	auto result = evalImpl();
-
-	// Catch
-	if (nodes.size() == 2 && (Error::the().hasOtherError() || Error::the().hasException())) {
-		// Get the exception
-		auto error = (Error::the().hasOtherError())
-		                 ? makePtr<String>(Error::the().otherError())
-		                 : Error::the().exception();
-		Error::the().clearErrors();
-
-		VALUE_CAST(catch_list, List, nodes.back(), void());
-		const auto& catch_nodes = catch_list->nodes();
-		CHECK_ARG_COUNT_IS("catch*", catch_nodes.size() - 1, 2, void());
-
-		VALUE_CAST(catch_symbol, Symbol, catch_nodes.front(), void());
-		if (catch_symbol->symbol() != "catch*") {
-			Error::the().add("catch block must begin with catch*");
-			return;
-		}
-
-		VALUE_CAST(catch_binding, Symbol, (*std::next(catch_nodes.begin())), void());
-
-		// Create new Environment that binds 'y' to the value of the exception
-		auto catch_env = Environment::create(env);
-		catch_env->set(catch_binding->symbol(), error);
-
-		// Evaluate 'z' using the new Environment
-		m_ast = catch_nodes.back();
-		m_env = catch_env;
-		return; // TCO
-	}
 
 	m_ast = result;
 	m_env = env;
