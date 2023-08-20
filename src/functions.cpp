@@ -518,7 +518,7 @@ ADD_FUNCTION(
 		return makePtr<List>(collection->rest());
 	});
 
-// (apply + 1 2 (list 3 4)) -> (+ 1 2 3 4)
+// (apply + 1 2 (list 3 4)) -> (+ 1 2 3 4) -> 10
 ADD_FUNCTION(
 	"apply",
 	{
@@ -984,8 +984,8 @@ ADD_FUNCTION(
 
 void installFunctions(EnvironmentPtr env)
 {
-	for (const auto& [name, lambda] : s_functions) {
-		env->set(name, makePtr<Function>(name, lambda));
+	for (const auto& [name, function] : s_functions) {
+		env->set(name, makePtr<Function>(name, function));
 	}
 }
 

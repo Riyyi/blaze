@@ -30,8 +30,8 @@ ValuePtr Eval::evalDef(const ValueVector& nodes, EnvironmentPtr env)
 	VALUE_CAST(symbol, Symbol, nodes.front());
 
 	// Eval second argument
-	m_ast_stack.push(*std::next(nodes.begin()));
-	m_env_stack.push(env);
+	m_ast = *std::next(nodes.begin());
+	m_env = env;
 	ValuePtr value = evalImpl();
 
 	// Dont overwrite symbols after an error
@@ -52,8 +52,8 @@ ValuePtr Eval::evalDefMacro(const ValueVector& nodes, EnvironmentPtr env)
 	VALUE_CAST(symbol, Symbol, nodes.front());
 
 	// Eval second argument
-	m_ast_stack.push(*std::next(nodes.begin()));
-	m_env_stack.push(env);
+	m_ast = *std::next(nodes.begin());
+	m_env = env;
 	ValuePtr value = evalImpl();
 	VALUE_CAST(lambda, Lambda, value);
 
@@ -118,14 +118,14 @@ void Eval::evalDo(const ValueVector& nodes, EnvironmentPtr env)
 
 	// Evaluate all nodes except the last
 	for (auto it = nodes.begin(); it != std::prev(nodes.end(), 1); ++it) {
-		m_ast_stack.push(*it);
-		m_env_stack.push(env);
+		m_ast = *it;
+		m_env = env;
 		evalImpl();
 	}
 
 	// Eval last node
-	m_ast_stack.push(nodes.back());
-	m_env_stack.push(env);
+	m_ast = nodes.back();
+	m_env = env;
 	return; // TCO
 }
 
@@ -138,18 +138,18 @@ void Eval::evalIf(const ValueVector& nodes, EnvironmentPtr env)
 	auto second_argument = *std::next(nodes.begin());
 	auto third_argument = (nodes.size() == 3) ? *std::next(std::next(nodes.begin())) : makePtr<Constant>(Constant::Nil);
 
-	m_ast_stack.push(first_argument);
-	m_env_stack.push(env);
+	m_ast = first_argument;
+	m_env = env;
 	auto first_evaluated = evalImpl();
 	if (!is<Constant>(first_evaluated.get())
 	    || std::static_pointer_cast<Constant>(first_evaluated)->state() == Constant::True) {
-		m_ast_stack.push(second_argument);
-		m_env_stack.push(env);
+		m_ast = second_argument;
+		m_env = env;
 		return; // TCO
 	}
 
-	m_ast_stack.push(third_argument);
-	m_env_stack.push(env);
+	m_ast = third_argument;
+	m_env = env;
 	return; // TCO
 }
 
@@ -173,16 +173,16 @@ void Eval::evalLet(const ValueVector& nodes, EnvironmentPtr env)
 		VALUE_CAST(elt, Symbol, (*it), void());
 
 		std::string key = elt->symbol();
-		m_ast_stack.push(*std::next(it));
-		m_env_stack.push(let_env);
+		m_ast = *std::next(it);
+		m_env = let_env;
 		ValuePtr value = evalImpl();
 		let_env->set(key, value);
 	}
 
 	// TODO: Remove limitation of 3 arguments
 	// Eval all arguments in this new env, return last sexp of the result
-	m_ast_stack.push(*std::next(nodes.begin()));
-	m_env_stack.push(let_env);
+	m_ast = *std::next(nodes.begin());
+	m_env = let_env;
 	return; // TCO
 }
 
@@ -277,8 +277,8 @@ void Eval::evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env)
 
 	auto result = evalQuasiQuoteImpl(nodes.front());
 
-	m_ast_stack.push(result);
-	m_env_stack.push(env);
+	m_ast = result;
+	m_env = env;
 	return; // TCO
 }
 
@@ -288,8 +288,8 @@ void Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
 	CHECK_ARG_COUNT_AT_LEAST("try*", nodes.size(), 1, void());
 
 	// Try 'x'
-	m_ast_stack.push(nodes.front());
-	m_env_stack.push(env);
+	m_ast = nodes.front();
+	m_env = env;
 	auto result = evalImpl();
 
 	// Catch
@@ -317,13 +317,13 @@ void Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
 		catch_env->set(catch_binding->symbol(), error);
 
 		// Evaluate 'z' using the new Environment
-		m_ast_stack.push(catch_nodes.back());
-		m_env_stack.push(catch_env);
+		m_ast = catch_nodes.back();
+		m_env = catch_env;
 		return; // TCO
 	}
 
-	m_ast_stack.push(result);
-	m_env_stack.push(env);
+	m_ast = result;
+	m_env = env;
 	return; // TCO
 }
 

@@ -48,9 +48,7 @@ private:
 
 	ValuePtr m_ast;
 	EnvironmentPtr m_env;
-
-	std::stack<ValuePtr> m_ast_stack;
-	std::stack<EnvironmentPtr> m_env_stack;
+	EnvironmentPtr m_outer_env;
 };
 
 } // namespace blaze

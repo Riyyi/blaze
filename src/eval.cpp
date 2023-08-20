@@ -23,6 +23,7 @@ namespace blaze {
 Eval::Eval(ValuePtr ast, EnvironmentPtr env)
 	: m_ast(ast)
 	, m_env(env)
+	, m_outer_env(env)
 {
 }
 
@@ -30,11 +31,6 @@ Eval::Eval(ValuePtr ast, EnvironmentPtr env)
 
 void Eval::eval()
 {
-	m_ast_stack = std::stack<ValuePtr>();
-	m_env_stack = std::stack<EnvironmentPtr>();
-	m_ast_stack.push(m_ast);
-	m_env_stack.push(m_env);
-
 	m_ast = evalImpl();
 }
 
@@ -48,19 +44,12 @@ ValuePtr Eval::evalImpl()
 			return nullptr;
 		}
 
-		if (m_ast_stack.size() == 0) {
-			return nullptr;
+		ast = m_ast;
+		env = m_env;
+
+		if (env == nullptr) {
+			env = m_outer_env;
 		}
-
-		if (m_env_stack.size() == 0) {
-			m_env_stack.push(m_env);
-		}
-
-		ast = m_ast_stack.top();
-		env = m_env_stack.top();
-
-		m_ast_stack.pop();
-		m_env_stack.pop();
 
 		if (!is<List>(ast.get())) {
 			return evalAst(ast, env);
@@ -133,8 +122,8 @@ ValuePtr Eval::evalImpl()
 		if (is<Lambda>(evaluated_list->front().get())) {
 			auto lambda = std::static_pointer_cast<Lambda>(evaluated_list->front());
 
-			m_ast_stack.push(lambda->body());
-			m_env_stack.push(Environment::create(lambda, evaluated_list->rest()));
+			m_ast = lambda->body();
+			m_env = Environment::create(lambda, evaluated_list->rest());
 			continue; // TCO
 		}
 
@@ -165,8 +154,8 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 		auto evaluated_nodes = ValueVector(count);
 
 		for (size_t i = 0; i < count; ++i) {
-			m_ast_stack.push(nodes[i]);
-			m_env_stack.push(env);
+			m_ast = nodes[i];
+			m_env = env;
 			ValuePtr eval_node = evalImpl();
 			if (eval_node == nullptr) {
 				return nullptr;
@@ -184,8 +173,8 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 		const auto& elements = std::static_pointer_cast<HashMap>(ast)->elements();
 		Elements evaluated_elements;
 		for (const auto& element : elements) {
-			m_ast_stack.push(element.second);
-			m_env_stack.push(env);
+			m_ast = element.second;
+			m_env = env;
 			ValuePtr element_node = evalImpl();
 			if (element_node == nullptr) {
 				return nullptr;
@@ -231,11 +220,12 @@ ValuePtr Eval::macroExpand(ValuePtr ast, EnvironmentPtr env)
 {
 	while (isMacroCall(ast, env)) {
 		auto list = std::static_pointer_cast<List>(ast);
+
 		auto value = env->get(std::static_pointer_cast<Symbol>(list->front())->symbol());
 		auto lambda = std::static_pointer_cast<Lambda>(value);
 
-		m_ast_stack.push(lambda->body());
-		m_env_stack.push(Environment::create(lambda, list->rest()));
+		m_ast = lambda->body();
+		m_env = Environment::create(lambda, list->rest());
 		ast = evalImpl();
 	}
 
