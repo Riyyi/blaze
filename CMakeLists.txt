@@ -2,7 +2,7 @@
 # User config between these lines
 
 # Set project name
-set(PROJECT "stepA_mal")
+set(PROJECT "blaze")
 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 	set(BLAZE_STANDALONE TRUE)
@@ -64,26 +64,10 @@ add_subdirectory("vendor/ruc")
 
 # Define source files
 file(GLOB_RECURSE PROJECT_SOURCES "src/*.cpp")
-file(GLOB_RECURSE EXCLUDED_SOURCES "src/step*.cpp")
-list(REMOVE_ITEM PROJECT_SOURCES ${EXCLUDED_SOURCES})
 
-function(add_step TARGET_NAME MAIN_PATH)
-	add_executable(${TARGET_NAME} ${PROJECT_SOURCES} ${MAIN_PATH})
-	target_include_directories(${TARGET_NAME} PRIVATE "src")
-	target_link_libraries(${TARGET_NAME} readline ruc)
-endfunction()
-
-add_step(step0_repl       "src/step0_repl.cpp")
-add_step(step1_read_print "src/step1_read_print.cpp")
-add_step(step2_eval       "src/step2_eval.cpp")
-add_step(step3_env        "src/step3_env.cpp")
-add_step(step4_if_fn_do   "src/step4_if_fn_do.cpp")
-add_step(step5_tco        "src/step5_tco.cpp")
-add_step(step6_file       "src/step6_file.cpp")
-add_step(step7_quote      "src/step7_quote.cpp")
-add_step(step8_macros     "src/step8_macros.cpp")
-add_step(step9_try        "src/step9_try.cpp")
-add_step(stepA_mal        "src/stepA_mal.cpp")
+add_executable(${PROJECT} ${PROJECT_SOURCES})
+target_include_directories(${PROJECT} PRIVATE "src")
+target_link_libraries(${PROJECT} readline ruc)
 
 # ------------------------------------------
 # Execute target
@@ -97,8 +81,8 @@ add_custom_target(run
 
 function(make_test_target target_name step_name)
 	add_custom_target(${target_name}
-		COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/${step_name}.mal -- ./${step_name})
-	add_dependencies(${target_name} ${step_name})
+		COMMAND ../vendor/mal/runtest.py --deferrable --optional ../tests/${step_name}.mal -- ./${PROJECT})
+	add_dependencies(${target_name} ${PROJECT})
 endfunction()
 
 make_test_target("test0" "step0_repl")
