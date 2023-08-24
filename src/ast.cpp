@@ -7,6 +7,7 @@
 #include <cstdint> // int64_t
 #include <memory>  // std::static_pointer_cast
 #include <string>
+#include <utility> // std::move
 #include <vector>
 
 #include "ast.h"
@@ -32,6 +33,11 @@ ValuePtr Value::meta() const
 
 Collection::Collection(const ValueVector& nodes)
 	: m_nodes(nodes)
+{
+}
+
+Collection::Collection(ValueVector&& nodes) noexcept
+	: m_nodes(std::move(nodes))
 {
 }
 
@@ -64,6 +70,11 @@ List::List(const ValueVector& nodes)
 {
 }
 
+List::List(ValueVector&& nodes) noexcept
+	: Collection(std::move(nodes))
+{
+}
+
 List::List(ValueVectorIt begin, ValueVectorIt end)
 	: Collection(begin, end)
 {
@@ -83,6 +94,11 @@ List::List(const List& that, ValuePtr meta)
 
 Vector::Vector(const ValueVector& nodes)
 	: Collection(nodes)
+{
+}
+
+Vector::Vector(ValueVector&& nodes) noexcept
+	: Collection(std::move(nodes))
 {
 }
 

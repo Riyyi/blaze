@@ -101,11 +101,18 @@ public:
 	ValuePtr front() const { return m_nodes.front(); }
 	ValueVector rest() const;
 
-	const ValueVector& nodes() const { return m_nodes; }
+	ValueVectorConstIt begin() const { return m_nodes.cbegin(); }
+	ValueVectorConstIt end() const { return m_nodes.cend(); }
+	ValueVectorConstReverseIt beginReverse() const { return m_nodes.crbegin(); }
+	ValueVectorConstReverseIt endReverse() const { return m_nodes.crend(); }
+
+	const ValueVector& nodesCopy() const { return m_nodes; }
+	std::span<const ValuePtr> nodesRead() const { return m_nodes; }
 
 protected:
 	Collection() = default;
 	Collection(const ValueVector& nodes);
+	Collection(ValueVector&& nodes) noexcept;
 	Collection(ValueVectorIt begin, ValueVectorIt end);
 	Collection(ValueVectorConstIt begin, ValueVectorConstIt end);
 	Collection(const Collection& that, ValuePtr meta);
@@ -129,6 +136,7 @@ class List final : public Collection {
 public:
 	List() = default;
 	List(const ValueVector& nodes);
+	List(ValueVector&& nodes) noexcept;
 	List(ValueVectorIt begin, ValueVectorIt end);
 	List(ValueVectorConstIt begin, ValueVectorConstIt end);
 	List(const List& that, ValuePtr meta);
@@ -154,6 +162,7 @@ class Vector final : public Collection {
 public:
 	Vector() = default;
 	Vector(const ValueVector& nodes);
+	Vector(ValueVector&& nodes) noexcept;
 	Vector(ValueVectorIt begin, ValueVectorIt end);
 	Vector(ValueVectorConstIt begin, ValueVectorConstIt end);
 	Vector(const Vector& that, ValuePtr meta);

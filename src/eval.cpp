@@ -148,7 +148,7 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 		return result;
 	}
 	else if (is<Collection>(ast_raw_ptr)) {
-		const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodes();
+		const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodesRead();
 		size_t count = nodes.size();
 		auto evaluated_nodes = ValueVector(count);
 
@@ -162,11 +162,11 @@ ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
 			evaluated_nodes.at(i) = eval_node;
 		}
 
-		if (is<List>(ast_raw_ptr)) {
-			return makePtr<List>(evaluated_nodes);
+		if (is<Vector>(ast_raw_ptr)) {
+			return makePtr<Vector>(evaluated_nodes);
 		}
 
-		return makePtr<Vector>(evaluated_nodes);
+		return makePtr<List>(evaluated_nodes);
 	}
 	else if (is<HashMap>(ast_raw_ptr)) {
 		const auto& elements = std::static_pointer_cast<HashMap>(ast)->elements();
@@ -239,16 +239,16 @@ ValuePtr Eval::apply(std::shared_ptr<List> evaluated_list)
 		return nullptr;
 	}
 
-	auto nodes = evaluated_list->nodes();
+	auto front = evaluated_list->front();
 
-	if (!is<Function>(nodes.front().get())) {
-		Error::the().add(::format("invalid function: {}", nodes.front()));
+	if (!is<Function>(front.get())) {
+		Error::the().add(::format("invalid function: {}", front));
 		return nullptr;
 	}
 
-	auto function = std::static_pointer_cast<Function>(nodes.front())->function();
+	auto function = std::static_pointer_cast<Function>(front)->function();
 
-	return function(nodes.begin() + 1, nodes.end());
+	return function(evaluated_list->begin() + 1, evaluated_list->end());
 }
 
 } // namespace blaze

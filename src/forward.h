@@ -18,7 +18,9 @@ class Value;
 typedef std::shared_ptr<Value> ValuePtr;
 typedef std::vector<ValuePtr> ValueVector;
 typedef ValueVector::iterator ValueVectorIt;
+typedef ValueVector::reverse_iterator ValueVectorReverseIt;
 typedef ValueVector::const_iterator ValueVectorConstIt;
+typedef ValueVector::const_reverse_iterator ValueVectorConstReverseIt;
 
 class Environment;
 typedef std::shared_ptr<Environment> EnvironmentPtr;

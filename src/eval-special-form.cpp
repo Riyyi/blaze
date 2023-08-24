@@ -73,7 +73,7 @@ ValuePtr Eval::evalFn(const ValueVector& nodes, EnvironmentPtr env)
 
 	// First element needs to be a List or Vector
 	VALUE_CAST(collection, Collection, nodes.front());
-	const auto& collection_nodes = collection->nodes();
+	const auto& collection_nodes = collection->nodesRead();
 
 	std::vector<std::string> bindings;
 	bindings.reserve(collection_nodes.size());
@@ -137,7 +137,7 @@ ValuePtr Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
 	Error::the().clearErrors();
 
 	VALUE_CAST(catch_list, List, nodes.back());
-	const auto& catch_nodes = catch_list->nodes();
+	const auto& catch_nodes = catch_list->nodesRead();
 	CHECK_ARG_COUNT_IS("catch*", catch_nodes.size() - 1, 2);
 
 	VALUE_CAST(catch_symbol, Symbol, catch_nodes.front());
@@ -209,7 +209,7 @@ void Eval::evalLet(const ValueVector& nodes, EnvironmentPtr env)
 
 	// First argument needs to be a List or Vector
 	VALUE_CAST(bindings, Collection, nodes.front(), void());
-	const auto& binding_nodes = bindings->nodes();
+	const auto& binding_nodes = bindings->nodesRead();
 
 	// List or Vector needs to have an even number of elements
 	CHECK_ARG_COUNT_EVEN("bindings", binding_nodes.size(), void());
@@ -258,7 +258,7 @@ static ValuePtr startsWith(ValuePtr ast, const std::string& symbol)
 		return nullptr;
 	}
 
-	const auto& nodes = std::static_pointer_cast<List>(ast)->nodes();
+	const auto& nodes = std::static_pointer_cast<List>(ast)->nodesRead();
 
 	if (nodes.empty() || !isSymbol(nodes.front(), symbol)) {
 		return nullptr;
@@ -294,10 +294,10 @@ static ValuePtr evalQuasiQuoteImpl(ValuePtr ast)
 
 	ValuePtr result = makePtr<List>();
 
-	const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodes();
+	auto collection = std::static_pointer_cast<Collection>(ast);
 
 	// `() or `(1 ~2 3) or `(1 ~@(list 2 2 2) 3)
-	for (auto it = nodes.crbegin(); it != nodes.crend(); ++it) {
+	for (auto it = collection->beginReverse(); it != collection->endReverse(); ++it) {
 		const auto& elt = *it;
 
 		const auto splice_unquote = startsWith(elt, "splice-unquote"); // (list 2 2 2)

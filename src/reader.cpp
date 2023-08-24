@@ -373,7 +373,7 @@ void Reader::dumpImpl(ValuePtr node)
 
 	Value* node_raw_ptr = node.get();
 	if (is<Collection>(node_raw_ptr)) {
-		auto nodes = std::static_pointer_cast<List>(node)->nodes();
+		auto nodes = std::static_pointer_cast<List>(node)->nodesRead();
 		print("{}", indentation);
 		print(fg(ruc::format::TerminalColor::Blue), "{}Container", (is<List>(node_raw_ptr)) ? "List" : "Vector");
 		print(" <");

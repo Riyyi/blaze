@@ -76,7 +76,7 @@ void Printer::printImpl(ValuePtr node, bool print_readably)
 		m_print += (is<List>(node_raw_ptr)) ? '(' : '[';
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto nodes = std::static_pointer_cast<Collection>(node)->nodes();
+		auto nodes = std::static_pointer_cast<Collection>(node)->nodesRead();
 		for (auto node : nodes) {
 			printImpl(node, print_readably);
 			m_previous_node_is_list = false;

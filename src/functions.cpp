@@ -239,16 +239,16 @@ ADD_FUNCTION(
 			[&equal](ValuePtr lhs, ValuePtr rhs) -> bool {
 			if ((is<List>(lhs.get()) || is<Vector>(lhs.get()))
 		        && (is<List>(rhs.get()) || is<Vector>(rhs.get()))) {
-				const auto& lhs_nodes = std::static_pointer_cast<Collection>(lhs)->nodes();
-				const auto& rhs_nodes = std::static_pointer_cast<Collection>(rhs)->nodes();
+				auto lhs_collection = std::static_pointer_cast<Collection>(lhs);
+				auto rhs_collection = std::static_pointer_cast<Collection>(rhs);
 
-				if (lhs_nodes.size() != rhs_nodes.size()) {
+				if (lhs_collection->size() != rhs_collection->size()) {
 					return false;
 				}
 
-				auto lhs_it = lhs_nodes.cbegin();
-				auto rhs_it = rhs_nodes.cbegin();
-				for (; lhs_it != lhs_nodes.end(); ++lhs_it, ++rhs_it) {
+				auto lhs_it = lhs_collection->begin();
+				auto rhs_it = rhs_collection->begin();
+				for (; lhs_it != lhs_collection->end(); ++lhs_it, ++rhs_it) {
 					if (!equal(*lhs_it, *rhs_it)) {
 						return false;
 					}
@@ -390,7 +390,7 @@ ADD_FUNCTION(
 
 		// Remove atom and function from the argument list, add atom value
 		begin += 2;
-		auto arguments = ValueVector(end - begin + 1);
+		auto arguments = ValueVector(SIZE() + 1);
 		arguments[0] = atom->deref();
 		std::copy(begin, end, arguments.begin() + 1);
 
@@ -401,7 +401,7 @@ ADD_FUNCTION(
 		}
 		else {
 			auto lambda = std::static_pointer_cast<Lambda>(callable);
-			value = eval(lambda->body(), Environment::create(lambda, arguments));
+			value = eval(lambda->body(), Environment::create(lambda, std::move(arguments)));
 		}
 
 		return atom->reset(value);
@@ -417,7 +417,7 @@ ADD_FUNCTION(
 		begin++;
 
 		VALUE_CAST(collection, Collection, (*begin));
-		const auto& collection_nodes = collection->nodes();
+		const auto& collection_nodes = collection->nodesRead();
 
 		auto result_nodes = ValueVector(collection_nodes.size() + 1);
 		result_nodes.at(0) = first;
@@ -439,7 +439,7 @@ ADD_FUNCTION(
 		auto result_nodes = ValueVector(count);
 		size_t offset = 0;
 		for (auto it = begin; it != end; ++it) {
-			const auto& collection_nodes = std::static_pointer_cast<Collection>(*it)->nodes();
+			const auto& collection_nodes = std::static_pointer_cast<Collection>(*it)->nodesRead();
 			std::copy(collection_nodes.begin(), collection_nodes.end(), result_nodes.begin() + offset);
 			offset += collection_nodes.size();
 		}
@@ -459,7 +459,7 @@ ADD_FUNCTION(
 
 		VALUE_CAST(collection, Collection, (*begin));
 
-		return makePtr<Vector>(collection->nodes());
+		return makePtr<Vector>(collection->nodesCopy());
 	});
 
 // (nth (list 1 2 3) 0)
@@ -470,20 +470,15 @@ ADD_FUNCTION(
 
 		VALUE_CAST(collection, Collection, (*begin));
 		VALUE_CAST(number_node, Number, (*(begin + 1)));
-		auto collection_nodes = collection->nodes();
-		auto index = (size_t)number_node->number();
+		auto collection_nodes = collection->nodesRead();
+		auto index = static_cast<size_t>(number_node->number());
 
 		if (number_node->number() < 0 || index >= collection_nodes.size()) {
 			Error::the().add("index is out of range");
 			return nullptr;
 		}
 
-		auto result = collection_nodes.begin();
-		for (size_t i = 0; i < index; ++i) {
-			result++;
-		}
-
-		return *result;
+		return collection_nodes[index];
 	});
 
 // (first (list 1 2 3)) -> 1
@@ -533,7 +528,7 @@ ADD_FUNCTION(
 		arguments.reserve(arguments.size() + collection->size());
 
 		// Append list nodes to the argument leftovers
-		auto nodes = collection->nodes();
+		auto nodes = collection->nodesRead();
 		for (const auto& node : nodes) {
 			arguments.push_back(node);
 		}
@@ -545,7 +540,7 @@ ADD_FUNCTION(
 		}
 		else {
 			auto lambda = std::static_pointer_cast<Lambda>(callable);
-			value = eval(lambda->body(), Environment::create(lambda, arguments));
+			value = eval(lambda->body(), Environment::create(lambda, std::move(arguments)));
 		}
 
 		return value;
@@ -559,7 +554,6 @@ ADD_FUNCTION(
 
 		VALUE_CAST(callable, Callable, (*begin));
 		VALUE_CAST(collection, Collection, (*(begin + 1)));
-		const auto& collection_nodes = collection->nodes();
 
 		size_t count = collection->size();
 		auto nodes = ValueVector(count);
@@ -567,11 +561,12 @@ ADD_FUNCTION(
 		if (is<Function>(callable.get())) {
 			auto function = std::static_pointer_cast<Function>(callable)->function();
 			for (size_t i = 0; i < count; ++i) {
-				nodes.at(i) = function(collection_nodes.begin() + i, collection_nodes.begin() + i + 1);
+				nodes.at(i) = function(collection->begin() + i, collection->begin() + i + 1);
 			}
 		}
 		else {
 			auto lambda = std::static_pointer_cast<Lambda>(callable);
+			auto collection_nodes = collection->nodesRead();
 			for (size_t i = 0; i < count; ++i) {
 				nodes.at(i) = (eval(lambda->body(), Environment::create(lambda, { collection_nodes[i] })));
 			}
@@ -911,7 +906,7 @@ ADD_FUNCTION(
 		VALUE_CAST(collection, Collection, (*begin));
 		begin++;
 
-		const auto& collection_nodes = collection->nodes();
+		const auto& collection_nodes = collection->nodesRead();
 		size_t collection_count = collection_nodes.size();
 		size_t argument_count = SIZE();
 
@@ -944,7 +939,10 @@ ADD_FUNCTION(
 		if (is<Constant>(front_raw_ptr) && std::static_pointer_cast<Constant>(front)->state() == Constant::Nil) {
 			return makePtr<Constant>();
 		}
-		if (is<Collection>(front_raw_ptr)) {
+		if (is<List>(front_raw_ptr)) {
+			return front;
+		}
+		if (is<Vector>(front_raw_ptr)) {
 			auto collection = std::static_pointer_cast<Collection>(front);
 
 			if (collection->empty()) {
@@ -955,7 +953,7 @@ ADD_FUNCTION(
 				return front;
 			}
 
-			return makePtr<List>(collection->nodes());
+			return makePtr<List>(collection->nodesCopy());
 		}
 		if (is<String>(front_raw_ptr)) {
 			auto string = std::static_pointer_cast<String>(front);
