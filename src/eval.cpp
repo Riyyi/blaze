@@ -109,6 +109,10 @@ ValuePtr Eval::evalImpl()
 				evalQuasiQuote(nodes, env);
 				continue; // TCO
 			}
+			if (symbol == "while") {
+				evalWhile(nodes, env);
+				continue; // TCO
+			}
 		}
 
 		auto evaluated_list = std::static_pointer_cast<List>(evalAst(ast, env));

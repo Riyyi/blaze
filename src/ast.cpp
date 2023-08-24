@@ -185,6 +185,11 @@ Keyword::Keyword(const std::string& data)
 {
 }
 
+Keyword::Keyword(int64_t number)
+	: m_data(std::string(1, 0x7f) + std::to_string(number)) // 127
+{
+}
+
 // -----------------------------------------
 
 Number::Number(int64_t number)

@@ -10,6 +10,7 @@
 #include <iterator>  // std::advance, std::distance, std::next, std::prev
 #include <memory>    // std::static_pointer_cast
 #include <string>
+#include <type_traits>
 
 #include "ruc/file.h"
 #include "ruc/format/format.h"
@@ -24,7 +25,7 @@
 
 // At the top-level you cant invoke any function, but you can create variables.
 // Using a struct's constructor you can work around this limitation.
-// Also the line number in the file is used to make the struct names unique.
+// Also, the counter macro is used to make the struct names unique.
 
 #define FUNCTION_STRUCT_NAME(unique) __functionStruct##unique
 
@@ -41,7 +42,7 @@
 			symbol,                                          \
 			[](ValueVectorConstIt begin, ValueVectorConstIt end) -> ValuePtr lambda);
 
-#define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__LINE__, symbol, lambda);
+#define ADD_FUNCTION(symbol, lambda) ADD_FUNCTION_IMPL(__COUNTER__, symbol, lambda);
 
 #define SIZE() std::distance(begin, end)
 
@@ -113,6 +114,18 @@ ADD_FUNCTION(
 		return makePtr<Number>((int64_t)result);
 	});
 
+// (% 5 2) -> 1
+ADD_FUNCTION(
+	"%",
+	{
+		CHECK_ARG_COUNT_IS("/", SIZE(), 2);
+
+		VALUE_CAST(divide, Number, (*begin));
+		VALUE_CAST(by, Number, (*(begin + 1)));
+
+		return makePtr<Number>(divide->number() % by->number());
+	});
+
 // // -----------------------------------------
 
 #define NUMBER_COMPARE(operator)                                               \
@@ -146,12 +159,14 @@ ADD_FUNCTION(">=", NUMBER_COMPARE(>=));
 
 // -----------------------------------------
 
+// (list 1 2) -> (1 2)
 ADD_FUNCTION(
 	"list",
 	{
 		return makePtr<List>(begin, end);
 	});
 
+// (empty?)
 ADD_FUNCTION(
 	"empty?",
 	{
@@ -230,6 +245,8 @@ ADD_FUNCTION("println", PRINTER_PRINT(false));
 
 // -----------------------------------------
 
+// (= 1 1)         -> true
+// (= "foo" "foo") -> true
 ADD_FUNCTION(
 	"=",
 	{
@@ -447,6 +464,32 @@ ADD_FUNCTION(
 		return makePtr<List>(result_nodes);
 	});
 
+// (set-nth-element (list 1 2 3) 1 "foo") -> (1 "foo" 3)
+ADD_FUNCTION(
+	"set-nth-element",
+	{
+		CHECK_ARG_COUNT_IS("set-nth-element", SIZE(), 3);
+
+		VALUE_CAST(collection, Collection, (*begin));
+
+		VALUE_CAST(number_node, Number, (*(begin + 1)));
+		auto index = static_cast<size_t>(number_node->number() < 0 ? 0 : number_node->number());
+
+		auto value = *(begin + 2);
+
+		auto collection_nodes = collection->nodesCopy();
+		if (index >= collection->size()) { // Enlarge list if index out of bounds
+			collection_nodes.resize(index + 1, makePtr<Constant>());
+		}
+		collection_nodes[index] = value;
+
+		if (is<Vector>(begin->get())) {
+			return makePtr<Vector>(collection_nodes);
+		}
+
+		return makePtr<List>(collection_nodes);
+	});
+
 // (vec (list 1 2 3))
 ADD_FUNCTION(
 	"vec",
@@ -462,7 +505,7 @@ ADD_FUNCTION(
 		return makePtr<Vector>(collection->nodesCopy());
 	});
 
-// (nth (list 1 2 3) 0)
+// (nth (list 1 2 3) 0) -> 1
 ADD_FUNCTION(
 	"nth",
 	{
@@ -497,7 +540,7 @@ ADD_FUNCTION(
 		return (collection->empty()) ? makePtr<Constant>() : collection->front();
 	});
 
-// (rest (list 1 2 3))
+// (rest (list 1 2 3)) -> (2 3)
 ADD_FUNCTION(
 	"rest",
 	{
@@ -673,22 +716,41 @@ ADD_FUNCTION(
 
 // -----------------------------------------
 
-#define STRING_TO_TYPE(name, type)                 \
-	{                                              \
-		CHECK_ARG_COUNT_IS(name, SIZE(), 1);       \
-                                                   \
-		if (is<type>(begin->get())) {              \
-			return *begin;                         \
-		}                                          \
-                                                   \
-		VALUE_CAST(stringValue, String, (*begin)); \
-                                                   \
-		return makePtr<type>(stringValue->data()); \
-	}
+// (symbol "foo")  -> foo
+ADD_FUNCTION(
+	"symbol",
+	{
+		CHECK_ARG_COUNT_IS("symbol", SIZE(), 1);
 
-// (symbol "foo")
-ADD_FUNCTION("symbol", STRING_TO_TYPE("symbol", Symbol));
-ADD_FUNCTION("keyword", STRING_TO_TYPE("keyword", Keyword));
+		if (is<Symbol>(begin->get())) {
+			return *begin;
+		}
+
+		VALUE_CAST(stringValue, String, (*begin));
+
+		return makePtr<Symbol>(stringValue->data());
+	});
+
+// (keyword "foo") -> :foo
+// (keyword 123)   -> :123
+ADD_FUNCTION(
+	"keyword",
+	{
+		CHECK_ARG_COUNT_IS("symbol", SIZE(), 1);
+
+		if (is<Keyword>(begin->get())) {
+			return *begin;
+		}
+		else if (is<Number>(begin->get())) {
+			VALUE_CAST(numberValue, Number, (*begin));
+
+			return makePtr<Keyword>(numberValue->number());
+		}
+
+		VALUE_CAST(stringValue, String, (*begin));
+
+		return makePtr<Keyword>(stringValue->data());
+	});
 
 // -----------------------------------------
 
@@ -976,6 +1038,58 @@ ADD_FUNCTION(
 		Error::the().add(::format("wrong argument type: Collection or String, {}", front));
 
 		return nullptr;
+	});
+
+// (make-list 4 nil) -> (nil nil nil nil)
+ADD_FUNCTION(
+	"make-list",
+	{
+		CHECK_ARG_COUNT_IS("make-list", SIZE(), 2);
+
+		VALUE_CAST(number, Number, (*begin));
+		auto count = static_cast<size_t>(number->number() < 0 ? 0 : number->number());
+		auto value = *std::next(begin);
+
+		auto nodes = ValueVector(count);
+		if (is<Atom>(value.get())) {
+			auto atom = std::static_pointer_cast<Atom>(value);
+			for (size_t i = 0; i < count; ++i) {
+				nodes[i] = makePtr<Atom>(atom);
+			}
+		}
+		// else if (is<Collection>(value.get())) {
+	    // 	for (size_t i = 0; i < count; ++i) {
+	    // 		auto nodes = std::static_pointer_cast<Collection>(value)->nodesCopy();
+	    // 		if (is<Vector>(value.get())) {
+	    // 			makePtr<Vector>(nodes);
+	    // 			continue;
+	    // 		}
+	    // 		nodes[i] = makePtr<List>(nodes);
+	    // 	}
+	    // }
+	    // else if (is<Constant>(value.get())) {
+	    // 	for (size_t i = 0; i < count; ++i) {
+	    // 		auto constant = std::static_pointer_cast<Constant>(value);
+	    // 		nodes[i] = makePtr<Constant>(constant);
+	    // 	}
+	    // }
+
+		// TODO:
+	    // Atom
+	    // Collection
+	    // Constant
+	    // Function
+	    // HashMap
+	    // Keyword
+	    // Lambda
+	    // List
+	    // Macro
+	    // Number
+	    // String
+	    // Symbol
+	    // Vector
+
+		return makePtr<List>(std::move(nodes));
 	});
 
 // -----------------------------------------

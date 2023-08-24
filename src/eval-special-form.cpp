@@ -331,6 +331,39 @@ void Eval::evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env)
 	return; // TCO
 }
 
+// (while true body...)
+void Eval::evalWhile(const ValueVector& nodes, EnvironmentPtr env)
+{
+	CHECK_ARG_COUNT_AT_LEAST("while", nodes.size(), 2, void());
+
+	// Condition
+	ValuePtr predicate = *nodes.begin();
+
+	// Printer p;
+
+	m_ast = predicate;
+	m_env = env;
+	ValuePtr condition = evalImpl();
+	while (!is<Constant>(condition.get())
+	       || std::static_pointer_cast<Constant>(condition)->state() == Constant::True) {
+		for (auto it = nodes.begin() + 1; it != nodes.end(); ++it) {
+			m_ast = *it;
+			m_env = env;
+			evalImpl();
+		}
+
+		m_ast = predicate;
+		m_env = env;
+		condition = evalImpl();
+
+		// print("{}\n", p.print(condition));
+	}
+
+	m_ast = makePtr<Constant>();
+	m_env = env;
+	return; // TCO
+}
+
 // -----------------------------------------
 
 } // namespace blaze

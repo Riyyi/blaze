@@ -44,6 +44,7 @@ private:
 	void evalIf(const ValueVector& nodes, EnvironmentPtr env);
 	void evalLet(const ValueVector& nodes, EnvironmentPtr env);
 	void evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env);
+	void evalWhile(const ValueVector& nodes, EnvironmentPtr env);
 
 	ValuePtr apply(std::shared_ptr<List> evaluated_list);
 

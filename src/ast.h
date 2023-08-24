@@ -238,6 +238,7 @@ private:
 class Keyword final : public Value {
 public:
 	Keyword(const std::string& data);
+	Keyword(int64_t number);
 	virtual ~Keyword() = default;
 
 	virtual bool isKeyword() const override { return true; }
