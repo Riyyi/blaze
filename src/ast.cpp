@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "ast.h"
-#include "environment.h"
+#include "env/environment.h"
 #include "error.h"
 #include "forward.h"
 #include "printer.h"

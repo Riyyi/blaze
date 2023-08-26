@@ -9,11 +9,13 @@
 #include "ruc/format/format.h"
 
 #include "ast.h"
-#include "environment.h"
+#include "env/environment.h"
 #include "error.h"
 #include "forward.h"
 
 namespace blaze {
+
+std::unordered_map<std::string, FunctionType> Environment::s_functions;
 
 EnvironmentPtr Environment::create()
 {
@@ -66,6 +68,20 @@ EnvironmentPtr Environment::create(const ValuePtr lambda, ValueVector&& argument
 	}
 
 	return env;
+}
+
+// -----------------------------------------
+
+void Environment::registerFunction(const std::string& name, FunctionType function)
+{
+	s_functions.insert_or_assign(name, function);
+}
+
+void Environment::installFunctions(EnvironmentPtr env)
+{
+	for (const auto& [name, function] : s_functions) {
+		env->set(name, makePtr<Function>(name, function));
+	}
 }
 
 // -----------------------------------------

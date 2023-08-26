@@ -11,7 +11,7 @@
 #include <string>
 
 #include "ast.h"
-#include "environment.h"
+#include "env/environment.h"
 #include "error.h"
 #include "eval.h"
 #include "forward.h"

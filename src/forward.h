@@ -32,6 +32,4 @@ extern ValuePtr readline(const std::string& prompt);
 extern ValuePtr read(std::string_view input);
 extern ValuePtr eval(ValuePtr ast, EnvironmentPtr env);
 
-extern void installFunctions(EnvironmentPtr env);
-
 } // namespace blaze

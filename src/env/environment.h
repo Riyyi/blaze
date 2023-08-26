@@ -10,6 +10,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "ast.h"
 #include "forward.h"
 
 namespace blaze {
@@ -23,15 +24,20 @@ public:
 	static EnvironmentPtr create(EnvironmentPtr outer);
 	static EnvironmentPtr create(const ValuePtr lambda, ValueVector&& arguments);
 
+	static void registerFunction(const std::string& name, FunctionType function);
+	static void installFunctions(EnvironmentPtr env);
+
 	bool exists(const std::string& symbol);
 	ValuePtr set(const std::string& symbol, ValuePtr value);
 	ValuePtr get(const std::string& symbol);
 
-protected:
+private:
 	Environment() {}
 
 	EnvironmentPtr m_outer { nullptr };
 	std::unordered_map<std::string, ValuePtr> m_values;
+
+	static std::unordered_map<std::string, FunctionType> s_functions;
 };
 
 } // namespace blaze

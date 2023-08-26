@@ -14,7 +14,7 @@
 #include "ruc/format/color.h"
 
 #include "ast.h"
-#include "environment.h"
+#include "env/environment.h"
 #include "error.h"
 #include "eval.h"
 #include "forward.h"
@@ -149,7 +149,7 @@ auto main(int argc, char* argv[]) -> int
 	std::signal(SIGINT, blaze::cleanup);
 	std::signal(SIGTERM, blaze::cleanup);
 
-	installFunctions(blaze::s_outer_env);
+	blaze::Environment::installFunctions(blaze::s_outer_env);
 	installLambdas(blaze::s_outer_env);
 	makeArgv(blaze::s_outer_env, arguments);
 
