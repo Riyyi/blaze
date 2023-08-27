@@ -27,7 +27,9 @@ public:
 
 private:
 	ValuePtr evalImpl();
-	ValuePtr evalAst(ValuePtr ast, EnvironmentPtr env);
+	ValuePtr evalSymbol(ValuePtr ast, EnvironmentPtr env);
+	ValuePtr evalVector(ValuePtr ast, EnvironmentPtr env);
+	ValuePtr evalHashMap(ValuePtr ast, EnvironmentPtr env);
 
 	bool isMacroCall(ValuePtr ast, EnvironmentPtr env);
 	ValuePtr macroExpand(ValuePtr ast, EnvironmentPtr env);
@@ -46,7 +48,7 @@ private:
 	void evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env);
 	void evalWhile(const ValueVector& nodes, EnvironmentPtr env);
 
-	ValuePtr apply(std::shared_ptr<List> evaluated_list);
+	ValuePtr apply(ValuePtr function, const ValueVector& nodes);
 
 	ValuePtr m_ast;
 	EnvironmentPtr m_env;

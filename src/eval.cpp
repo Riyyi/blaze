@@ -39,6 +39,10 @@ ValuePtr Eval::evalImpl()
 	ValuePtr ast = nullptr;
 	EnvironmentPtr env = nullptr;
 
+	if (env == nullptr) {
+		env = m_outer_env;
+	}
+
 	while (true) {
 		if (Error::the().hasAnyError()) {
 			return nullptr;
@@ -47,18 +51,17 @@ ValuePtr Eval::evalImpl()
 		ast = m_ast;
 		env = m_env;
 
-		if (env == nullptr) {
-			env = m_outer_env;
+		if (is<Symbol>(ast.get())) {
+			return evalSymbol(ast, env);
 		}
-
-		if (!is<List>(ast.get())) {
-			return evalAst(ast, env);
+		if (is<Vector>(ast.get())) {
+			return evalVector(ast, env);
 		}
-
-		ast = macroExpand(ast, env);
-
+		if (is<HashMap>(ast.get())) {
+			return evalHashMap(ast, env);
+		}
 		if (!is<List>(ast.get())) {
-			return evalAst(ast, env);
+			return ast;
 		}
 
 		auto list = std::static_pointer_cast<List>(ast);
@@ -115,80 +118,86 @@ ValuePtr Eval::evalImpl()
 			}
 		}
 
-		auto evaluated_list = std::static_pointer_cast<List>(evalAst(ast, env));
+		m_ast = list->front();
+		m_env = env;
+		auto evaluated_front = evalImpl();
+		auto unevaluated_nodes = list->rest();
 
-		if (evaluated_list == nullptr) {
-			return nullptr;
+		if (is<Macro>(evaluated_front.get())) { // FIXME
+			auto lambda = std::static_pointer_cast<Lambda>(evaluated_front);
+			m_ast = lambda->body();
+			m_env = Environment::create(lambda, std::move(unevaluated_nodes));
+			m_ast = evalImpl();
+			m_env = env;
+			continue; // TCO
+		}
+
+		ValueVector evaluated_nodes(unevaluated_nodes.size());
+		for (size_t i = 0; i < unevaluated_nodes.size(); ++i) {
+			m_ast = unevaluated_nodes[i];
+			m_env = env;
+			evaluated_nodes[i] = evalImpl();
 		}
 
 		// Regular list
-		if (is<Lambda>(evaluated_list->front().get())) {
-			auto lambda = std::static_pointer_cast<Lambda>(evaluated_list->front());
+		if (is<Lambda>(evaluated_front.get())) {
+			auto lambda = std::static_pointer_cast<Lambda>(evaluated_front);
 
 			m_ast = lambda->body();
-			m_env = Environment::create(lambda, evaluated_list->rest());
+			m_env = Environment::create(lambda, std::move(evaluated_nodes));
 			continue; // TCO
 		}
 
 		// Function call
-		return apply(evaluated_list);
+		return apply(evaluated_front, evaluated_nodes);
 	}
 }
 
-ValuePtr Eval::evalAst(ValuePtr ast, EnvironmentPtr env)
+ValuePtr Eval::evalSymbol(ValuePtr ast, EnvironmentPtr env)
 {
-	if (ast == nullptr || env == nullptr) {
+	auto result = env->get(std::static_pointer_cast<Symbol>(ast)->symbol());
+	if (!result) {
+		Error::the().add(::format("'{}' not found", ast));
 		return nullptr;
 	}
 
-	Value* ast_raw_ptr = ast.get();
-	if (is<Symbol>(ast_raw_ptr)) {
-		auto result = env->get(std::static_pointer_cast<Symbol>(ast)->symbol());
-		if (!result) {
-			Error::the().add(::format("'{}' not found", ast));
+	return result;
+}
+
+ValuePtr Eval::evalVector(ValuePtr ast, EnvironmentPtr env)
+{
+	const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodesRead();
+	size_t count = nodes.size();
+	auto evaluated_nodes = ValueVector(count);
+
+	for (size_t i = 0; i < count; ++i) {
+		m_ast = nodes[i];
+		m_env = env;
+		ValuePtr eval_node = evalImpl();
+		if (eval_node == nullptr) {
 			return nullptr;
 		}
-
-		return result;
-	}
-	else if (is<Collection>(ast_raw_ptr)) {
-		const auto& nodes = std::static_pointer_cast<Collection>(ast)->nodesRead();
-		size_t count = nodes.size();
-		auto evaluated_nodes = ValueVector(count);
-
-		for (size_t i = 0; i < count; ++i) {
-			m_ast = nodes[i];
-			m_env = env;
-			ValuePtr eval_node = evalImpl();
-			if (eval_node == nullptr) {
-				return nullptr;
-			}
-			evaluated_nodes.at(i) = eval_node;
-		}
-
-		if (is<Vector>(ast_raw_ptr)) {
-			return makePtr<Vector>(evaluated_nodes);
-		}
-
-		return makePtr<List>(evaluated_nodes);
-	}
-	else if (is<HashMap>(ast_raw_ptr)) {
-		const auto& elements = std::static_pointer_cast<HashMap>(ast)->elements();
-		Elements evaluated_elements;
-		for (const auto& element : elements) {
-			m_ast = element.second;
-			m_env = env;
-			ValuePtr element_node = evalImpl();
-			if (element_node == nullptr) {
-				return nullptr;
-			}
-			evaluated_elements.insert_or_assign(element.first, element_node);
-		}
-
-		return makePtr<HashMap>(evaluated_elements);
+		evaluated_nodes.at(i) = eval_node;
 	}
 
-	return ast;
+	return makePtr<Vector>(evaluated_nodes);
+}
+
+ValuePtr Eval::evalHashMap(ValuePtr ast, EnvironmentPtr env)
+{
+	const auto& elements = std::static_pointer_cast<HashMap>(ast)->elements();
+	Elements evaluated_elements;
+	for (const auto& element : elements) {
+		m_ast = element.second;
+		m_env = env;
+		ValuePtr element_node = evalImpl();
+		if (element_node == nullptr) {
+			return nullptr;
+		}
+		evaluated_elements.insert_or_assign(element.first, element_node);
+	}
+
+	return makePtr<HashMap>(evaluated_elements);
 }
 
 // -----------------------------------------
@@ -237,22 +246,16 @@ ValuePtr Eval::macroExpand(ValuePtr ast, EnvironmentPtr env)
 
 // -----------------------------------------
 
-ValuePtr Eval::apply(std::shared_ptr<List> evaluated_list)
+ValuePtr Eval::apply(ValuePtr function, const ValueVector& nodes)
 {
-	if (evaluated_list == nullptr) {
+	if (!is<Function>(function.get())) {
+		Error::the().add(::format("invalid function: {}", function));
 		return nullptr;
 	}
 
-	auto front = evaluated_list->front();
+	auto func = std::static_pointer_cast<Function>(function)->function();
 
-	if (!is<Function>(front.get())) {
-		Error::the().add(::format("invalid function: {}", front));
-		return nullptr;
-	}
-
-	auto function = std::static_pointer_cast<Function>(front)->function();
-
-	return function(evaluated_list->begin() + 1, evaluated_list->end());
+	return func(nodes.begin(), nodes.end());
 }
 
 } // namespace blaze
