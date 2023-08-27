@@ -149,6 +149,7 @@ auto main(int argc, char* argv[]) -> int
 	std::signal(SIGINT, blaze::cleanup);
 	std::signal(SIGTERM, blaze::cleanup);
 
+	blaze::Environment::loadFunctions();
 	blaze::Environment::installFunctions(blaze::s_outer_env);
 	installLambdas(blaze::s_outer_env);
 	makeArgv(blaze::s_outer_env, arguments);

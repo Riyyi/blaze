@@ -24,6 +24,7 @@ public:
 	static EnvironmentPtr create(EnvironmentPtr outer);
 	static EnvironmentPtr create(const ValuePtr lambda, ValueVector&& arguments);
 
+	static void loadFunctions();
 	static void registerFunction(const std::string& name, FunctionType function);
 	static void installFunctions(EnvironmentPtr env);
 
@@ -33,6 +34,20 @@ public:
 
 private:
 	Environment() {}
+
+	// Outer environment native functions, "Core"
+	static void loadCollectionAccess();
+	static void loadCollectionConstructor();
+	static void loadCollectionModify();
+	static void loadCompare();
+	static void loadConvert();
+	static void loadFormat();
+	static void loadMeta();
+	static void loadMutable();
+	static void loadOperators();
+	static void loadOther();
+	static void loadPredicate();
+	static void loadRepl();
 
 	EnvironmentPtr m_outer { nullptr };
 	std::unordered_map<std::string, ValuePtr> m_values;

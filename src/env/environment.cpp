@@ -72,6 +72,22 @@ EnvironmentPtr Environment::create(const ValuePtr lambda, ValueVector&& argument
 
 // -----------------------------------------
 
+void Environment::loadFunctions()
+{
+	loadCollectionAccess();
+	loadCollectionConstructor();
+	loadCollectionModify();
+	loadCompare();
+	loadConvert();
+	loadFormat();
+	loadMeta();
+	loadMutable();
+	loadOperators();
+	loadOther();
+	loadPredicate();
+	loadRepl();
+}
+
 void Environment::registerFunction(const std::string& name, FunctionType function)
 {
 	s_functions.insert_or_assign(name, function);
