@@ -1,0 +1,7 @@
+
+(defn not [cond]
+  (if cond false true))
+
+;; Local Variables:
+;; eval: (emacs-lisp-mode)
+;; End:

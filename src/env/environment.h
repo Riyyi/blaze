@@ -9,6 +9,7 @@
 #include <list>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "ast.h"
 #include "forward.h"
@@ -53,6 +54,7 @@ private:
 	std::unordered_map<std::string, ValuePtr> m_values;
 
 	static std::unordered_map<std::string, FunctionType> s_functions;
+	static std::vector<std::string> s_lambdas;
 };
 
 } // namespace blaze

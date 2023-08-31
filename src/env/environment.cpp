@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <memory> // std::static_pointer_cast
+#include <filesystem>
+#include <iterator> // std::distance
+#include <memory>   // std::static_pointer_cast
 
+#include "ruc/file.h"
 #include "ruc/format/format.h"
 
 #include "ast.h"
@@ -16,6 +19,7 @@
 namespace blaze {
 
 std::unordered_map<std::string, FunctionType> Environment::s_functions;
+std::vector<std::string> Environment::s_lambdas;
 
 EnvironmentPtr Environment::create()
 {
@@ -86,6 +90,32 @@ void Environment::loadFunctions()
 	loadOther();
 	loadPredicate();
 	loadRepl();
+
+	// Load std files
+
+	std::filesystem::path std = "./lisp";
+	if (!std::filesystem::exists(std) || !std::filesystem::is_directory(std)) {
+		return;
+	}
+
+	s_lambdas.reserve(std::distance(std::filesystem::directory_iterator(std), {}));
+	for (const auto& entry : std::filesystem::directory_iterator(std)) {
+		if (!std::filesystem::is_regular_file(entry.path())
+		    || entry.path().extension().string() != ".bl") {
+			continue;
+		}
+
+		std::filesystem::path filename = entry.path().filename();
+		ruc::File file((std / filename).string());
+
+		// The init will be added to the front and executed first
+		if (filename.string() == "init.bl") {
+			s_lambdas.emplace(s_lambdas.begin(), file.data());
+		}
+		else {
+			s_lambdas.push_back(file.data());
+		}
+	}
 }
 
 void Environment::registerFunction(const std::string& name, FunctionType function)
@@ -97,6 +127,10 @@ void Environment::installFunctions(EnvironmentPtr env)
 {
 	for (const auto& [name, function] : s_functions) {
 		env->set(name, makePtr<Function>(name, function));
+	}
+	for (const auto& lambda : s_lambdas) {
+		// Ensure all s-exprs are run with (do)
+		eval(read("(do " + lambda + ")"), env);
 	}
 }
 

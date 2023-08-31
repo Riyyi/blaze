@@ -89,27 +89,6 @@ static auto rep(std::string_view input, EnvironmentPtr env) -> std::string
 	return print(eval(read(input), env));
 }
 
-static std::string_view lambdaTable[] = {
-	"(def! not (fn* (cond) (if cond false true)))",
-	"(def! load-file (fn* (filename) \
-	   (eval (read-string (str \"(do \" (slurp filename) \"\nnil)\")))))",
-	"(defmacro! cond (fn* (& xs) \
-	    (if (> (count xs) 0) \
-	        (list 'if (first xs) \
-	            (if (> (count xs) 1) \
-	                (nth xs 1) \
-	              (throw \"odd number of forms to cond\")) \
-	          (cons 'cond (rest (rest xs)))))))",
-	"(def! *host-language* \"C++\")",
-};
-
-static auto installLambdas(EnvironmentPtr env) -> void
-{
-	for (auto function : lambdaTable) {
-		rep(function, env);
-	}
-}
-
 static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void
 {
 	size_t count = arguments.size();
@@ -151,7 +130,6 @@ auto main(int argc, char* argv[]) -> int
 
 	blaze::Environment::loadFunctions();
 	blaze::Environment::installFunctions(blaze::s_outer_env);
-	installLambdas(blaze::s_outer_env);
 	makeArgv(blaze::s_outer_env, arguments);
 
 	if (arguments.size() > 0) {

@@ -70,6 +70,14 @@ target_include_directories(${PROJECT} PRIVATE "src")
 target_link_libraries(${PROJECT} readline ruc)
 
 # ------------------------------------------
+# Std target
+
+add_custom_target(${PROJECT}-lisp
+	COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/copy-lisp.cmake
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+add_dependencies(${PROJECT} ${PROJECT}-lisp)
+
+# ------------------------------------------
 # Execute target
 
 add_custom_target(run

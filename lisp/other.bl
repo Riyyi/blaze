@@ -1,0 +1,6 @@
+
+(def! *host-language* "C++")
+
+;; Local Variables:
+;; eval: (emacs-lisp-mode)
+;; End:
