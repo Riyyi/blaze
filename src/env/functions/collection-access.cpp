@@ -16,6 +16,35 @@ namespace blaze {
 
 void Environment::loadCollectionAccess()
 {
+	// (count '(1 2 3))        -> 3
+	// (count [1 2 3])         -> 3
+	// (count {:foo 2 :bar 3}) -> 2
+	ADD_FUNCTION(
+		"count",
+		{
+			CHECK_ARG_COUNT_IS("count", SIZE(), 1);
+
+			size_t result = 0;
+			if (is<Constant>(begin->get()) && std::static_pointer_cast<Constant>(*begin)->state() == Constant::Nil) {
+				// result = 0
+			}
+			else if (is<Collection>(begin->get())) {
+				result = std::static_pointer_cast<Collection>(*begin)->size();
+			}
+			else if (is<HashMap>(begin->get())) {
+				result = std::static_pointer_cast<HashMap>(*begin)->size();
+			}
+			else {
+				Error::the().add(::format("wrong argument type: Collection, '{}'", *begin));
+				return nullptr;
+			}
+
+			// FIXME: Add numeric_limits check for implicit cast: size_t > int64_t
+			return makePtr<Number>((int64_t)result);
+		});
+
+	// -----------------------------------------
+
 	// (first (list 1 2 3)) -> 1
 	ADD_FUNCTION(
 		"first",
