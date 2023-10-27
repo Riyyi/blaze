@@ -31,13 +31,9 @@ private:
 	ValuePtr evalVector(ValuePtr ast, EnvironmentPtr env);
 	ValuePtr evalHashMap(ValuePtr ast, EnvironmentPtr env);
 
-	bool isMacroCall(ValuePtr ast, EnvironmentPtr env);
-	ValuePtr macroExpand(ValuePtr ast, EnvironmentPtr env);
-
 	ValuePtr evalDef(const ValueVector& nodes, EnvironmentPtr env);
 	ValuePtr evalDefMacro(const ValueVector& nodes, EnvironmentPtr env);
 	ValuePtr evalFn(const ValueVector& nodes, EnvironmentPtr env);
-	ValuePtr evalMacroExpand(const ValueVector& nodes, EnvironmentPtr env);
 	ValuePtr evalQuasiQuoteExpand(const ValueVector& nodes);
 	ValuePtr evalQuote(const ValueVector& nodes);
 	ValuePtr evalTry(const ValueVector& nodes, EnvironmentPtr env);
@@ -45,6 +41,7 @@ private:
 	void evalDo(const ValueVector& nodes, EnvironmentPtr env);
 	void evalIf(const ValueVector& nodes, EnvironmentPtr env);
 	void evalLet(const ValueVector& nodes, EnvironmentPtr env);
+	void evalMacroExpand1(const ValueVector& nodes, EnvironmentPtr env);
 	void evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env);
 	void evalWhile(const ValueVector& nodes, EnvironmentPtr env);
 

@@ -83,9 +83,6 @@ ValuePtr Eval::evalImpl()
 			if (symbol == "fn*") {
 				return evalFn(nodes, env);
 			}
-			if (symbol == "macroexpand") {
-				return evalMacroExpand(nodes, env);
-			}
 			if (symbol == "quasiquoteexpand") {
 				return evalQuasiQuoteExpand(nodes);
 			}
@@ -106,6 +103,10 @@ ValuePtr Eval::evalImpl()
 			}
 			if (symbol == "let*") {
 				evalLet(nodes, env);
+				continue; // TCO
+			}
+			if (symbol == "macroexpand-1") {
+				evalMacroExpand1(nodes, env);
 				continue; // TCO
 			}
 			if (symbol == "quasiquote") {
@@ -198,50 +199,6 @@ ValuePtr Eval::evalHashMap(ValuePtr ast, EnvironmentPtr env)
 	}
 
 	return makePtr<HashMap>(evaluated_elements);
-}
-
-// -----------------------------------------
-
-// (x y z)
-bool Eval::isMacroCall(ValuePtr ast, EnvironmentPtr env)
-{
-	auto list = dynamic_cast<List*>(ast.get());
-
-	if (list == nullptr || list->empty()) {
-		return false;
-	}
-
-	auto front = list->front().get();
-
-	if (!is<Symbol>(front)) {
-		return false;
-	}
-
-	auto symbol = dynamic_cast<Symbol*>(front)->symbol();
-	auto value = env->get(symbol).get();
-
-	if (!is<Macro>(value)) {
-		return false;
-	}
-
-	return true;
-}
-
-// (x y z)
-ValuePtr Eval::macroExpand(ValuePtr ast, EnvironmentPtr env)
-{
-	while (isMacroCall(ast, env)) {
-		auto list = std::static_pointer_cast<List>(ast);
-
-		auto value = env->get(std::static_pointer_cast<Symbol>(list->front())->symbol());
-		auto lambda = std::static_pointer_cast<Lambda>(value);
-
-		m_ast = lambda->body();
-		m_env = Environment::create(lambda, list->rest());
-		ast = evalImpl();
-	}
-
-	return ast;
 }
 
 // -----------------------------------------

@@ -88,12 +88,7 @@ ValuePtr Eval::evalFn(const ValueVector& nodes, EnvironmentPtr env)
 	return makePtr<Lambda>(bindings, *std::next(nodes.begin()), env);
 }
 
-ValuePtr Eval::evalMacroExpand(const ValueVector& nodes, EnvironmentPtr env)
-{
-	CHECK_ARG_COUNT_IS("macroexpand", nodes.size(), 1);
-
-	return macroExpand(nodes.front(), env);
-}
+// -----------------------------------------
 
 // (quasiquoteexpand x)
 ValuePtr Eval::evalQuasiQuoteExpand(const ValueVector& nodes)
@@ -237,6 +232,53 @@ void Eval::evalLet(const ValueVector& nodes, EnvironmentPtr env)
 
 // -----------------------------------------
 
+// (x y z)
+static bool isMacroCall(ValuePtr ast, EnvironmentPtr env)
+{
+	auto list = dynamic_cast<List*>(ast.get());
+
+	if (list == nullptr || list->empty()) {
+		return false;
+	}
+
+	auto front = list->front().get();
+
+	if (!is<Symbol>(front)) {
+		return false;
+	}
+
+	auto symbol = dynamic_cast<Symbol*>(front)->symbol();
+	auto value = env->get(symbol).get();
+
+	if (!is<Macro>(value)) {
+		return false;
+	}
+
+	return true;
+}
+
+void Eval::evalMacroExpand1(const ValueVector& nodes, EnvironmentPtr env)
+{
+	CHECK_ARG_COUNT_IS("macroexpand-1", nodes.size(), 1, void());
+
+	if (!isMacroCall(nodes.front(), env)) {
+		m_ast = nodes.front();
+		m_env = env;
+		return;
+	}
+
+	auto list = std::static_pointer_cast<List>(nodes.front());
+
+	auto value = env->get(std::static_pointer_cast<Symbol>(list->front())->symbol());
+	auto lambda = std::static_pointer_cast<Lambda>(value);
+
+	m_ast = lambda->body();
+	m_env = Environment::create(lambda, list->rest());
+	return; // TCO
+}
+
+// -----------------------------------------
+
 static bool isSymbol(ValuePtr value, const std::string& symbol)
 {
 	if (!is<Symbol>(value.get())) {
@@ -330,6 +372,8 @@ void Eval::evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env)
 	m_env = env;
 	return; // TCO
 }
+
+// -----------------------------------------
 
 // (while true body...)
 void Eval::evalWhile(const ValueVector& nodes, EnvironmentPtr env)
