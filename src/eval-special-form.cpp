@@ -7,6 +7,7 @@
 #include <iterator> // std::next, std::prev
 #include <list>
 #include <memory>
+#include <span>
 #include <string>
 
 #include "ast.h"
@@ -106,40 +107,55 @@ ValuePtr Eval::evalQuote(const ValueVector& nodes)
 	return nodes.front();
 }
 
-// (try* x (catch* y z))
+// (try* x ... (catch* y z))
 ValuePtr Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
 {
 	CHECK_ARG_COUNT_AT_LEAST("try*", nodes.size(), 1);
 
-	// Try 'x'
-	m_ast = nodes.front();
-	m_env = env;
-	auto result = evalImpl();
-
-	if (!Error::the().hasAnyError()) {
-		return result;
+	// Is last node a catch* block
+	bool is_last_node_catch = false;
+	std::span<const ValuePtr> catch_nodes;
+	if (nodes.size() >= 2 && is<List>(nodes.back().get())) {
+		VALUE_CAST(list, List, nodes.back());
+		catch_nodes = list->nodesRead();
+		if (!list->empty() && is<Symbol>(catch_nodes.front().get())) {
+			VALUE_CAST(catch_symbol, Symbol, catch_nodes.front());
+			if (catch_symbol->symbol() == "catch*") {
+				CHECK_ARG_COUNT_IS("catch*", catch_nodes.size() - 1, 2);
+				is_last_node_catch = true;
+			}
+		}
 	}
-	if (nodes.size() == 1) {
+
+	// Dont have to eval on malformed (catch*)
+	if (Error::the().hasAnyError()) {
 		return nullptr;
 	}
 
+	// Try
+
+	ValuePtr result;
+	auto end = (!is_last_node_catch) ? nodes.end() : std::prev(nodes.end(), 1);
+	for (auto it = nodes.begin(); it != end; ++it) {
+		m_ast = *it;
+		m_env = env;
+		result = evalImpl();
+	}
+	if (!Error::the().hasAnyError()) {
+		return result;
+	}
+
 	// Catch
+
+	if (!is_last_node_catch) {
+		return nullptr;
+	}
 
 	// Get the error message
 	auto error = (Error::the().hasOtherError())
 	                 ? makePtr<String>(Error::the().otherError())
 	                 : Error::the().exception();
 	Error::the().clearErrors();
-
-	VALUE_CAST(catch_list, List, nodes.back());
-	const auto& catch_nodes = catch_list->nodesRead();
-	CHECK_ARG_COUNT_IS("catch*", catch_nodes.size() - 1, 2);
-
-	VALUE_CAST(catch_symbol, Symbol, catch_nodes.front());
-	if (catch_symbol->symbol() != "catch*") {
-		Error::the().add("catch block must begin with catch*");
-		return nullptr;
-	}
 
 	VALUE_CAST(catch_binding, Symbol, (*std::next(catch_nodes.begin())));
 
@@ -383,8 +399,6 @@ void Eval::evalWhile(const ValueVector& nodes, EnvironmentPtr env)
 	// Condition
 	ValuePtr predicate = *nodes.begin();
 
-	// Printer p;
-
 	m_ast = predicate;
 	m_env = env;
 	ValuePtr condition = evalImpl();
@@ -399,8 +413,6 @@ void Eval::evalWhile(const ValueVector& nodes, EnvironmentPtr env)
 		m_ast = predicate;
 		m_env = env;
 		condition = evalImpl();
-
-		// print("{}\n", p.print(condition));
 	}
 
 	m_ast = makePtr<Constant>();
