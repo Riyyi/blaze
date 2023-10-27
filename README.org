@@ -1,9 +1,9 @@
-#+TITLE: mal - Make a Lisp
+#+TITLE: blaze lisp
 #+AUTHOR: Riyyi
 #+LANGUAGE: en
 #+OPTIONS: toc:nil
 
-This is an implementation of the [[https://github.com/kanaka/mal][Make A Lisp]] project, done in C++20.
+blaze lisp, written in C++20.
 
 ** Usage
 
