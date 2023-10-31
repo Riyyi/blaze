@@ -171,6 +171,30 @@ ValuePtr Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
 
 // -----------------------------------------
 
+// (and 1 2 3)
+void Eval::evalAnd(const ValueVector& nodes, EnvironmentPtr env)
+{
+	ValuePtr result;
+	for (auto node : nodes) {
+		m_ast = node;
+		m_env = env;
+		result = evalImpl();
+
+		if (is<Constant>(result.get())) {
+			VALUE_CAST(constant, Constant, result, void());
+			if (constant->state() == Constant::Nil || constant->state() == Constant::False) {
+				m_ast = makePtr<Constant>(Constant::Nil);
+				m_env = env;
+				return; // TCO
+			}
+		}
+	}
+
+	m_ast = result;
+	m_env = env;
+	return; // TCO
+}
+
 // (do 1 2 3)
 void Eval::evalDo(const ValueVector& nodes, EnvironmentPtr env)
 {
@@ -290,6 +314,36 @@ void Eval::evalMacroExpand1(const ValueVector& nodes, EnvironmentPtr env)
 
 	m_ast = lambda->body();
 	m_env = Environment::create(lambda, list->rest());
+	return; // TCO
+}
+
+// -----------------------------------------
+
+// (or 1 2 3)
+void Eval::evalOr(const ValueVector& nodes, EnvironmentPtr env)
+{
+	ValuePtr result;
+	for (auto node : nodes) {
+		m_ast = node;
+		m_env = env;
+		result = evalImpl();
+
+		if (!is<Constant>(result.get())) {
+			m_ast = result;
+			m_env = env;
+			return; // TCO
+		}
+
+		VALUE_CAST(constant, Constant, result, void());
+		if (constant->state() == Constant::True) {
+			m_ast = result;
+			m_env = env;
+			return; // TCO
+		}
+	}
+
+	m_ast = makePtr<Constant>(Constant::Nil);
+	m_env = env;
 	return; // TCO
 }
 

@@ -38,10 +38,12 @@ private:
 	ValuePtr evalQuote(const ValueVector& nodes);
 	ValuePtr evalTry(const ValueVector& nodes, EnvironmentPtr env);
 
+	void evalAnd(const ValueVector& nodes, EnvironmentPtr env);
 	void evalDo(const ValueVector& nodes, EnvironmentPtr env);
 	void evalIf(const ValueVector& nodes, EnvironmentPtr env);
 	void evalLet(const ValueVector& nodes, EnvironmentPtr env);
 	void evalMacroExpand1(const ValueVector& nodes, EnvironmentPtr env);
+	void evalOr(const ValueVector& nodes, EnvironmentPtr env);
 	void evalQuasiQuote(const ValueVector& nodes, EnvironmentPtr env);
 	void evalWhile(const ValueVector& nodes, EnvironmentPtr env);
 

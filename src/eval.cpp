@@ -93,6 +93,10 @@ ValuePtr Eval::evalImpl()
 				return evalTry(nodes, env);
 			}
 			// Tail call optimized functions
+			if (symbol == "and") {
+				evalAnd(nodes, env);
+				continue; // TCO
+			}
 			if (symbol == "do") {
 				evalDo(nodes, env);
 				continue; // TCO
@@ -107,6 +111,10 @@ ValuePtr Eval::evalImpl()
 			}
 			if (symbol == "macroexpand-1") {
 				evalMacroExpand1(nodes, env);
+				continue; // TCO
+			}
+			if (symbol == "or") {
+				evalOr(nodes, env);
 				continue; // TCO
 			}
 			if (symbol == "quasiquote") {
