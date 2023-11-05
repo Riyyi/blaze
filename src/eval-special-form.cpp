@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <iterator> // std::next, std::prev
+#include <iterator> // std::distance, std::next, std::prev
 #include <list>
 #include <memory>
 #include <span>
@@ -70,7 +70,7 @@ ValuePtr Eval::evalDefMacro(const ValueVector& nodes, EnvironmentPtr env)
 // (fn* (x) x)
 ValuePtr Eval::evalFn(const ValueVector& nodes, EnvironmentPtr env)
 {
-	CHECK_ARG_COUNT_IS("fn*", nodes.size(), 2);
+	CHECK_ARG_COUNT_AT_LEAST("fn*", nodes.size(), 2);
 
 	// First element needs to be a List or Vector
 	VALUE_CAST(collection, Collection, nodes.front());
@@ -84,8 +84,18 @@ ValuePtr Eval::evalFn(const ValueVector& nodes, EnvironmentPtr env)
 		bindings.push_back(symbol->symbol());
 	}
 
-	// TODO: Remove limitation of 3 arguments
-	// Wrap all other nodes in list and add that as lambda body
+	// If more than one s-exp in lambda body, wrap in list
+	if (nodes.size() > 2) {
+		auto first = std::next(nodes.begin());
+		auto last = std::prev(nodes.end());
+		auto body_nodes = ValueVector(std::distance(first, last) + 2);
+		body_nodes.at(0) = makePtr<Symbol>("do");
+		std::copy(first, nodes.end(), body_nodes.begin() + 1);
+		auto body = makePtr<List>(body_nodes);
+
+		return makePtr<Lambda>(bindings, body, env);
+	}
+
 	return makePtr<Lambda>(bindings, *std::next(nodes.begin()), env);
 }
 
@@ -355,9 +365,9 @@ static bool isSymbol(ValuePtr value, const std::string& symbol)
 		return false;
 	}
 
-	auto valueSymbol = std::static_pointer_cast<Symbol>(value)->symbol();
+	auto value_symbol = std::static_pointer_cast<Symbol>(value)->symbol();
 
-	if (valueSymbol != symbol) {
+	if (value_symbol != symbol) {
 		return false;
 	}
 

@@ -1,10 +1,10 @@
 
 (defmacro! defmacro
   (fn* [name args & body]
-    `(defmacro! ~name (fn* ~args (do ~@body)))))
+    `(defmacro! ~name (fn* ~args ~@body))))
 
 (defmacro defn [name args & body]
-  `(def! ~name (fn* ~args (do ~@body))))
+  `(def! ~name (fn* ~args ~@body)))
 
 (defmacro def [name & body]
   `(def! ~name ~@body))

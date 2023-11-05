@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <iterator> // sd::advance, std::next, std::prev
+#include <iterator> // std::advance, std::next, std::prev
 #include <list>
 #include <memory> // std::static_pointer_cast
 #include <span>   // std::span
