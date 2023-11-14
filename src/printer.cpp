@@ -8,12 +8,14 @@
 #include <memory>   // std::static_pointer_cast
 #include <string>
 
+#include "ruc/format/color.h"
 #include "ruc/format/format.h"
 
 #include "ast.h"
 #include "error.h"
 #include "lexer.h"
 #include "printer.h"
+#include "settings.h"
 #include "types.h"
 #include "util.h"
 
@@ -64,6 +66,8 @@ void Printer::init()
 
 void Printer::printImpl(ValuePtr node, bool print_readably)
 {
+	bool pretty_print = Settings::the().get("pretty-print") == "1";
+
 	auto printSpacing = [this]() -> void {
 		if (!m_first_node && !m_previous_node_is_list) {
 			m_print += ' ';
@@ -109,7 +113,12 @@ void Printer::printImpl(ValuePtr node, bool print_readably)
 			text = "\"" + text + "\"";
 		}
 		printSpacing();
-		m_print += ::format("{}", text);
+		if (pretty_print) {
+			m_print += ::format(fg(ruc::format::TerminalColor::BrightGreen), "{}", text);
+		}
+		else {
+			m_print += ::format("{}", text);
+		}
 	}
 	else if (is<Keyword>(node_raw_ptr)) {
 		printSpacing();
