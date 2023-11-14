@@ -184,7 +184,7 @@ ValuePtr Eval::evalTry(const ValueVector& nodes, EnvironmentPtr env)
 // (and 1 2 3)
 void Eval::evalAnd(const ValueVector& nodes, EnvironmentPtr env)
 {
-	ValuePtr result;
+	ValuePtr result = makePtr<Constant>(Constant::True);
 	for (auto node : nodes) {
 		m_ast = node;
 		m_env = env;

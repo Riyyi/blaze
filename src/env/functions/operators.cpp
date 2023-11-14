@@ -30,13 +30,18 @@ void Environment::loadOperators()
 	ADD_FUNCTION(
 		"-",
 		{
-			if (SIZE() == 0) {
+			size_t length = SIZE();
+			if (length == 0) {
 				return makePtr<Number>(0);
 			}
 
 			// Start with the first number
 			VALUE_CAST(number, Number, (*begin));
 			int64_t result = number->number();
+
+			if (length == 1) {
+				return makePtr<Number>(-result);
+			}
 
 			// Skip the first node
 			for (auto it = begin + 1; it != end; ++it) {
