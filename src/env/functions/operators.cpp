@@ -16,6 +16,8 @@ void Environment::loadOperators()
 {
 	ADD_FUNCTION(
 		"+",
+		"number...",
+		"Return the sum of any amount of arguments, where NUMBER is of type number.",
 		{
 			int64_t result = 0;
 
@@ -29,6 +31,11 @@ void Environment::loadOperators()
 
 	ADD_FUNCTION(
 		"-",
+		"[number] subtract...",
+		R"(Negate NUMBER or SUBTRACT numbers and return the result.
+
+With one arg, negates it. With more than one arg,
+subtracts all but the first from the first.)",
 		{
 			size_t length = SIZE();
 			if (length == 0) {
@@ -54,6 +61,8 @@ void Environment::loadOperators()
 
 	ADD_FUNCTION(
 		"*",
+		"",
+		"",
 		{
 			int64_t result = 1;
 
@@ -67,6 +76,8 @@ void Environment::loadOperators()
 
 	ADD_FUNCTION(
 		"/",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("/", SIZE(), 1);
 
@@ -86,6 +97,8 @@ void Environment::loadOperators()
 	// (% 5 2) -> 1
 	ADD_FUNCTION(
 		"%",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("/", SIZE(), 2);
 

@@ -40,10 +40,10 @@ void Environment::loadCompare()
 		return makePtr<Constant>((result) ? Constant::True : Constant::False); \
 	}
 
-	ADD_FUNCTION("<", NUMBER_COMPARE(<));
-	ADD_FUNCTION("<=", NUMBER_COMPARE(<=));
-	ADD_FUNCTION(">", NUMBER_COMPARE(>));
-	ADD_FUNCTION(">=", NUMBER_COMPARE(>=));
+	ADD_FUNCTION("<", "", "", NUMBER_COMPARE(<));
+	ADD_FUNCTION("<=", "", "", NUMBER_COMPARE(<=));
+	ADD_FUNCTION(">", "", "", NUMBER_COMPARE(>));
+	ADD_FUNCTION(">=", "", "", NUMBER_COMPARE(>=));
 
 	// -----------------------------------------
 
@@ -51,6 +51,8 @@ void Environment::loadCompare()
 	// (= "foo" "foo") -> true
 	ADD_FUNCTION(
 		"=",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("=", SIZE(), 2);
 

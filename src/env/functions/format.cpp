@@ -34,8 +34,8 @@ void Environment::loadFormat()
 		return makePtr<String>(result);                                               \
 	}
 
-	ADD_FUNCTION("str", PRINTER_STRING(false, ""));
-	ADD_FUNCTION("pr-str", PRINTER_STRING(true, " "));
+	ADD_FUNCTION("str", "", "", PRINTER_STRING(false, ""));
+	ADD_FUNCTION("pr-str", "", "", PRINTER_STRING(true, " "));
 
 #define PRINTER_PRINT(print_readably)                                    \
 	{                                                                    \
@@ -52,8 +52,8 @@ void Environment::loadFormat()
 		return makePtr<Constant>();                                      \
 	}
 
-	ADD_FUNCTION("prn", PRINTER_PRINT(true));
-	ADD_FUNCTION("println", PRINTER_PRINT(false));
+	ADD_FUNCTION("prn", "", "", PRINTER_PRINT(true));
+	ADD_FUNCTION("println", "", "", PRINTER_PRINT(false));
 }
 
 } // namespace blaze

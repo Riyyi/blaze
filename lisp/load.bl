@@ -1,9 +1,11 @@
 
-(defn load-file [filename]
-  (eval (read-string (str "(do " (slurp filename) "\nnil)"))))
+(defn load-file [file]
+  "Load the Lisp file named FILE."
+  (eval (read-string (str "(do " (slurp file) "\nnil)"))))
 
-(defn load [filename]
-  (eval (read-string (str "(let* [] (do " (slurp filename) "))"))))
+(defn load [file]
+  "Load the Lisp file named FILE."
+  (eval (read-string (str "(let* [] (do " (slurp file) "))"))))
 
 ;; Local Variables:
 ;; eval: (emacs-lisp-mode)

@@ -5,9 +5,7 @@
  */
 
 #include <chrono>  // std::chrono::sytem_clock
-#include <cstddef> // size_t
 #include <cstdint> // int64_t
-#include <memory>  // std::static_pointer_cast
 
 #include "ast.h"
 #include "env/macro.h"
@@ -22,6 +20,8 @@ void Environment::loadOther()
 	// (throw x)
 	ADD_FUNCTION(
 		"throw",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("throw", SIZE(), 1);
 
@@ -35,6 +35,8 @@ void Environment::loadOther()
 	// (time-ms)
 	ADD_FUNCTION(
 		"time-ms",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("time-ms", SIZE(), 0);
 

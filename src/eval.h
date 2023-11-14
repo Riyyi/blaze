@@ -6,20 +6,26 @@
 
 #pragma once
 
-#include <list>
-#include <stack>
+#include <vector>
 
 #include "env/environment.h"
 #include "forward.h"
 
 namespace blaze {
 
-class List;
+// All of these combined become a Function in the Environment
+struct SpecialFormParts {
+	std::string_view name;
+	std::string_view signature;
+	std::string_view documentation;
+};
 
 class Eval {
 public:
 	Eval(ValuePtr ast, EnvironmentPtr env);
 	virtual ~Eval() = default;
+
+	static void registerSpecialForm(SpecialFormParts special_form_parts);
 
 	void eval();
 
@@ -33,6 +39,7 @@ private:
 
 	ValuePtr evalDef(const ValueVector& nodes, EnvironmentPtr env);
 	ValuePtr evalDefMacro(const ValueVector& nodes, EnvironmentPtr env);
+	ValuePtr evalDescribe(const ValueVector& nodes, EnvironmentPtr env);
 	ValuePtr evalFn(const ValueVector& nodes, EnvironmentPtr env);
 	ValuePtr evalQuasiQuoteExpand(const ValueVector& nodes);
 	ValuePtr evalQuote(const ValueVector& nodes);
@@ -52,6 +59,8 @@ private:
 	ValuePtr m_ast;
 	EnvironmentPtr m_env;
 	EnvironmentPtr m_outer_env;
+
+	static std::vector<SpecialFormParts> s_special_form_parts;
 };
 
 } // namespace blaze

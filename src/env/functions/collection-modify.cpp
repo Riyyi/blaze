@@ -21,6 +21,8 @@ void Environment::loadCollectionModify()
 	// (apply + 1 2 (list 3 4)) -> (+ 1 2 3 4) -> 10
 	ADD_FUNCTION(
 		"apply",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("apply", SIZE(), 2);
 
@@ -54,6 +56,8 @@ void Environment::loadCollectionModify()
 	// (cons 1 (list 2 3))
 	ADD_FUNCTION(
 		"cons",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("cons", SIZE(), 2);
 
@@ -73,6 +77,8 @@ void Environment::loadCollectionModify()
 	// (concat (list 1) (list 2 3)) -> (1 2 3)
 	ADD_FUNCTION(
 		"concat",
+		"",
+		"",
 		{
 			size_t count = 0;
 			for (auto it = begin; it != end; ++it) {
@@ -95,6 +101,8 @@ void Environment::loadCollectionModify()
 	// (conj [1 2 3] 4 5 6)  -> [1 2 3 4 5 6]
 	ADD_FUNCTION(
 		"conj",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("conj", SIZE(), 1);
 
@@ -123,6 +131,8 @@ void Environment::loadCollectionModify()
 	// (map (fn* (x) (* x 2)) (list 1 2 3)) -> (2 4 6)
 	ADD_FUNCTION(
 		"map",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("map", SIZE(), 2);
 
@@ -152,6 +162,8 @@ void Environment::loadCollectionModify()
 	// (set-nth (list 1 2 3) 1 "foo") -> (1 "foo" 3)
 	ADD_FUNCTION(
 		"set-nth",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("set-nth-element", SIZE(), 3);
 
@@ -180,6 +192,8 @@ void Environment::loadCollectionModify()
 	// (seq "foo")    -> ("f" "o" "o")
 	ADD_FUNCTION(
 		"seq",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("seq", SIZE(), 1);
 
@@ -230,6 +244,8 @@ void Environment::loadCollectionModify()
 	// (assoc {:a 1 :b 2} :a 3 :c 1) -> {:a 3 :b 2 :c 1}
 	ADD_FUNCTION(
 		"assoc",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("assoc", SIZE(), 1);
 
@@ -250,6 +266,8 @@ void Environment::loadCollectionModify()
 	// (dissoc {:a 1 :b 2 :c 3} :a :c :d) -> {:b 2}
 	ADD_FUNCTION(
 		"dissoc",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("dissoc", SIZE(), 1);
 

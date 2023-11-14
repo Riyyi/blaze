@@ -19,6 +19,8 @@ void Environment::loadRepl()
 	// REPL reader
 	ADD_FUNCTION(
 		"read-string",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("read-string", SIZE(), 1);
 
@@ -31,6 +33,8 @@ void Environment::loadRepl()
 	// Read file contents
 	ADD_FUNCTION(
 		"slurp",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("slurp", SIZE(), 1);
 
@@ -45,6 +49,8 @@ void Environment::loadRepl()
 	// Prompt readline
 	ADD_FUNCTION(
 		"readline",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("readline", SIZE(), 1);
 
@@ -56,6 +62,8 @@ void Environment::loadRepl()
 	// REPL eval
 	ADD_FUNCTION(
 		"eval",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("eval", SIZE(), 1);
 

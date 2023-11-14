@@ -22,9 +22,9 @@ void Environment::loadPredicate()
 	}
 
 	// (nil? nil)
-	ADD_FUNCTION("nil?", IS_CONSTANT("nil?", Constant::Nil));
-	ADD_FUNCTION("true?", IS_CONSTANT("true?", Constant::True));
-	ADD_FUNCTION("false?", IS_CONSTANT("false?", Constant::False));
+	ADD_FUNCTION("nil?", "", "", IS_CONSTANT("nil?", Constant::Nil));
+	ADD_FUNCTION("true?", "", "", IS_CONSTANT("true?", Constant::True));
+	ADD_FUNCTION("false?", "", "", IS_CONSTANT("false?", Constant::False));
 
 	// -----------------------------------------
 
@@ -47,18 +47,20 @@ void Environment::loadPredicate()
 	}
 
 	// (symbol? 'foo)
-	ADD_FUNCTION("atom?", IS_TYPE(Atom));
-	ADD_FUNCTION("keyword?", IS_TYPE(Keyword));
-	ADD_FUNCTION("list?", IS_TYPE(List));
-	ADD_FUNCTION("map?", IS_TYPE(HashMap));
-	ADD_FUNCTION("number?", IS_TYPE(Number));
-	ADD_FUNCTION("sequential?", IS_TYPE(Collection));
-	ADD_FUNCTION("string?", IS_TYPE(String));
-	ADD_FUNCTION("symbol?", IS_TYPE(Symbol));
-	ADD_FUNCTION("vector?", IS_TYPE(Vector));
+	ADD_FUNCTION("atom?", "", "", IS_TYPE(Atom));
+	ADD_FUNCTION("keyword?", "", "", IS_TYPE(Keyword));
+	ADD_FUNCTION("list?", "", "", IS_TYPE(List));
+	ADD_FUNCTION("map?", "", "", IS_TYPE(HashMap));
+	ADD_FUNCTION("number?", "", "", IS_TYPE(Number));
+	ADD_FUNCTION("sequential?", "", "", IS_TYPE(Collection));
+	ADD_FUNCTION("string?", "", "", IS_TYPE(String));
+	ADD_FUNCTION("symbol?", "", "", IS_TYPE(Symbol));
+	ADD_FUNCTION("vector?", "", "", IS_TYPE(Vector));
 
 	ADD_FUNCTION(
 		"fn?",
+		"",
+		"",
 		{
 			bool result = true;
 
@@ -78,6 +80,8 @@ void Environment::loadPredicate()
 
 	ADD_FUNCTION(
 		"macro?",
+		"",
+		"",
 		{
 			bool result = true;
 
@@ -101,6 +105,8 @@ void Environment::loadPredicate()
 	// (contains? {"bar" 5} "foo") -> false
 	ADD_FUNCTION(
 		"contains?",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("contains?", SIZE(), 2);
 
@@ -117,6 +123,8 @@ void Environment::loadPredicate()
 	// (empty? [] [1 2 3] []) -> false
 	ADD_FUNCTION(
 		"empty?",
+		"",
+		"",
 		{
 			bool result = true;
 

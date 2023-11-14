@@ -19,6 +19,8 @@ void Environment::loadCollectionConstructor()
 	// (list 1 2) -> (1 2)
 	ADD_FUNCTION(
 		"list",
+		"",
+		"",
 		{
 			return makePtr<List>(begin, end);
 		});
@@ -26,6 +28,8 @@ void Environment::loadCollectionConstructor()
 	// (make-list 4 nil) -> (nil nil nil nil)
 	ADD_FUNCTION(
 		"make-list",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("make-list", SIZE(), 2);
 
@@ -80,6 +84,8 @@ void Environment::loadCollectionConstructor()
 	// (vec (list 1 2 3))
 	ADD_FUNCTION(
 		"vec",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("vec", SIZE(), 1);
 
@@ -95,6 +101,8 @@ void Environment::loadCollectionConstructor()
 	// (vector 1 2 3) -> [1 2 3]
 	ADD_FUNCTION(
 		"vector",
+		"",
+		"",
 		{
 			auto result = makePtr<Vector>();
 
@@ -106,6 +114,8 @@ void Environment::loadCollectionConstructor()
 	// (hash-map "foo" 5 :bar 10) -> {"foo" 5 :bar 10}
 	ADD_FUNCTION(
 		"hash-map",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_EVEN("hash-map", SIZE());
 

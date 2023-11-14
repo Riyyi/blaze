@@ -21,6 +21,8 @@ void Environment::loadCollectionAccess()
 	// (count {:foo 2 :bar 3}) -> 2
 	ADD_FUNCTION(
 		"count",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("count", SIZE(), 1);
 
@@ -48,6 +50,8 @@ void Environment::loadCollectionAccess()
 	// (first (list 1 2 3)) -> 1
 	ADD_FUNCTION(
 		"first",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("first", SIZE(), 1);
 
@@ -64,6 +68,8 @@ void Environment::loadCollectionAccess()
 	// (nth (list 1 2 3) 0) -> 1
 	ADD_FUNCTION(
 		"nth",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("nth", SIZE(), 2);
 
@@ -83,6 +89,8 @@ void Environment::loadCollectionAccess()
 	// (rest (list 1 2 3)) -> (2 3)
 	ADD_FUNCTION(
 		"rest",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("rest", SIZE(), 1);
 
@@ -101,6 +109,8 @@ void Environment::loadCollectionAccess()
 	// (get {:kw "value"} :kw) -> "value"
 	ADD_FUNCTION(
 		"get",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("get", SIZE(), 1);
 
@@ -123,6 +133,8 @@ void Environment::loadCollectionAccess()
 	// (keys {"foo" 3 :bar 5}) -> ("foo" :bar)
 	ADD_FUNCTION(
 		"keys",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("keys", SIZE(), 1);
 
@@ -149,6 +161,8 @@ void Environment::loadCollectionAccess()
 	// (vals {"foo" 3 :bar 5}) -> (3 5)
 	ADD_FUNCTION(
 		"vals",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("vals", SIZE(), 1);
 

@@ -17,6 +17,8 @@ void Environment::loadMeta()
 	// (meta [1 2 3])
 	ADD_FUNCTION(
 		"meta",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("meta", SIZE(), 1);
 
@@ -36,6 +38,8 @@ void Environment::loadMeta()
 	// (with-meta [1 2 3] "some metadata")
 	ADD_FUNCTION(
 		"with-meta",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("with-meta", SIZE(), 2);
 

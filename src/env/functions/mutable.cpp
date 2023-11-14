@@ -20,6 +20,8 @@ void Environment::loadMutable()
 	// (atom 1)
 	ADD_FUNCTION(
 		"atom",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("atom", SIZE(), 1);
 
@@ -29,6 +31,8 @@ void Environment::loadMutable()
 	// (deref myatom)
 	ADD_FUNCTION(
 		"deref",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("deref", SIZE(), 1);
 
@@ -40,6 +44,8 @@ void Environment::loadMutable()
 	// (reset! myatom 2)
 	ADD_FUNCTION(
 		"reset!",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_IS("reset!", SIZE(), 2);
 
@@ -54,6 +60,8 @@ void Environment::loadMutable()
 	// (swap! myatom (fn* [x y] (+ 1 x y)) 2) -> (deref (def! myatom (atom ((fn* [x y] (+ 1 x y)) (deref myatom) 2))))
 	ADD_FUNCTION(
 		"swap!",
+		"",
+		"",
 		{
 			CHECK_ARG_COUNT_AT_LEAST("swap!", SIZE(), 2);
 

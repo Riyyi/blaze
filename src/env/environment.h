@@ -16,6 +16,14 @@
 
 namespace blaze {
 
+// All of these combined become a Function in the Environment
+struct FunctionParts {
+	std::string_view name;
+	std::string_view signature;
+	std::string_view documentation;
+	FunctionType function;
+};
+
 class Environment {
 public:
 	virtual ~Environment() = default;
@@ -26,7 +34,7 @@ public:
 	static EnvironmentPtr create(const ValuePtr lambda, ValueVector&& arguments);
 
 	static void loadFunctions();
-	static void registerFunction(const std::string& name, FunctionType function);
+	static void registerFunction(FunctionParts function_parts);
 	static void installFunctions(EnvironmentPtr env);
 
 	bool exists(const std::string& symbol);
@@ -53,7 +61,7 @@ private:
 	EnvironmentPtr m_outer { nullptr };
 	std::unordered_map<std::string, ValuePtr> m_values;
 
-	static std::unordered_map<std::string, FunctionType> s_functions;
+	static std::vector<FunctionParts> s_function_parts;
 	static std::vector<std::string> s_lambdas;
 };
 

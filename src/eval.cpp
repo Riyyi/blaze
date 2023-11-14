@@ -20,6 +20,8 @@
 
 namespace blaze {
 
+std::vector<SpecialFormParts> Eval::s_special_form_parts;
+
 Eval::Eval(ValuePtr ast, EnvironmentPtr env)
 	: m_ast(ast)
 	, m_env(env)
@@ -28,6 +30,11 @@ Eval::Eval(ValuePtr ast, EnvironmentPtr env)
 }
 
 // -----------------------------------------
+
+void Eval::registerSpecialForm(SpecialFormParts special_form_parts)
+{
+	s_special_form_parts.push_back(special_form_parts);
+}
 
 void Eval::eval()
 {
@@ -79,6 +86,9 @@ ValuePtr Eval::evalImpl()
 			}
 			if (symbol == "defmacro!") {
 				return evalDefMacro(nodes, env);
+			}
+			if (symbol == "describe") {
+				return evalDescribe(nodes, env);
 			}
 			if (symbol == "fn*") {
 				return evalFn(nodes, env);

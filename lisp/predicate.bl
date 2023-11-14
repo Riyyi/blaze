@@ -1,6 +1,7 @@
 
-(defn not [cond]
-  (if cond false true))
+(defn not [object]
+  "Return true if OBJECT is nil or false, and return false otherwise."
+  (if object false true))
 
 ;; Local Variables:
 ;; eval: (emacs-lisp-mode)

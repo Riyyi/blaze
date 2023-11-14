@@ -18,7 +18,7 @@
 
 namespace blaze {
 
-std::unordered_map<std::string, FunctionType> Environment::s_functions;
+std::vector<FunctionParts> Environment::s_function_parts;
 std::vector<std::string> Environment::s_lambdas;
 
 EnvironmentPtr Environment::create()
@@ -118,15 +118,20 @@ void Environment::loadFunctions()
 	}
 }
 
-void Environment::registerFunction(const std::string& name, FunctionType function)
+void Environment::registerFunction(FunctionParts function_parts)
 {
-	s_functions.insert_or_assign(name, function);
+	s_function_parts.push_back(function_parts);
 }
 
 void Environment::installFunctions(EnvironmentPtr env)
 {
-	for (const auto& [name, function] : s_functions) {
-		env->set(name, makePtr<Function>(name, function));
+	for (const auto& function_parts : s_function_parts) {
+		env->set(std::string(function_parts.name),
+		         makePtr<Function>(
+					 function_parts.name,
+					 function_parts.signature,
+					 function_parts.documentation,
+					 function_parts.function));
 	}
 	for (const auto& lambda : s_lambdas) {
 		// Ensure all s-exprs are run with (do)

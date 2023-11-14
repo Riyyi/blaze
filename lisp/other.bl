@@ -1,5 +1,5 @@
 
-(def! *host-language* "C++")
+(def *host-language* "C++")
 
 ;; Local Variables:
 ;; eval: (emacs-lisp-mode)

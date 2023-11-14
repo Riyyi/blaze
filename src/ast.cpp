@@ -225,8 +225,10 @@ Callable::Callable(ValuePtr meta)
 
 // -----------------------------------------
 
-Function::Function(const std::string& name, FunctionType function)
+Function::Function(std::string_view name, std::string_view signature, std::string_view documentation, FunctionType function)
 	: m_name(name)
+	, m_signature(signature)
+	, m_documentation(documentation)
 	, m_function(function)
 {
 }
