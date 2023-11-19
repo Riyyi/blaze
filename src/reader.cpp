@@ -16,9 +16,14 @@
 
 #include "ast.h"
 #include "reader.h"
+#include "settings.h"
 #include "types.h"
 
 namespace blaze {
+
+Reader::Reader()
+{
+}
 
 Reader::Reader(std::vector<Token>&& tokens) noexcept
 	: m_tokens(std::move(tokens))
@@ -362,54 +367,126 @@ void Reader::retreat()
 
 // -----------------------------------------
 
-void Reader::dump()
+void Reader::dump(ValuePtr node)
 {
-	dumpImpl(m_node);
+	m_indentation = 0;
+	dumpImpl((node != nullptr) ? node : m_node);
 }
 
 void Reader::dumpImpl(ValuePtr node)
 {
-	std::string indentation = std::string(m_indentation * 2, ' ');
+	std::string indentation = std::string(m_indentation * INDENTATION_WIDTH, ' ');
+	print("{}", indentation);
+
+	bool pretty_print = Settings::the().get("pretty-print") == "1";
+	auto blue = fg(ruc::format::TerminalColor::BrightBlue);
+	auto yellow = fg(ruc::format::TerminalColor::Yellow);
 
 	Value* node_raw_ptr = node.get();
 	if (is<Collection>(node_raw_ptr)) {
-		auto nodes = std::static_pointer_cast<List>(node)->nodesRead();
-		print("{}", indentation);
-		print(fg(ruc::format::TerminalColor::Blue), "{}Container", (is<List>(node_raw_ptr)) ? "List" : "Vector");
+		auto container = (is<List>(node_raw_ptr)) ? "List" : "Vector";
+		auto parens = (is<List>(node_raw_ptr)) ? "()" : "[]";
+		pretty_print ? print(blue, "{}", container) : print("{}", container);
 		print(" <");
-		print(fg(ruc::format::TerminalColor::Blue), "{}", (is<List>(node_raw_ptr)) ? "()" : "{}");
+		pretty_print ? print(blue, "{}", parens) : print("{}", parens);
 		print(">\n");
 		m_indentation++;
+		auto nodes = std::static_pointer_cast<List>(node)->nodesRead();
 		for (auto node : nodes) {
 			dumpImpl(node);
 		}
 		m_indentation--;
 		return;
 	}
+	else if (is<HashMap>(node_raw_ptr)) {
+		auto hash_map = std::static_pointer_cast<HashMap>(node);
+		auto elements = hash_map->elements();
+		pretty_print ? print(blue, "HashMap") : print("HashMap");
+		print(" <");
+		pretty_print ? print(blue, "{{}}") : print("{{}}");
+		print(">\n");
+		m_indentation++;
+		ValuePtr key_node = nullptr;
+		for (auto element : elements) {
+			bool is_keyword = element.first.front() == 0x7f; // 127
+			is_keyword
+				? dumpImpl(makePtr<Keyword>(element.first.substr(1)))
+				: dumpImpl(makePtr<String>(element.first));
+			m_indentation++;
+			dumpImpl(element.second);
+			m_indentation--;
+		}
+		m_indentation--;
+		return;
+	}
 	else if (is<String>(node_raw_ptr)) {
-		print("{}", indentation);
-		print(fg(ruc::format::TerminalColor::Yellow), "StringNode");
+		pretty_print ? print(yellow, "StringNode") : print("StringNode");
 		print(" <{}>", node);
 	}
 	else if (is<Keyword>(node_raw_ptr)) {
-		print("{}", indentation);
-		print(fg(ruc::format::TerminalColor::Yellow), "KeywordNode");
+		pretty_print ? print(yellow, "KeywordNode") : print("KeywordNode");
 		print(" <{}>", node);
 	}
 	else if (is<Number>(node_raw_ptr)) {
-		print("{}", indentation);
-		print(fg(ruc::format::TerminalColor::Yellow), "NumberNode");
+		pretty_print ? print(yellow, "NumberNode") : print("NumberNode");
 		print(" <{}>", node);
 	}
 	else if (is<Constant>(node_raw_ptr)) {
-		print("{}", indentation);
-		print(fg(ruc::format::TerminalColor::Yellow), "ValueNode");
+		pretty_print ? print(yellow, "ValueNode") : print("ValueNode");
 		print(" <{}>", node);
 	}
 	else if (is<Symbol>(node_raw_ptr)) {
-		print("{}", indentation);
-		print(fg(ruc::format::TerminalColor::Yellow), "SymbolNode");
+		pretty_print ? print(yellow, "SymbolNode") : print("SymbolNode");
 		print(" <{}>", node);
+	}
+	else if (is<Function>(node_raw_ptr)) {
+		auto function = std::static_pointer_cast<Function>(node);
+		pretty_print ? print(blue, "Function") : print("Function");
+		print(" <");
+		pretty_print ? print(blue, "{}", function->name()) : print("{}", function->name());
+		print(">\n");
+
+		m_indentation++;
+		indentation = std::string(m_indentation * INDENTATION_WIDTH, ' ');
+
+		// bindings
+		print("{}", indentation);
+		pretty_print ? print(blue, "Bindings") : print("Bindings");
+		print(" <{}>\n", function->bindings());
+
+		m_indentation--;
+		return;
+	}
+	else if (is<Lambda>(node_raw_ptr) || is<Macro>(node_raw_ptr)) {
+		auto container = (is<Lambda>(node_raw_ptr)) ? "Lambda" : "Macro";
+		auto lambda = std::static_pointer_cast<Lambda>(node);
+		pretty_print ? print(blue, "{}", container) : print("{}", container);
+		print(" <");
+		pretty_print ? print(blue, "{:p}", node_raw_ptr) : print("{:p}", node_raw_ptr);
+		print(">\n");
+
+		m_indentation++;
+		indentation = std::string(m_indentation * INDENTATION_WIDTH, ' ');
+
+		// bindings
+		print("{}", indentation);
+		pretty_print ? print(blue, "Bindings") : print("Bindings");
+		print(" <");
+		const auto& bindings = lambda->bindings();
+		for (size_t i = 0; i < bindings.size(); ++i) {
+			print("{}{}", (i > 0) ? " " : "", bindings[i]);
+		}
+		print(">\n");
+
+		// body
+		dumpImpl(lambda->body());
+
+		m_indentation--;
+		return;
+	}
+	else if (is<Atom>(node_raw_ptr)) {
+		pretty_print ? print(yellow, "AtomNode") : print("AtomNode");
+		print(" <{}>", std::static_pointer_cast<Atom>(node)->deref());
 	}
 	print("\n");
 }

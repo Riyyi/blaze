@@ -332,12 +332,12 @@ using FunctionType = std::function<ValuePtr(ValueVectorConstIt, ValueVectorConst
 
 class Function final : public Callable {
 public:
-	Function(std::string_view name, std::string_view signature, std::string_view documentation, FunctionType function);
+	Function(std::string_view name, std::string_view bindings, std::string_view documentation, FunctionType function);
 	Function(const Function& that, ValuePtr meta);
 	virtual ~Function() = default;
 
 	std::string_view name() const { return m_name; }
-	std::string_view signature() const { return m_signature; }
+	std::string_view bindings() const { return m_bindings; }
 	std::string_view documentation() const { return m_documentation; }
 	FunctionType function() const { return m_function; }
 
@@ -347,7 +347,7 @@ private:
 	virtual bool isFunction() const override { return true; }
 
 	std::string_view m_name;
-	std::string_view m_signature;
+	std::string_view m_bindings;
 	std::string_view m_documentation;
 	const FunctionType m_function;
 };

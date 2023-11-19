@@ -172,8 +172,8 @@ ValuePtr Eval::evalDescribe(const ValueVector& nodes, EnvironmentPtr env)
 		type = "function";
 
 		auto function = std::static_pointer_cast<Function>(value);
-		signature += !function->signature().empty() ? " " : "";
-		signature += function->signature();
+		signature += !function->bindings().empty() ? " " : "";
+		signature += function->bindings();
 
 		documentation = function->documentation();
 	}

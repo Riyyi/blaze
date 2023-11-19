@@ -7,6 +7,7 @@
 #include <iterator> // std::next
 #include <string>
 
+#include "reader.h"
 #include "ruc/format/print.h"
 
 #include "ast.h"
@@ -54,6 +55,21 @@ void Environment::loadFormat()
 
 	ADD_FUNCTION("prn", "", "", PRINTER_PRINT(true));
 	ADD_FUNCTION("println", "", "", PRINTER_PRINT(false));
+
+	// -------------------------------------
+
+	ADD_FUNCTION(
+		"dump",
+		"arg",
+		"Print AST of the value ARG.",
+		{
+			CHECK_ARG_COUNT_IS("dump", SIZE(), 1);
+
+			Reader reader;
+			reader.dump(*begin);
+
+			return nullptr;
+		});
 }
 
 } // namespace blaze

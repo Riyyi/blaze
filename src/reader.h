@@ -13,17 +13,20 @@
 #include "ast.h"
 #include "lexer.h"
 
+#define INDENTATION_WIDTH 2
+
 namespace blaze {
 
 // Parsing -> creates AST
 class Reader {
 public:
+	Reader();
 	Reader(std::vector<Token>&& tokens) noexcept;
 	virtual ~Reader();
 
 	void read();
 
-	void dump();
+	void dump(ValuePtr node = nullptr);
 
 	ValuePtr node() { return m_node; }
 
