@@ -17,12 +17,12 @@ public:
 	Printer();
 	virtual ~Printer();
 
-	std::string print(ValuePtr node, bool print_readably = true);
-	std::string printNoErrorCheck(ValuePtr node, bool print_readably = true);
+	std::string print(ValuePtr value, bool print_readably = true);
+	std::string printNoErrorCheck(ValuePtr value, bool print_readably = true);
 
 private:
 	void init();
-	void printImpl(ValuePtr node, bool print_readably = true);
+	void printImpl(ValuePtr value, bool print_readably = true);
 	void printError();
 
 	bool m_first_node { true };

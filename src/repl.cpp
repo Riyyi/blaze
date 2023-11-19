@@ -74,11 +74,11 @@ auto eval(ValuePtr ast, EnvironmentPtr env) -> ValuePtr
 	return eval.ast();
 }
 
-static auto print(ValuePtr exp) -> std::string
+static auto print(ValuePtr value) -> std::string
 {
 	Printer printer;
 
-	return printer.print(exp, true);
+	return printer.print(value, true);
 }
 
 static auto rep(std::string_view input, EnvironmentPtr env) -> std::string

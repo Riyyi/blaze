@@ -31,7 +31,7 @@ Printer::~Printer()
 
 // -----------------------------------------
 
-std::string Printer::print(ValuePtr node, bool print_readably)
+std::string Printer::print(ValuePtr value, bool print_readably)
 {
 	if (Error::the().hasAnyError()) {
 		init();
@@ -39,18 +39,18 @@ std::string Printer::print(ValuePtr node, bool print_readably)
 		return m_print;
 	}
 
-	return printNoErrorCheck(node, print_readably);
+	return printNoErrorCheck(value, print_readably);
 }
 
-std::string Printer::printNoErrorCheck(ValuePtr node, bool print_readably)
+std::string Printer::printNoErrorCheck(ValuePtr value, bool print_readably)
 {
 	init();
 
-	if (node == nullptr) {
+	if (value == nullptr) {
 		return {};
 	}
 
-	printImpl(node, print_readably);
+	printImpl(value, print_readably);
 
 	return m_print;
 }
@@ -64,7 +64,7 @@ void Printer::init()
 	m_print = "";
 }
 
-void Printer::printImpl(ValuePtr node, bool print_readably)
+void Printer::printImpl(ValuePtr value, bool print_readably)
 {
 	bool pretty_print = Settings::the().get("pretty-print") == "1";
 
@@ -74,25 +74,25 @@ void Printer::printImpl(ValuePtr node, bool print_readably)
 		}
 	};
 
-	Value* node_raw_ptr = node.get();
-	if (is<Collection>(node_raw_ptr)) {
+	Value* value_raw_ptr = value.get();
+	if (is<Collection>(value_raw_ptr)) {
 		printSpacing();
-		m_print += (is<List>(node_raw_ptr)) ? '(' : '[';
+		m_print += (is<List>(value_raw_ptr)) ? '(' : '[';
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto nodes = std::static_pointer_cast<Collection>(node)->nodesRead();
+		auto nodes = std::static_pointer_cast<Collection>(value)->nodesRead();
 		for (auto node : nodes) {
 			printImpl(node, print_readably);
 			m_previous_node_is_list = false;
 		}
-		m_print += (is<List>(node_raw_ptr)) ? ')' : ']';
+		m_print += (is<List>(value_raw_ptr)) ? ')' : ']';
 	}
-	else if (is<HashMap>(node_raw_ptr)) {
+	else if (is<HashMap>(value_raw_ptr)) {
 		printSpacing();
 		m_print += "{";
 		m_first_node = false;
 		m_previous_node_is_list = true;
-		auto elements = std::static_pointer_cast<HashMap>(node)->elements();
+		auto elements = std::static_pointer_cast<HashMap>(value)->elements();
 		for (auto it = elements.begin(); it != elements.end(); ++it) {
 			m_print += ::format("{} ", (it->first.front() == 0x7f) ? ":" + it->first.substr(1) : '"' + it->first + '"'); // 127
 			printImpl(it->second, print_readably);
@@ -104,8 +104,8 @@ void Printer::printImpl(ValuePtr node, bool print_readably)
 		m_previous_node_is_list = false;
 		m_print += '}';
 	}
-	else if (is<String>(node_raw_ptr)) {
-		std::string text = std::static_pointer_cast<String>(node)->data();
+	else if (is<String>(value_raw_ptr)) {
+		std::string text = std::static_pointer_cast<String>(value)->data();
 		if (print_readably) {
 			text = replaceAll(text, "\\", "\\\\");
 			text = replaceAll(text, "\"", "\\\"");
@@ -120,44 +120,44 @@ void Printer::printImpl(ValuePtr node, bool print_readably)
 			m_print += ::format("{}", text);
 		}
 	}
-	else if (is<Keyword>(node_raw_ptr)) {
+	else if (is<Keyword>(value_raw_ptr)) {
 		printSpacing();
-		m_print += ::format(":{}", std::static_pointer_cast<Keyword>(node)->keyword().substr(1));
+		m_print += ::format(":{}", std::static_pointer_cast<Keyword>(value)->keyword().substr(1));
 	}
-	else if (is<Number>(node_raw_ptr)) {
+	else if (is<Number>(value_raw_ptr)) {
 		printSpacing();
-		m_print += ::format("{}", std::static_pointer_cast<Number>(node)->number());
+		m_print += ::format("{}", std::static_pointer_cast<Number>(value)->number());
 	}
-	else if (is<Constant>(node_raw_ptr)) {
+	else if (is<Constant>(value_raw_ptr)) {
 		printSpacing();
-		std::string value;
-		switch (std::static_pointer_cast<Constant>(node)->state()) {
-		case Constant::Nil: value = "nil"; break;
-		case Constant::True: value = "true"; break;
-		case Constant::False: value = "false"; break;
+		std::string constant;
+		switch (std::static_pointer_cast<Constant>(value)->state()) {
+		case Constant::Nil: constant = "nil"; break;
+		case Constant::True: constant = "true"; break;
+		case Constant::False: constant = "false"; break;
 		}
-		m_print += ::format("{}", value);
+		m_print += ::format("{}", constant);
 	}
-	else if (is<Symbol>(node_raw_ptr)) {
+	else if (is<Symbol>(value_raw_ptr)) {
 		printSpacing();
-		m_print += ::format("{}", std::static_pointer_cast<Symbol>(node)->symbol());
+		m_print += ::format("{}", std::static_pointer_cast<Symbol>(value)->symbol());
 	}
-	else if (is<Function>(node_raw_ptr)) {
+	else if (is<Function>(value_raw_ptr)) {
 		printSpacing();
-		m_print += ::format("#<builtin-function>({})", std::static_pointer_cast<Function>(node)->name());
+		m_print += ::format("#<builtin-function>({})", std::static_pointer_cast<Function>(value)->name());
 	}
-	else if (is<Lambda>(node_raw_ptr)) {
+	else if (is<Lambda>(value_raw_ptr)) {
 		printSpacing();
-		m_print += ::format("#<user-function>({:p})", node_raw_ptr);
+		m_print += ::format("#<user-function>({:p})", value_raw_ptr);
 	}
-	else if (is<Macro>(node_raw_ptr)) {
+	else if (is<Macro>(value_raw_ptr)) {
 		printSpacing();
-		m_print += ::format("#<user-macro>({:p})", node_raw_ptr);
+		m_print += ::format("#<user-macro>({:p})", value_raw_ptr);
 	}
-	else if (is<Atom>(node_raw_ptr)) {
+	else if (is<Atom>(value_raw_ptr)) {
 		printSpacing();
 		m_print += "(atom ";
-		printImpl(std::static_pointer_cast<Atom>(node)->deref(), print_readably);
+		printImpl(std::static_pointer_cast<Atom>(value)->deref(), print_readably);
 		m_print += ")";
 	}
 }
