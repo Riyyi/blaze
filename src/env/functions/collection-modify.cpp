@@ -12,6 +12,7 @@
 #include "env/environment.h"
 #include "env/macro.h"
 #include "forward.h"
+#include "repl.h"
 #include "util.h"
 
 namespace blaze {
@@ -47,7 +48,7 @@ void Environment::loadCollectionModify()
 			}
 			else {
 				auto lambda = std::static_pointer_cast<Lambda>(callable);
-				value = eval(lambda->body(), Environment::create(lambda, std::move(arguments)));
+				value = Repl::eval(lambda->body(), Environment::create(lambda, std::move(arguments)));
 			}
 
 			return value;
@@ -152,7 +153,7 @@ void Environment::loadCollectionModify()
 				auto lambda = std::static_pointer_cast<Lambda>(callable);
 				auto collection_nodes = collection->nodesRead();
 				for (size_t i = 0; i < count; ++i) {
-					nodes.at(i) = (eval(lambda->body(), Environment::create(lambda, { collection_nodes[i] })));
+					nodes.at(i) = (Repl::eval(lambda->body(), Environment::create(lambda, { collection_nodes[i] })));
 				}
 			}
 

@@ -10,6 +10,7 @@
 
 #include "ast.h"
 #include "env/macro.h"
+#include "repl.h"
 #include "util.h"
 
 namespace blaze {
@@ -27,7 +28,7 @@ void Environment::loadRepl()
 			VALUE_CAST(node, String, (*begin));
 			std::string input = node->data();
 
-			return read(input);
+			return Repl::read(input);
 		});
 
 	// Read file contents
@@ -56,7 +57,7 @@ void Environment::loadRepl()
 
 			VALUE_CAST(prompt, String, (*begin));
 
-			return readline(prompt->data());
+			return Repl::readline(prompt->data());
 		});
 
 	// REPL eval
@@ -67,7 +68,7 @@ void Environment::loadRepl()
 		{
 			CHECK_ARG_COUNT_IS("eval", SIZE(), 1);
 
-			return eval(*begin, nullptr);
+			return Repl::eval(*begin, nullptr);
 		});
 }
 

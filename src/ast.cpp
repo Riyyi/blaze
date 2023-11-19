@@ -226,7 +226,8 @@ Callable::Callable(ValuePtr meta)
 // -----------------------------------------
 
 Function::Function(std::string_view name, std::string_view bindings, std::string_view documentation, FunctionType function)
-	: m_name(name)
+	: Callable()
+	, m_name(name)
 	, m_bindings(bindings)
 	, m_documentation(documentation)
 	, m_function(function)
@@ -243,14 +244,16 @@ Function::Function(const Function& that, ValuePtr meta)
 // -----------------------------------------
 
 Lambda::Lambda(const std::vector<std::string>& bindings, ValuePtr body, EnvironmentPtr env)
-	: m_bindings(bindings)
+	: Callable()
+	, m_bindings(bindings)
 	, m_body(body)
 	, m_env(env)
 {
 }
 
 Lambda::Lambda(const Lambda& that)
-	: m_bindings(that.m_bindings)
+	: Callable()
+	, m_bindings(that.m_bindings)
 	, m_body(that.m_body)
 	, m_env(that.m_env)
 {

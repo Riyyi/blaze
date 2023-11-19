@@ -11,6 +11,7 @@
 #include "env/environment.h"
 #include "env/macro.h"
 #include "forward.h"
+#include "repl.h"
 #include "util.h"
 
 namespace blaze {
@@ -82,7 +83,7 @@ void Environment::loadMutable()
 			}
 			else {
 				auto lambda = std::static_pointer_cast<Lambda>(callable);
-				value = eval(lambda->body(), Environment::create(lambda, std::move(arguments)));
+				value = Repl::eval(lambda->body(), Environment::create(lambda, std::move(arguments)));
 			}
 
 			return atom->reset(value);

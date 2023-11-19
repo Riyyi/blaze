@@ -96,7 +96,7 @@ ValuePtr Eval::evalDescribe(const ValueVector& nodes, EnvironmentPtr env)
 	std::string documentation;
 	std::string value_string;
 
-	bool pretty_print = Settings::the().get("pretty-print") == "1";
+	bool pretty_print = Settings::the().getEnvBool("*PRETTY-PRINT*");
 	auto bold = fg(ruc::format::TerminalColor::None) | ruc::format::Emphasis::Bold;
 
 	auto describe = [&]() {

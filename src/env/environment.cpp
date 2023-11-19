@@ -15,6 +15,7 @@
 #include "env/environment.h"
 #include "error.h"
 #include "forward.h"
+#include "repl.h"
 
 namespace blaze {
 
@@ -135,21 +136,21 @@ void Environment::installFunctions(EnvironmentPtr env)
 	}
 	for (const auto& lambda : s_lambdas) {
 		// Ensure all s-exprs are run with (do)
-		eval(read("(do " + lambda + ")"), env);
+		Repl::eval(Repl::read("(do " + lambda + ")"), env);
 	}
 }
 
 // -----------------------------------------
 
-bool Environment::exists(const std::string& symbol)
+bool Environment::exists(std::string_view symbol)
 {
-	return m_values.find(symbol) != m_values.end();
+	return m_values.find(std::string(symbol)) != m_values.end();
 }
 
-ValuePtr Environment::set(const std::string& symbol, ValuePtr value)
+ValuePtr Environment::set(std::string_view symbol, ValuePtr value)
 {
 	if (exists(symbol)) {
-		m_values.erase(symbol);
+		m_values.erase(std::string(symbol));
 	}
 
 	m_values.emplace(symbol, value);
@@ -157,10 +158,10 @@ ValuePtr Environment::set(const std::string& symbol, ValuePtr value)
 	return value;
 }
 
-ValuePtr Environment::get(const std::string& symbol)
+ValuePtr Environment::get(std::string_view symbol)
 {
 	if (exists(symbol)) {
-		return m_values[symbol];
+		return m_values[std::string(symbol)];
 	}
 
 	if (m_outer) {

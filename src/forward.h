@@ -25,11 +25,15 @@ typedef ValueVector::const_reverse_iterator ValueVectorConstReverseIt;
 class Environment;
 typedef std::shared_ptr<Environment> EnvironmentPtr;
 
+class Readline;
+
 // -----------------------------------------
 // Functions
 
-extern ValuePtr readline(const std::string& prompt);
-extern ValuePtr read(std::string_view input);
-extern ValuePtr eval(ValuePtr ast, EnvironmentPtr env);
+// -----------------------------------------
+// Variables
+
+extern Readline g_readline;
+extern EnvironmentPtr g_outer_env;
 
 } // namespace blaze

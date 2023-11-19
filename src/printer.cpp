@@ -66,7 +66,7 @@ void Printer::init()
 
 void Printer::printImpl(ValuePtr value, bool print_readably)
 {
-	bool pretty_print = Settings::the().get("pretty-print") == "1";
+	bool pretty_print = Settings::the().getEnvBool("*PRETTY-PRINT*");
 
 	auto printSpacing = [this]() -> void {
 		if (!m_first_node && !m_previous_node_is_list) {

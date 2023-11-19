@@ -4,16 +4,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <csignal> // std::signal
 #include <cstdlib> // std::exit
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "ruc/argparser.h"
-#include "ruc/format/color.h"
+#include "ruc/format/print.h"
 
-#include "ast.h"
 #include "env/environment.h"
 #include "error.h"
 #include "eval.h"
@@ -22,50 +19,51 @@
 #include "printer.h"
 #include "reader.h"
 #include "readline.h"
+#include "repl.h"
 #include "settings.h"
 
 namespace blaze {
 
-static blaze::Readline s_readline;
-static EnvironmentPtr s_outer_env = Environment::create();
+Readline g_readline;
+EnvironmentPtr g_outer_env = Environment::create();
 
-static auto cleanup(int signal) -> void
+auto Repl::cleanup(int signal) -> void
 {
-	print("\033[0m\n");
+	::print("\033[0m\n");
 	std::exit(signal);
 }
 
-auto readline(const std::string& prompt) -> ValuePtr
+auto Repl::readline(const std::string& prompt) -> ValuePtr
 {
 	std::string input;
-	if (s_readline.get(input, s_readline.createPrompt(prompt))) {
+	if (g_readline.get(input, g_readline.createPrompt(prompt))) {
 		return makePtr<String>(input);
 	}
 
 	return makePtr<Constant>();
 }
 
-auto read(std::string_view input) -> ValuePtr
+auto Repl::read(std::string_view input) -> ValuePtr
 {
 	Lexer lexer(input);
 	lexer.tokenize();
-	if (Settings::the().get("dump-lexer") == "1") {
+	if (Settings::the().getEnvBool("*DUMP-LEXER*")) {
 		lexer.dump();
 	}
 
 	Reader reader(std::move(lexer.tokens()));
 	reader.read();
-	if (Settings::the().get("dump-reader") == "1") {
+	if (Settings::the().getEnvBool("*DUMP-READER*")) {
 		reader.dump();
 	}
 
 	return reader.node();
 }
 
-auto eval(ValuePtr ast, EnvironmentPtr env) -> ValuePtr
+auto Repl::eval(ValuePtr ast, EnvironmentPtr env) -> ValuePtr
 {
 	if (env == nullptr) {
-		env = s_outer_env;
+		env = g_outer_env;
 	}
 
 	Eval eval(ast, env);
@@ -74,14 +72,14 @@ auto eval(ValuePtr ast, EnvironmentPtr env) -> ValuePtr
 	return eval.ast();
 }
 
-static auto print(ValuePtr value) -> std::string
+auto Repl::print(ValuePtr value) -> std::string
 {
 	Printer printer;
 
 	return printer.print(value, true);
 }
 
-static auto rep(std::string_view input, EnvironmentPtr env) -> std::string
+auto Repl::rep(std::string_view input, EnvironmentPtr env) -> std::string
 {
 	Error::the().clearErrors();
 	Error::the().setInput(input);
@@ -89,7 +87,7 @@ static auto rep(std::string_view input, EnvironmentPtr env) -> std::string
 	return print(eval(read(input), env));
 }
 
-static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void
+auto Repl::makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void
 {
 	size_t count = arguments.size();
 	auto nodes = ValueVector();
@@ -100,58 +98,3 @@ static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> 
 }
 
 } // namespace blaze
-
-auto main(int argc, char* argv[]) -> int
-{
-	bool dump_lexer = false;
-	bool dump_reader = false;
-	bool pretty_print = false;
-	std::string_view history_path = "~/.blaze-history";
-	std::vector<std::string> arguments;
-
-	// CLI arguments
-	ruc::ArgParser arg_parser;
-	arg_parser.addOption(dump_lexer, 'l', "dump-lexer", nullptr, nullptr);
-	arg_parser.addOption(dump_reader, 'r', "dump-reader", nullptr, nullptr);
-	arg_parser.addOption(pretty_print, 'c', "color", nullptr, nullptr);
-	arg_parser.addOption(history_path, 'h', "history-path", nullptr, nullptr, nullptr, ruc::ArgParser::Required::Yes);
-	// TODO: Add overload for addArgument(std::vector<std::string_view>)
-	arg_parser.addArgument(arguments, "arguments", nullptr, nullptr, ruc::ArgParser::Required::No);
-	arg_parser.parse(argc, argv);
-
-	// Set settings
-	blaze::Settings::the().set("dump-lexer", dump_lexer ? "1" : "0");
-	blaze::Settings::the().set("dump-reader", dump_reader ? "1" : "0");
-	blaze::Settings::the().set("pretty-print", pretty_print ? "1" : "0");
-
-	// Signal callbacks
-	std::signal(SIGINT, blaze::cleanup);
-	std::signal(SIGTERM, blaze::cleanup);
-
-	blaze::Environment::loadFunctions();
-	blaze::Environment::installFunctions(blaze::s_outer_env);
-	makeArgv(blaze::s_outer_env, arguments);
-
-	if (arguments.size() > 0) {
-		rep(format("(load-file \"{}\")", arguments.front()), blaze::s_outer_env);
-		return 0;
-	}
-
-	rep("(println (str \"Blaze [\" *host-language* \"]\"))", blaze::s_outer_env);
-
-	blaze::s_readline = blaze::Readline(pretty_print, history_path);
-
-	std::string input;
-	while (blaze::s_readline.get(input)) {
-		std::string output = rep(input, blaze::s_outer_env);
-		if (output.length() > 0) {
-			print("{}\n", output);
-		}
-	}
-
-	if (pretty_print) {
-		print("\033[0m");
-	}
-
-	return 0;
-}

@@ -8,8 +8,7 @@
 
 #include <vector>
 
-#include "env/environment.h"
-#include "forward.h"
+#include "forward.h" // EnvironmentPtr
 
 namespace blaze {
 

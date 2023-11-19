@@ -147,7 +147,7 @@ ValuePtr Reader::readList()
 		nodes.push_back(node);
 	}
 
-	if (!consumeSpecific(Token { .type = Token::Type::ParenClose })) { // )
+	if (!consumeSpecific(Token { .type = Token::Type::ParenClose, .symbol = "" })) { // )
 		Error::the().add("expected ')', got EOF");
 		return nullptr;
 	}
@@ -168,7 +168,7 @@ ValuePtr Reader::readVector()
 		nodes.push_back(node);
 	}
 
-	if (!consumeSpecific(Token { .type = Token::Type::BracketClose })) { // ]
+	if (!consumeSpecific(Token { .type = Token::Type::BracketClose, .symbol = "" })) { // ]
 		Error::the().add("expected ']', got EOF");
 	}
 
@@ -201,7 +201,7 @@ ValuePtr Reader::readHashMap()
 		elements.insert_or_assign(HashMap::getKeyString(key), value);
 	}
 
-	if (!consumeSpecific(Token { .type = Token::Type::BraceClose })) { // }
+	if (!consumeSpecific(Token { .type = Token::Type::BraceClose, .symbol = "" })) { // }
 		Error::the().add("expected '}', got EOF");
 		return nullptr;
 	}
@@ -378,7 +378,7 @@ void Reader::dumpImpl(ValuePtr node)
 	std::string indentation = std::string(m_indentation * INDENTATION_WIDTH, ' ');
 	print("{}", indentation);
 
-	bool pretty_print = Settings::the().get("pretty-print") == "1";
+	bool pretty_print = Settings::the().getEnvBool("*PRETTY-PRINT*");
 	auto blue = fg(ruc::format::TerminalColor::BrightBlue);
 	auto yellow = fg(ruc::format::TerminalColor::Yellow);
 

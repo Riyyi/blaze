@@ -37,9 +37,9 @@ public:
 	static void registerFunction(FunctionParts function_parts);
 	static void installFunctions(EnvironmentPtr env);
 
-	bool exists(const std::string& symbol);
-	ValuePtr set(const std::string& symbol, ValuePtr value);
-	ValuePtr get(const std::string& symbol);
+	bool exists(std::string_view symbol);
+	ValuePtr set(std::string_view symbol, ValuePtr value);
+	ValuePtr get(std::string_view symbol);
 
 private:
 	Environment() {}
