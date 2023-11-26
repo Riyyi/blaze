@@ -52,7 +52,9 @@ public:
 	virtual bool isHashMap() const { return false; }
 	virtual bool isString() const { return false; }
 	virtual bool isKeyword() const { return false; }
+	virtual bool isNumeric() const { return false; }
 	virtual bool isNumber() const { return false; }
+	virtual bool isDecimal() const { return false; }
 	virtual bool isConstant() const { return false; }
 	virtual bool isSymbol() const { return false; }
 	virtual bool isCallable() const { return false; }
@@ -252,8 +254,19 @@ private:
 };
 
 // -----------------------------------------
+
+class Numeric : public Value {
+public:
+	virtual ~Numeric() = default;
+
+protected:
+	Numeric() = default;
+
+	virtual bool isNumeric() const override { return true; }
+};
+
 // 123
-class Number final : public Value {
+class Number final : public Numeric {
 public:
 	Number(int64_t number);
 	virtual ~Number() = default;
@@ -266,6 +279,22 @@ private:
 	virtual bool isNumber() const override { return true; }
 
 	const int64_t m_number { 0 };
+};
+
+// 123.456
+class Decimal final : public Numeric {
+public:
+	Decimal(double decimal);
+	virtual ~Decimal() = default;
+
+	double decimal() const { return m_decimal; }
+
+	WITH_NO_META();
+
+private:
+	virtual bool isDecimal() const override { return true; }
+
+	const double m_decimal { 0 };
 };
 
 // -----------------------------------------
@@ -429,7 +458,13 @@ template<>
 inline bool Value::fastIs<Keyword>() const { return isKeyword(); }
 
 template<>
+inline bool Value::fastIs<Numeric>() const { return isNumeric(); }
+
+template<>
 inline bool Value::fastIs<Number>() const { return isNumber(); }
+
+template<>
+inline bool Value::fastIs<Decimal>() const { return isDecimal(); }
 
 template<>
 inline bool Value::fastIs<Constant>() const { return isConstant(); }

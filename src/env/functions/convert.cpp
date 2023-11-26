@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <charconv>     // std::from_chars, std::to_chars
+#include <charconv> // std::from_chars, std::to_chars
+#include <memory>
 #include <system_error> // std::errc
 
 #include "ast.h"
@@ -23,12 +24,14 @@ void Environment::loadConvert()
 		{
 			CHECK_ARG_COUNT_IS("number-to-string", SIZE(), 1);
 
-			VALUE_CAST(number, Number, (*begin));
+			IS_VALUE(Numeric, (*begin));
 
 			char result[32];
 			auto conversion = std::to_chars(result,
 		                                    result + sizeof(result),
-		                                    number->number());
+		                                    is<Number>(begin->get())
+		                                        ? std::static_pointer_cast<Number>(*begin)->number()
+		                                        : std::static_pointer_cast<Decimal>(*begin)->decimal());
 			if (conversion.ec != std::errc()) {
 				return makePtr<Constant>(Constant::Nil);
 			}
@@ -61,15 +64,23 @@ void Environment::loadConvert()
 			VALUE_CAST(string_value, String, (*begin));
 			std::string data = string_value->data();
 
-			int64_t result;
-			auto conversion = std::from_chars(data.c_str(),
-		                                      data.c_str() + data.size(),
-		                                      result);
-			if (conversion.ec != std::errc()) {
+			if (data.find('.') == std::string::npos) {
+				int64_t number;
+				auto conversion_number = std::from_chars(data.c_str(), data.c_str() + data.size(), number);
+				if (conversion_number.ec != std::errc()) {
+					return makePtr<Constant>(Constant::Nil);
+				}
+
+				return makePtr<Number>(number);
+			}
+
+			double decimal;
+			auto conversion_decimal = std::from_chars(data.c_str(), data.c_str() + data.size(), decimal);
+			if (conversion_decimal.ec != std::errc()) {
 				return makePtr<Constant>(Constant::Nil);
 			}
 
-			return makePtr<Number>(result);
+			return makePtr<Decimal>(decimal);
 		});
 
 #define STRING_TO_COLLECTION(name, type)                    \

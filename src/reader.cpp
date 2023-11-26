@@ -4,11 +4,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <cstddef> // size_t
-#include <cstdint> // uint64_t
-#include <cstdlib> // std::strtoll
-#include <memory>  // std::static_pointer_cast
-#include <utility> // std::move
+#include <charconv>     // std::from_chars
+#include <cstddef>      // size_t
+#include <cstdint>      // uint64_t
+#include <cstdlib>      // std::strtoll
+#include <memory>       // std::static_pointer_cast
+#include <system_error> // std::errc
+#include <utility>      // std::move
 
 #include "error.h"
 #include "ruc/format/color.h"
@@ -306,24 +308,33 @@ ValuePtr Reader::readKeyword()
 
 ValuePtr Reader::readValue()
 {
-	Token token = consume();
-	char* end_ptr = nullptr;
-	int64_t result = std::strtoll(token.symbol.c_str(), &end_ptr, 10);
-	if (end_ptr == token.symbol.c_str() + token.symbol.size()) {
-		return makePtr<Number>(result);
+	auto symbol = consume().symbol;
+
+	int64_t number;
+	auto [_, error] = std::from_chars(symbol.data(), symbol.data() + symbol.size(), number);
+	if (error == std::errc() && symbol.find('.') == std::string::npos) {
+		return makePtr<Number>(number);
 	}
 
-	if (token.symbol == "nil") {
+	double decimal;
+	{
+		auto [_, error] = std::from_chars(symbol.data(), symbol.data() + symbol.size(), decimal);
+		if (error == std::errc()) {
+			return makePtr<Decimal>(decimal);
+		}
+	}
+
+	if (symbol == "nil") {
 		return makePtr<Constant>(Constant::Nil);
 	}
-	else if (token.symbol == "true") {
+	else if (symbol == "true") {
 		return makePtr<Constant>(Constant::True);
 	}
-	else if (token.symbol == "false") {
+	else if (symbol == "false") {
 		return makePtr<Constant>(Constant::False);
 	}
 
-	return makePtr<Symbol>(token.symbol);
+	return makePtr<Symbol>(symbol);
 }
 
 // -----------------------------------------
@@ -429,6 +440,10 @@ void Reader::dumpImpl(ValuePtr node)
 	}
 	else if (is<Number>(node_raw_ptr)) {
 		pretty_print ? print(yellow, "NumberNode") : print("NumberNode");
+		print(" <{}>", node);
+	}
+	else if (is<Decimal>(node_raw_ptr)) {
+		pretty_print ? print(yellow, "DecimalNode") : print("DecimalNode");
 		print(" <{}>", node);
 	}
 	else if (is<Constant>(node_raw_ptr)) {

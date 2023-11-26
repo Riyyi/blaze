@@ -128,6 +128,10 @@ void Printer::printImpl(ValuePtr value, bool print_readably)
 		printSpacing();
 		m_print += ::format("{}", std::static_pointer_cast<Number>(value)->number());
 	}
+	else if (is<Decimal>(value_raw_ptr)) {
+		printSpacing();
+		m_print += ::format("{:.15}", std::static_pointer_cast<Decimal>(value)->decimal());
+	}
 	else if (is<Constant>(value_raw_ptr)) {
 		printSpacing();
 		std::string constant;

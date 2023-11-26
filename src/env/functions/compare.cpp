@@ -16,28 +16,51 @@ namespace blaze {
 
 void Environment::loadCompare()
 {
-#define NUMBER_COMPARE(operator)                                               \
-	{                                                                          \
-		bool result = true;                                                    \
-                                                                               \
-		CHECK_ARG_COUNT_AT_LEAST(#operator, SIZE(), 2);                        \
-                                                                               \
-		/* Start with the first number */                                      \
-		VALUE_CAST(number_node, Number, (*begin));                             \
-		int64_t number = number_node->number();                                \
-                                                                               \
-		/* Skip the first node */                                              \
-		for (auto it = begin + 1; it != end; ++it) {                           \
-			VALUE_CAST(current_number_node, Number, (*it));                    \
-			int64_t current_number = current_number_node->number();            \
-			if (!(number operator current_number)) {                           \
-				result = false;                                                \
-				break;                                                         \
-			}                                                                  \
-			number = current_number;                                           \
-		}                                                                      \
-                                                                               \
-		return makePtr<Constant>((result) ? Constant::True : Constant::False); \
+#define NUMBER_COMPARE(operator)                                                             \
+	{                                                                                        \
+		CHECK_ARG_COUNT_AT_LEAST(#operator, SIZE(), 2);                                      \
+                                                                                             \
+		bool result = true;                                                                  \
+                                                                                             \
+		int64_t number = 0;                                                                  \
+		double decimal = 0;                                                                  \
+		bool current_numeric_is_number = false;                                              \
+                                                                                             \
+		/* Start with the first number */                                                    \
+		IS_VALUE(Numeric, (*begin));                                                         \
+		if (is<Number>(begin->get())) {                                                      \
+			number = std::static_pointer_cast<Number>(*begin)->number();                     \
+			current_numeric_is_number = true;                                                \
+		}                                                                                    \
+		else {                                                                               \
+			decimal = std::static_pointer_cast<Decimal>(*begin)->decimal();                  \
+			current_numeric_is_number = false;                                               \
+		}                                                                                    \
+                                                                                             \
+		/* Skip the first node */                                                            \
+		for (auto it = begin + 1; it != end; ++it) {                                         \
+			IS_VALUE(Numeric, (*it));                                                        \
+			if (is<Number>(*it->get())) {                                                    \
+				int64_t it_number = std::static_pointer_cast<Number>(*it)->number();         \
+				if (!((current_numeric_is_number ? number : decimal) operator it_number)) {  \
+					result = false;                                                          \
+					break;                                                                   \
+				}                                                                            \
+				number = it_number;                                                          \
+				current_numeric_is_number = true;                                            \
+			}                                                                                \
+			else {                                                                           \
+				double it_decimal = std::static_pointer_cast<Decimal>(*it)->decimal();       \
+				if (!((current_numeric_is_number ? number : decimal) operator it_decimal)) { \
+					result = false;                                                          \
+					break;                                                                   \
+				}                                                                            \
+				decimal = it_decimal;                                                        \
+				current_numeric_is_number = false;                                           \
+			}                                                                                \
+		}                                                                                    \
+                                                                                             \
+		return makePtr<Constant>((result) ? Constant::True : Constant::False);               \
 	}
 
 	ADD_FUNCTION("<", "", "", NUMBER_COMPARE(<));
@@ -58,8 +81,7 @@ void Environment::loadCompare()
 
 			std::function<bool(ValuePtr, ValuePtr)> equal =
 				[&equal](ValuePtr lhs, ValuePtr rhs) -> bool {
-				if ((is<List>(lhs.get()) || is<Vector>(lhs.get()))
-			        && (is<List>(rhs.get()) || is<Vector>(rhs.get()))) {
+				if (is<Collection>(lhs.get()) && is<Collection>(rhs.get())) {
 					auto lhs_collection = std::static_pointer_cast<Collection>(lhs);
 					auto rhs_collection = std::static_pointer_cast<Collection>(rhs);
 
@@ -104,10 +126,17 @@ void Environment::loadCompare()
 			        && std::static_pointer_cast<Keyword>(lhs)->keyword() == std::static_pointer_cast<Keyword>(rhs)->keyword()) {
 					return true;
 				}
-				if (is<Number>(lhs.get()) && is<Number>(rhs.get())
-			        && std::static_pointer_cast<Number>(lhs)->number() == std::static_pointer_cast<Number>(rhs)->number()) {
+				// clang-format off
+				if (is<Numeric>(lhs.get()) && is<Numeric>(rhs.get())
+				    && (is<Number>(lhs.get())
+				    	? std::static_pointer_cast<Number>(lhs)->number()
+				        : std::static_pointer_cast<Decimal>(lhs)->decimal())
+				    == (is<Number>(rhs.get())
+			        	? std::static_pointer_cast<Number>(rhs)->number()
+				        : std::static_pointer_cast<Decimal>(rhs)->decimal())) {
 					return true;
 				}
+				// clang-format on
 				if (is<Constant>(lhs.get()) && is<Constant>(rhs.get())
 			        && std::static_pointer_cast<Constant>(lhs)->state() == std::static_pointer_cast<Constant>(rhs)->state()) {
 					return true;

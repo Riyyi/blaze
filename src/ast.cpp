@@ -193,7 +193,14 @@ Keyword::Keyword(int64_t number)
 // -----------------------------------------
 
 Number::Number(int64_t number)
-	: m_number(number)
+	: Numeric()
+	, m_number(number)
+{
+}
+
+Decimal::Decimal(double decimal)
+	: Numeric()
+	, m_decimal(decimal)
 {
 }
 
