@@ -21,6 +21,13 @@
 
 namespace blaze {
 
+static auto cleanup(int signal) -> void
+{
+	print("\033[0m\n");
+	Repl::cleanup();
+	std::exit(signal);
+}
+
 auto main(int argc, char* argv[]) -> int
 {
 	bool dump_lexer = false;
@@ -39,17 +46,17 @@ auto main(int argc, char* argv[]) -> int
 	arg_parser.addArgument(arguments, "arguments", nullptr, nullptr, ruc::ArgParser::Required::No);
 	arg_parser.parse(argc, argv);
 
+	Repl::init();
+
+	// Signal callbacks
+	std::signal(SIGINT, cleanup);
+	std::signal(SIGTERM, cleanup);
+
 	// Set settings
 	g_outer_env->set("*DUMP-LEXER*", makePtr<Constant>(dump_lexer));
 	g_outer_env->set("*DUMP-READER*", makePtr<Constant>(dump_reader));
 	g_outer_env->set("*PRETTY-PRINT*", makePtr<Constant>(pretty_print));
 
-	// Signal callbacks
-	std::signal(SIGINT, Repl::cleanup);
-	std::signal(SIGTERM, Repl::cleanup);
-
-	Environment::loadFunctions();
-	Environment::installFunctions(g_outer_env);
 	Repl::makeArgv(g_outer_env, arguments);
 
 	if (arguments.size() > 0) {
@@ -72,6 +79,8 @@ auto main(int argc, char* argv[]) -> int
 	if (pretty_print) {
 		print("\033[0m");
 	}
+
+	Repl::cleanup();
 
 	return 0;
 }

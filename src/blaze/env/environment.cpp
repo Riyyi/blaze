@@ -79,6 +79,9 @@ EnvironmentPtr Environment::create(const ValuePtr lambda, ValueVector&& argument
 
 void Environment::loadFunctions()
 {
+	s_function_parts.clear();
+	s_lambdas.clear();
+
 	loadCollectionAccess();
 	loadCollectionConstructor();
 	loadCollectionModify();

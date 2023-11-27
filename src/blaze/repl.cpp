@@ -25,12 +25,18 @@
 namespace blaze {
 
 Readline g_readline;
-EnvironmentPtr g_outer_env = Environment::create();
+EnvironmentPtr g_outer_env;
 
-auto Repl::cleanup(int signal) -> void
+auto Repl::init() -> void
 {
-	::print("\033[0m\n");
-	std::exit(signal);
+	g_outer_env = Environment::create();
+	Environment::loadFunctions();
+	Environment::installFunctions(g_outer_env);
+}
+
+auto Repl::cleanup() -> void
+{
+	g_outer_env = nullptr;
 }
 
 auto Repl::readline(const std::string& prompt) -> ValuePtr

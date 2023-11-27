@@ -17,7 +17,9 @@ namespace blaze {
 
 class Repl {
 public:
-	static auto cleanup(int signal) -> void;
+	static auto init() -> void;
+	static auto cleanup() -> void;
+
 	static auto eval(ValuePtr ast, EnvironmentPtr env) -> ValuePtr;
 	static auto makeArgv(EnvironmentPtr env, std::vector<std::string> arguments) -> void;
 	static auto print(ValuePtr value) -> std::string;
