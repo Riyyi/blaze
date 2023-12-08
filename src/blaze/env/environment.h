@@ -51,6 +51,7 @@ private:
 	static void loadCompare();
 	static void loadConvert();
 	static void loadFormat();
+	static void loadMath();
 	static void loadMeta();
 	static void loadMutable();
 	static void loadOperators();

@@ -6,8 +6,6 @@
 
 #include <string>
 
-#include "ruc/file.h"
-
 #include "blaze/ast.h"
 #include "blaze/env/macro.h"
 #include "blaze/repl.h"
@@ -29,22 +27,6 @@ void Environment::loadRepl()
 			std::string input = node->data();
 
 			return Repl::read(input);
-		});
-
-	// Read file contents
-	ADD_FUNCTION(
-		"slurp",
-		"",
-		"",
-		{
-			CHECK_ARG_COUNT_IS("slurp", SIZE(), 1);
-
-			VALUE_CAST(node, String, (*begin));
-			std::string path = node->data();
-
-			auto file = ruc::File(path);
-
-			return makePtr<String>(file.data());
 		});
 
 	// Prompt readline

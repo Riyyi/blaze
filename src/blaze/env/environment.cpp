@@ -88,6 +88,7 @@ void Environment::loadFunctions()
 	loadCompare();
 	loadConvert();
 	loadFormat();
+	loadMath();
 	loadMeta();
 	loadMutable();
 	loadOperators();
