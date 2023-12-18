@@ -11,16 +11,18 @@
 #include <functional> // std::function
 #include <list>
 #include <map>
-#include <memory> // std::shared_ptr
+#include <memory> // std::make_shared, std::shared_ptr
 #include <span>
 #include <string>
 #include <string_view>
 #include <typeinfo> // typeid
+#include <utility>  // std::forward
 #include <vector>
 
 #include "ruc/format/formatter.h"
 
 #include "blaze/forward.h"
+#include "blaze/to-from-hashmap.h"
 
 namespace blaze {
 
@@ -77,14 +79,13 @@ protected:
 #define WITH_META(Type)                                         \
 	virtual ValuePtr withMetaImpl(ValuePtr meta) const override \
 	{                                                           \
-		return makePtr<Type>(*this, meta);                      \
+		return std::make_shared<Type>(*this, meta);             \
 	}
 
-#define WITH_NO_META()                                          \
-	virtual ValuePtr withMetaImpl(ValuePtr meta) const override \
-	{                                                           \
-		(void)meta;                                             \
-		return nullptr;                                         \
+#define WITH_NO_META()                                     \
+	virtual ValuePtr withMetaImpl(ValuePtr) const override \
+	{                                                      \
+		return nullptr;                                    \
 	}
 
 // -----------------------------------------
@@ -195,6 +196,20 @@ public:
 	HashMap(const HashMap& that, ValuePtr meta);
 	virtual ~HashMap() = default;
 
+	static HashMapPtr create(const Elements& elements)
+	{
+		return std::make_shared<HashMap>(elements);
+	}
+
+	// Customization Point
+	template<typename T>
+	static HashMapPtr create(T value)
+	{
+		HashMapPtr hash_map;
+		to_hash_map(hash_map, std::forward<T>(value));
+		return hash_map;
+	}
+
 	static std::string getKeyString(ValuePtr key);
 
 	bool exists(const std::string& key);
@@ -221,6 +236,11 @@ public:
 	String(const std::string& data);
 	String(char character);
 	virtual ~String() = default;
+
+	static ValuePtr create(const std::string& data)
+	{
+		return std::make_shared<String>(data);
+	}
 
 	const std::string& data() const { return m_data; }
 	size_t size() const { return m_data.size(); }
@@ -286,6 +306,11 @@ class Decimal final : public Numeric {
 public:
 	Decimal(double decimal);
 	virtual ~Decimal() = default;
+
+	static ValuePtr create(float value)
+	{
+		return std::make_shared<Decimal>(value);
+	}
 
 	double decimal() const { return m_decimal; }
 

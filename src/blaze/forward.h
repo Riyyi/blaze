@@ -15,7 +15,9 @@ namespace blaze {
 // Types
 
 class Value;
+class HashMap;
 typedef std::shared_ptr<Value> ValuePtr;
+typedef std::shared_ptr<HashMap> HashMapPtr;
 typedef std::vector<ValuePtr> ValueVector;
 typedef ValueVector::iterator ValueVectorIt;
 typedef ValueVector::reverse_iterator ValueVectorReverseIt;

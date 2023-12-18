@@ -6,15 +6,17 @@
 
 #pragma once
 
+#include <iterator> // std::distance
 #include <unordered_map>
 
 #include "blaze/env/environment.h"
+#include "blaze/forward.h"
 
 #define ADD_FUNCTION(name, signature, documentation, lambda) \
-	Environment::registerFunction(                           \
+	blaze::Environment::registerFunction(                    \
 		{ name,                                              \
 	      signature,                                         \
 	      documentation,                                     \
-	      [](ValueVectorConstIt begin, ValueVectorConstIt end) -> blaze::ValuePtr lambda });
+	      [](blaze::ValueVectorConstIt begin, blaze::ValueVectorConstIt end) -> blaze::ValuePtr lambda });
 
 #define SIZE() std::distance(begin, end)

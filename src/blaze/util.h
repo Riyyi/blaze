@@ -34,10 +34,10 @@
 
 // -----------------------------------------
 
-#define CHECK_ARG_COUNT_IS_IMPL(name, size, expected, result)                        \
-	if (size != expected) {                                                          \
-		Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
-		return result;                                                               \
+#define CHECK_ARG_COUNT_IS_IMPL(name, size, expected, result)                               \
+	if (size != expected) {                                                                 \
+		blaze::Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
+		return result;                                                                      \
 	}
 
 #define CHECK_ARG_COUNT_IS_3(name, size, expected) \
@@ -52,10 +52,10 @@
 
 // -----------------------------------------
 
-#define CHECK_ARG_COUNT_AT_LEAST_IMPL(name, size, min, result)                       \
-	if (size < min) {                                                                \
-		Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
-		return result;                                                               \
+#define CHECK_ARG_COUNT_AT_LEAST_IMPL(name, size, min, result)                              \
+	if (size < min) {                                                                       \
+		blaze::Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
+		return result;                                                                      \
 	}
 
 #define CHECK_ARG_COUNT_AT_LEAST_3(name, size, min) \
@@ -70,10 +70,10 @@
 
 // -----------------------------------------
 
-#define CHECK_ARG_COUNT_BETWEEN_IMPL(name, size, min, max, result)                   \
-	if (size < min || size > max) {                                                  \
-		Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
-		return result;                                                               \
+#define CHECK_ARG_COUNT_BETWEEN_IMPL(name, size, min, max, result)                          \
+	if (size < min || size > max) {                                                         \
+		blaze::Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
+		return result;                                                                      \
 	}
 
 #define CHECK_ARG_COUNT_BETWEEN_4(name, size, min, max) \
@@ -88,10 +88,10 @@
 
 // -----------------------------------------
 
-#define CHECK_ARG_COUNT_EVEN_IMPL(name, size, result)                                \
-	if (size % 2 != 0) {                                                             \
-		Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
-		return result;                                                               \
+#define CHECK_ARG_COUNT_EVEN_IMPL(name, size, result)                                       \
+	if (size % 2 != 0) {                                                                    \
+		blaze::Error::the().add(::format("wrong number of arguments: {}, {}", name, size)); \
+		return result;                                                                      \
 	}
 
 #define CHECK_ARG_COUNT_EVEN_2(name, size) \
@@ -106,10 +106,10 @@
 
 // -----------------------------------------
 
-#define IS_VALUE_IMPL(type, value, result)                                       \
-	if (!is<type>(value.get())) {                                                \
-		Error::the().add(::format("wrong argument type: {}, {}", #type, value)); \
-		return result;                                                           \
+#define IS_VALUE_IMPL(type, value, result)                                              \
+	if (!is<type>(value.get())) {                                                       \
+		blaze::Error::the().add(::format("wrong argument type: {}, {}", #type, value)); \
+		return result;                                                                  \
 	}
 
 #define IS_VALUE_2(type, value) \
